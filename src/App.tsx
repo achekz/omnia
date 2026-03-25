@@ -22,6 +22,7 @@ import BudgetTrackerPage from "@/pages/academics/budget-tracker";
 import MyPerformancePage from "@/pages/performance/my-performance";
 import AIDashboard from "@/pages/ai/index";
 import EmployesRedesign from "@/pages/rh/employes";
+import PaieTunisieDashboard from "@/pages/paie/dashboard";
 import LandingPage from "@/pages/landing";
 
 const queryClient = new QueryClient({
@@ -83,6 +84,7 @@ function Router() {
   if (pathname === "/performance") return <ProtectedRoute component={MyPerformancePage} allowedProfiles={['employee']} />;
   if (pathname === "/ai") return <ProtectedRoute component={AIDashboard} allowedProfiles={['company', 'cabinet']} />;
   if (pathname === "/rh/employes") return <ProtectedRoute component={EmployesRedesign} allowedProfiles={['company']} />;
+  if (pathname === "/paie/dashboard") return <ProtectedRoute component={PaieTunisieDashboard} allowedProfiles={['company', 'cabinet']} />;
 
   if (pathname === "/" || pathname === "") return <Home />;
   

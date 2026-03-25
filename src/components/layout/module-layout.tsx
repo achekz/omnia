@@ -110,7 +110,7 @@ const MODULES: NavModule[] = [
     activeSidebarStyle: "bg-lime-50 text-lime-600 font-semibold",
     allowedProfiles: ['company', 'cabinet'],
     items: [
-       { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" /> },
+       { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" />, path: "/paie/dashboard" },
        { id: "salaries", label: "Salariés", icon: <Users className="w-4 h-4" /> },
        { id: "exercices", label: "Exercices", icon: <Calendar className="w-4 h-4" /> },
        { id: "cnss", label: "CNSS", icon: <FileText className="w-4 h-4" /> },

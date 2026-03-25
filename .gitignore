@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production / Build
+dist/
+build/
+.vercel
+.netlify
+
+# Environment Variables (CRITICAL: Do not push these!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server/.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python ML Service
+ml_service/venv/
+ml_service/__pycache__/
+ml_service/*.pyc
+ml_service/.pytest_cache
