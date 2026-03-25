@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/omni-ai/"
+title = "OmniAI Platform"
+version = "1.0.0"
+id = "artifacts/omni-ai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/omni-ai/" ]
+localPort = 22483
+
+[services.development]
+run = "pnpm --filter @workspace/omni-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/omni-ai", "run", "build" ]
+publicDir = "artifacts/omni-ai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22483"
+BASE_PATH = "/omni-ai/"

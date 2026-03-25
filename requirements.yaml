@@ -1,0 +1,20 @@
+packages:
+  "framer-motion": "For page transitions, smooth enter animations, and layout animations"
+  "recharts": "For rendering beautiful analytics charts on the dashboards"
+  "date-fns": "For formatting dates in task lists, timelines, and notifications"
+  "@hello-pangea/dnd": "For the drag-and-drop Kanban board in the Employee dashboard"
+  "clsx": "For conditional tailwind class merging"
+  "tailwind-merge": "For conflict-free tailwind utility merging"
+
+images:
+  - path: "artifacts/omni-ai/public/images/auth-bg.png"
+    description: "Abstract 3D dark mode technology background with glowing purple and emerald neural network nodes and data streams, very sleek and professional SaaS feel"
+    aspect_ratio: "16:9"
+  - path: "artifacts/omni-ai/public/images/logo.png"
+    description: "A minimal, modern geometric logo for an AI company named OmniAI, using deep indigo and vibrant emerald green colors, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - "Authentication: Token is stored in localStorage as 'omniAI_token'."
+  - "Since we are using generated hooks without modifying the customFetch file, we patch window.fetch in App.tsx to automatically inject the Bearer token."
+  - "All API endpoints are prefixed with /api."
