@@ -37,8 +37,11 @@ export default function Register() {
     setError("");
     try {
       await register({
-        ...formData,
-        profileType
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        profileType,
+        orgName: formData.organizationName
       });
     } catch (err: any) {
       setError(err.message || "Failed to create account");

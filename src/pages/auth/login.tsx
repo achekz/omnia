@@ -16,16 +16,6 @@ export default function Login() {
     setIsLoading(true);
     setError("");
     try {
-      // Mock login - accept any of the demo accounts
-      const isValidAccount = demoAccounts.some(acc => acc.email === email);
-      
-      if (!isValidAccount) {
-        throw new Error("Invalid credentials. Please use one of the demo accounts.");
-      }
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       await login({ email, password });
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
@@ -34,19 +24,10 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = async (email: string) => {
-    setIsLoading(true);
+  const handleDemoSelect = (email: string) => {
     setEmail(email);
+    setPassword("");
     setError("");
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      await login({ email, password: "demo123" });
-    } catch (err: any) {
-      setError(err.message || "Login failed");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const demoAccounts = [
@@ -147,7 +128,8 @@ export default function Login() {
                 {demoAccounts.map((demo) => (
                   <button
                     key={demo.type}
-                    onClick={() => handleDemoLogin(demo.email)}
+                    type="button"
+                    onClick={() => handleDemoSelect(demo.email)}
                     disabled={isLoading}
                     className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-purple-200 hover:shadow-sm transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                   >

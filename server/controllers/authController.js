@@ -44,8 +44,15 @@ export const register = asyncHandler(async (req, res) => {
     await org.save();
   }
 
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
+  // Generate tokens
+  let accessToken, refreshToken;
+  try {
+    accessToken = user.generateAccessToken();
+    refreshToken = user.generateRefreshToken();
+  } catch (tokenErr) {
+    throw new ApiError(500, 'Token generation failed. Please try again.');
+  }
+
   user.refreshToken = refreshToken;
   await user.save();
 
@@ -86,18 +93,21 @@ export const login = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save();
 
-  // Log the login event in activity
-  try {
-    const { default: ActivityLog } = await import('../models/ActivityLog.js');
-    const today = new Date(); today.setHours(0,0,0,0);
-    await ActivityLog.findOneAndUpdate(
-      { userId: user._id, date: today },
-      { $inc: { loginCount: 1 } },
-      { upsert: true, new: true }
-    );
-  } catch (_) {}
+  // Log the login event in activity (fire and forget - don't block response)
+  setImmediate(async () => {
+    try {
+      const { default: ActivityLog } = await import('../models/ActivityLog.js');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      await ActivityLog.findOneAndUpdate(
+        { userId: user._id, date: today },
+        { $inc: { loginCount: 1 } },
+        { upsert: true, new: true }
+      );
+    } catch (_) {}
+  });
 
-  return res.json(
+  return res.status(200).json(
     new ApiResponse(200, {
       user: {
         _id: user._id,
