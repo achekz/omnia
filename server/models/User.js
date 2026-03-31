@@ -14,11 +14,10 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    password: { type: String, required: true, minlength: 6 },
     role: {
       type: String,
-      enum: ['company_admin', 'cabinet_admin', 'manager', 'employee', 'student'],
-      required: true,
+      enum: ['admin', 'user', 'manager'],
+      default: 'user',
     },
     profileType: {
       type: String,
@@ -44,6 +43,9 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
+
+// Create index for email queries - CRITICAL for login performance
+userSchema.index({ email: 1 });
 
 // Compare candidate password
 userSchema.methods.comparePassword = async function (candidatePassword) {
