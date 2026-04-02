@@ -1,22 +1,39 @@
 import axios from "axios";
-import { predict } from "./mlService.js";
+import { predict, recommend } from "./mlService.js";
 import { buildPrompt } from "./promptBuilder.js";
+import * as notifService from "./notifService.js";
 
 export async function askAI({ user, message, context }) {
   try {
-    // 🔥 ML prediction
+    // 🔮 ML prediction
     const prediction = await predict(context);
+    
+    context.futureScore = prediction.risk_score;
 
-    // injecter alert si risque élevé
+    context.risk_score = prediction.risk_score;
+    context.risk_level = prediction.risk_level;
+
+    // 💡 ML recommendations
+    const rec = await recommend(context);
+    context.recommendations = rec.recommendations;
+
+    // 🚨 HIGH RISK ALERT
     if (prediction.risk_score > 70) {
       context.alert = "⚠️ High risk detected";
-      context.risk_score = prediction.risk_score;
+
+      await notifService.create(user._id, user.tenantId, {
+        type: "warning",
+        title: "AI Alert",
+        message: "High risk detected. Immediate action required.",
+        source: "ai",
+        actionUrl: "/tasks",
+      });
     }
 
-    // construire prompt
+    // 🧠 PROMPT
     const prompt = buildPrompt(user, message, context);
 
-    // appel AI
+    // 🤖 AI CALL
     const response = await axios.post("http://localhost:5000/ai", {
       prompt,
     });
