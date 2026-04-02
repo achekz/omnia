@@ -45,8 +45,20 @@ const userSchema = new Schema(
 // Hash password before save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  
+  // Check if password is already hashed (bcrypt format: $2a, $2b, $2y, $2x)
+  if (this.password.startsWith('$2')) {
+    console.log('ℹ️  Password already hashed. Skipping...');
+    return next();
+  }
+  
+  // Hash plain text password
+  try {
+    this.password = await bcrypt.hash(this.password, 12);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Create index for email queries - CRITICAL for login performance

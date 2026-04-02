@@ -1,59 +1,87 @@
+/**
+ * Build a dynamic prompt that will be sent to the AI model
+ * This creates context for real, intelligent responses
+ * NOTE: This is kept for backward compatibility but not used in the new ai.service.js
+ */
 export function buildPrompt(user, message, context) {
-
-  let roleInstruction = "";
-
-  if (user.role === "employee") {
-    roleInstruction = "Tu es un assistant de productivité pour employé.";
+  if (!message) {
+    return "Please provide a question.";
   }
 
-  if (user.role === "company_admin") {
-    roleInstruction = "Tu es un assistant stratégique pour entreprise.";
-  }
+  const roleDescriptions = {
+    employee: "You are a productivity assistant for an employee",
+    company_admin: "You are a strategic consultant for company management",
+    cabinet_admin: "You are a financial advisor for accounting",
+    student: "You are an academic assistant for students"
+  };
 
-  if (user.role === "cabinet_admin") {
-    roleInstruction = "Tu es un assistant financier pour cabinet comptable.";
-  }
-
-  if (user.role === "student") {
-    roleInstruction = "Tu es un assistant académique pour étudiant.";
-  }
+  const roleDesc = roleDescriptions[user?.role] || "You are a general assistant";
+  const contextSummary = formatContext(context, user?.role);
 
   return `
-Tu es un assistant intelligent interne du projet OmniAI.
+# User Profile
+- Role: ${user?.role || "guest"}
+- Name: ${user?.name || "User"}
 
-⚠️ Règles STRICTES :
-- Tu réponds SEULEMENT dans le contexte OmniAI
-- Tu refuses les questions hors sujet
-- Si la question n’est pas liée à OmniAI → répond EXACTEMENT :
-"Je suis un assistant spécialisé OmniAI, je ne peux répondre qu’aux questions liées à la plateforme."
+# System Message
+${roleDesc}
 
-🎯 Ton objectif :
-- Analyser la situation utilisateur
-- Donner recommandations intelligentes
-- Proposer des actions concrètes
+# Available Context
+${contextSummary}
 
-📌 Format obligatoire de réponse :
-Analyse:
-...
+# User Question
+"${message}"
 
-Recommandations:
-...
+# Instructions
+1. Answer naturally and conversationally like ChatGPT
+2. Be concise (2-4 sentences)
+3. Use the context if relevant
+4. Don't force templates - respond intelligently
+5. If math/coding, show exact calculations
 
-Actions:
-- ...
-- ...
-- ...
+Respond now:`;
+}
 
-${roleInstruction}
+/**
+ * Format available context for the AI prompt
+ * Extracts relevant information the AI can use
+ */
+function formatContext(context, role) {
+  if (!context || Object.keys(context).length === 0) {
+    return "No specific context available.";
+  }
 
-👤 Rôle: ${user.role}
+  const parts = [];
 
-📊 Données utilisateur:
-${JSON.stringify(context)}
+  // Extract relevant context based on role
+  if (role === "employee" && context.tasks?.length > 0) {
+    parts.push(`- ${context.tasks.length} tasks available`);
+  }
+  
+  if (role === "company_admin") {
+    if (context.teamActivity?.length > 0) {
+      parts.push(`- ${context.teamActivity.length} team activities`);
+    }
+    if (context.teamMembers?.length > 0) {
+      parts.push(`- ${context.teamMembers.length} team members`);
+    }
+  }
 
-❓ Question:
-${message}
+  if (role === "cabinet_admin") {
+    if (context.financialData?.length > 0) {
+      parts.push(`- Financial records available`);
+    }
+  }
 
-Réponse:
-`;
+  if (role === "student") {
+    if (context.courses?.length > 0) {
+      parts.push(`- ${context.courses.length} courses enrolled`);
+    }
+  }
+
+  if (context.recentActivity?.length > 0) {
+    parts.push("- Recent activity history available");
+  }
+
+  return parts.length > 0 ? parts.join("\n") : "Context: User profile loaded.";
 }
