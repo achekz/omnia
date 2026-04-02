@@ -82,7 +82,7 @@ function Router() {
   if (pathname === "/planner") return <ProtectedRoute component={StudyPlannerPage} allowedProfiles={['student']} />;
   if (pathname === "/budget") return <ProtectedRoute component={BudgetTrackerPage} allowedProfiles={['student']} />;
   if (pathname === "/performance") return <ProtectedRoute component={MyPerformancePage} allowedProfiles={['employee']} />;
-  if (pathname === "/ai") return <ProtectedRoute component={AIDashboard} allowedProfiles={['company', 'cabinet']} />;
+  if (pathname === "/ai") return <ProtectedRoute component={AIDashboard} />;
   if (pathname === "/rh/employes") return <ProtectedRoute component={EmployesRedesign} allowedProfiles={['company']} />;
   if (pathname === "/paie/dashboard") return <ProtectedRoute component={PaieTunisieDashboard} allowedProfiles={['company', 'cabinet']} />;
 

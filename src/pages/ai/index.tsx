@@ -8,10 +8,10 @@ export default function AIDashboard() {
   const { user } = useAuth();
   const [prompt, setPrompt] = useState("");
 
-  if (!user || (user.profileType !== 'company' && user.profileType !== 'cabinet')) {
+  if (!user) {
     return (
       <ModuleLayout activeItem="ia">
-        <div className="p-8 text-center text-gray-500">Access Restricted</div>
+        <div className="p-8 text-center text-gray-500">Loading...</div>
       </ModuleLayout>
     );
   }

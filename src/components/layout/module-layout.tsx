@@ -52,6 +52,18 @@ const MODULES: NavModule[] = [
     ],
   },
   {
+    id: "ai",
+    label: "Assistant IA",
+    icon: <Bot className="w-4 h-4" />,
+    bg: "bg-violet-500",
+    textColor: "text-violet-600",
+    activeSidebarStyle: "bg-violet-50 text-violet-600 font-semibold",
+    allowedProfiles: ['company', 'cabinet', 'employee', 'student'],
+    items: [
+      { id: "ai-home", label: "Assistant IA", icon: <Bot className="w-4 h-4" />, path: "/ai" },
+    ],
+  },
+  {
     id: "catalogue",
     label: "Catalogue",
     icon: <Box className="w-4 h-4" />,
@@ -79,6 +91,7 @@ const MODULES: NavModule[] = [
       { id: "projets", label: "Projets", icon: <Briefcase className="w-4 h-4" /> },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "performances", label: "Performances", icon: <Award className="w-4 h-4" />, path: "/performance" },
+      { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
   {
@@ -140,6 +153,7 @@ const MODULES: NavModule[] = [
       { id: "planner", label: "Study Planner", icon: <Calendar className="w-4 h-4" />, path: "/planner" },
       { id: "budget", label: "Budget Tracker", icon: <Calculator className="w-4 h-4" />, path: "/budget" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
+      { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   }
 ];

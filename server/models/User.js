@@ -14,9 +14,14 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: true,
+      select: false,
+    },
     role: {
       type: String,
-      enum: ['admin', 'user', 'manager'],
+      enum: ['admin', 'user', 'manager', 'company_admin', 'cabinet_admin'],
       default: 'user',
     },
     profileType: {
