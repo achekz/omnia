@@ -7,15 +7,18 @@ import Task from "../models/Task.js";
 const router = express.Router();
 
 // 🤖 AI CHAT
-router.post("/ask", protect, async (req, res) => {
+router.post("/ask", async (req, res) => {
   try {
-    const user = req.user;
     const message = req.body.message;
 
-    const context = await getContext(user);
+    // Optional: get user context if authenticated
+    let context = { user: null };
+    if (req.user) {
+      context = await getContext(req.user);
+    }
 
     const response = await askAI({
-      user,
+      user: req.user || null,
       message,
       context,
     });
