@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import AnalyticsChart from "../components/AnalyticsChart";
+import TaskBoard from "../components/TaskBoard";
 
 export default function EmployeeDashboard() {
+  const [prediction, setPrediction] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [input, setInput] = useState("");
@@ -10,23 +14,40 @@ export default function EmployeeDashboard() {
 
   const chatRef = useRef(null);
 
+  // 🔽 FETCH TASKS
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const res = await axios.get("/api/tasks");
+      setTasks(res.data);
+    };
+    fetchTasks();
+  }, []);
+
+  // 🔽 FETCH ANALYTICS
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get("/api/analytics/activity");
+        setChartData(res.data);
+      } catch {
+        console.error("Analytics error");
+      }
+    };
+    fetchData();
+  }, []);
+
+  // 🔽 AUTO SCROLL
   useEffect(() => {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages]);
 
   // 🎤 VOICE
   const startVoice = () => {
-    if (!("webkitSpeechRecognition" in window)) {
-      alert("Voice not supported");
-      return;
-    }
-
     const recognition = new window.webkitSpeechRecognition();
     recognition.lang = "fr-FR";
 
     recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      setInput(text);
+      setInput(event.results[0][0].transcript);
     };
 
     recognition.start();
@@ -41,11 +62,7 @@ export default function EmployeeDashboard() {
 
   // 🤖 CREATE TASK
   const createTask = async (title) => {
-    try {
-      await axios.post("/api/ai/create-task-from-ai", { title });
-    } catch (err) {
-      console.error("Task error");
-    }
+    await axios.post("/api/ai/create-task-from-ai", { title });
   };
 
   // 🤖 SEND MESSAGE
@@ -64,19 +81,16 @@ export default function EmployeeDashboard() {
 
       speak(aiText);
 
-      // ✅ AI ACTION DETECTION (CORRECT PLACE)
       if (aiText.includes("Actions")) {
         createTask("Task suggested by AI");
-      }
-
-      if (aiText.includes("Terminer")) {
-        createTask("Terminer tâche urgente");
       }
 
       setMessages((prev) => [
         ...prev,
         { text: aiText, type: "ai" },
       ]);
+
+      setPrediction(res.data.prediction || null);
 
     } catch {
       setMessages((prev) => [
@@ -107,41 +121,29 @@ export default function EmployeeDashboard() {
         padding: "20px"
       }}>
         <h2>OmniAI</h2>
-        <p>Dashboard</p>
-        <p>Tasks</p>
-        <p>Analytics</p>
-
-        <button onClick={() => setDarkMode(!darkMode)}>
-          🌙 Toggle
-        </button>
+        <button onClick={() => setDarkMode(!darkMode)}>🌙</button>
       </div>
 
       {/* MAIN */}
       <div style={{ flex: 1, padding: "20px" }}>
-        <h2>👨‍💼 Employee Dashboard</h2>
 
-        {/* CHAT */}
+        <h2>Dashboard</h2>
+
+        {/* AI CHAT */}
         <div style={{
           background: darkMode ? "#1e293b" : "#fff",
-          borderRadius: "16px",
-          padding: "15px"
+          padding: "15px",
+          borderRadius: "10px"
         }}>
           <h3>🤖 AI Assistant</h3>
 
-          <div ref={chatRef} style={{
-            height: "300px",
-            overflowY: "auto"
-          }}>
+          <div ref={chatRef} style={{ height: "200px", overflowY: "auto" }}>
             {messages.map((msg, i) => (
-              <div key={i} style={{
-                textAlign: msg.type === "user" ? "right" : "left"
-              }}>
+              <div key={i}>
                 <b>{msg.type === "ai" ? "🤖 AI" : "👤 You"}:</b>
-                <br />
-                <span>{msg.text}</span>
+                <p>{msg.text}</p>
               </div>
             ))}
-
             {isTyping && <p>🤖 AI is typing...</p>}
           </div>
 
@@ -149,21 +151,28 @@ export default function EmployeeDashboard() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-
           <button onClick={sendMessage}>Send</button>
           <button onClick={startVoice}>🎤</button>
         </div>
 
-        {/* INSIGHTS */}
-        <div style={{
-          marginTop: "20px",
-          padding: "15px",
-          background: darkMode ? "#1e293b" : "#fff"
-        }}>
+        {/* AI PREDICTION */}
+        <div style={{ marginTop: "20px" }}>
+          <h3>🔮 AI Prediction</h3>
+          <p>{prediction || "No prediction yet"}</p>
+        </div>
+
+        {/* AI INSIGHTS */}
+        <div style={{ marginTop: "20px" }}>
           <h3>📊 AI Insights</h3>
           <p>Productivity: 78%</p>
-          <p>Risk Level: Medium</p>
         </div>
+
+        {/* 📊 CHART */}
+        <AnalyticsChart data={chartData} />
+
+        {/* 🧲 TASK BOARD */}
+        <TaskBoard tasks={tasks} setTasks={setTasks} />
+
       </div>
     </div>
   );

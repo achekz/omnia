@@ -21,6 +21,7 @@ import mlRoutes from './routes/ml.js';
 import financeRoutes from './routes/finance.js';
 import analyticsRoutes from './routes/analytics.js';
 import userRoutes from './routes/users.js';
+import aiRoutes from './routes/ai.routes.js';
 
 // Load Env
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/ml', mlRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Root
 app.get('/', (req, res) => {

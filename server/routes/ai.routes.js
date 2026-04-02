@@ -1,13 +1,13 @@
 import express from "express";
 import { askAI } from "../services/ai.service.js";
 import { getContext } from "../services/contextBuilder.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { protect } from "../middleware/auth.js";
 import Task from "../models/Task.js";
 
 const router = express.Router();
 
 // 🤖 AI CHAT
-router.post("/ask", authMiddleware, async (req, res) => {
+router.post("/ask", protect, async (req, res) => {
   try {
     const user = req.user;
     const message = req.body.message;
@@ -29,7 +29,7 @@ router.post("/ask", authMiddleware, async (req, res) => {
 });
 
 // 🤖 CREATE TASK FROM AI
-router.post("/create-task-from-ai", authMiddleware, async (req, res) => {
+router.post("/create-task-from-ai", protect, async (req, res) => {
   try {
     const { title } = req.body;
     const user = req.user;
