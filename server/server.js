@@ -26,6 +26,9 @@ import aiRoutes from './routes/ai.routes.js';
 // Load Env
 dotenv.config();
 
+// 🔥 DEBUG: تأكد env تقرى
+console.log('MONGO_URI:', process.env.MONGO_URI);
+
 // Connect DB
 connectDB();
 
@@ -37,11 +40,15 @@ initSocket(httpServer);
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
+// Dev logs
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -56,16 +63,15 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Root
+// Root route
 app.get('/', (req, res) => {
-  res.send('OmniAI API is running...');
+  res.send('✅ OmniAI API is running...');
 });
 
 // Global Error Handler
 app.use(errorHandler);
 
-// Cron Jobs
-// Run rule engine every hour on the hour
+// Cron Job (Rule Engine)
 cron.schedule('0 * * * *', () => {
   console.log('[Cron] Running Rule Engine...');
   ruleEngine.run();
