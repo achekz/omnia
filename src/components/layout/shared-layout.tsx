@@ -8,6 +8,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useGetNotifications } from "@/lib/api-client";
+import { BackButton } from "@/components/ui/back-button";
+import { SettingsMenu } from "@/components/ui/settings-menu";
 
 interface SharedLayoutProps {
   children: ReactNode;
@@ -112,21 +114,10 @@ export function SharedLayout({ children }: SharedLayoutProps) {
             );
           })}
           
-          <div className="mt-8 pt-8 border-t border-gray-100">
-            <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preferences</p>
-            <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200">
-              <Settings className="w-5 h-5" />
-              Settings
-            </Link>
-            <button 
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-all duration-200 mt-2"
-            >
-              <LogOut className="w-5 h-5" />
-              Logout
-            </button>
-          </div>
+          {/* Spacer for flex-1 to push preferences to bottom */}
         </nav>
+
+        {/* Preferences Section at Bottom - REMOVED Settings & Logout, now in header dropdown */}
       </aside>
 
       {/* Main Content */}
@@ -137,19 +128,22 @@ export function SharedLayout({ children }: SharedLayoutProps) {
             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-gray-500 hover:text-gray-900">
               <Menu className="w-6 h-6" />
             </button>
+            <BackButton />
             <h1 className="font-display text-xl font-bold text-gray-900 hidden sm:block">Welcome back, {user.name.split(' ')[0]} 👋</h1>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsNotifOpen(true)}
               className="relative p-2.5 rounded-full bg-gray-50 border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              title="Notifications"
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
               )}
             </button>
+            <SettingsMenu />
           </div>
         </header>
 

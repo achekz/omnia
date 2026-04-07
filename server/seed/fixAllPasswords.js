@@ -8,7 +8,7 @@ dotenv.config();
 async function fixAllPasswords() {
   try {
     console.log('🔗 Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected\n');
 
     const users = await User.find({}).select('+password');

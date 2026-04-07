@@ -12,6 +12,8 @@ import {
   Package, FileText, Pickaxe, Bot
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { BackButton } from "@/components/ui/back-button";
+import { SettingsMenu } from "@/components/ui/settings-menu";
 
 interface ModuleLayoutProps {
   children: ReactNode;
@@ -305,9 +307,8 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
 
         {/* Right: Icons + User */}
         <div className="flex items-center gap-3 shrink-0 ml-4">
-          <button className="p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
+          <BackButton />
+          <SettingsMenu />
           
           <button
             onClick={() => setIsNotifOpen(true)}

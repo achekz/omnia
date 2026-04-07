@@ -8,7 +8,7 @@ dotenv.config();
 async function fixPasswordHashing() {
   try {
     console.log('🔗 Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB\n');
 
     // Find all users

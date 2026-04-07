@@ -50,7 +50,7 @@ async function testMongoDB() {
     console.log('\n✅ Everything looks good! You can now register accounts.\n');
     process.exit(0);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Connection failed!\n');
     console.error('❌ Error:', error.message);
     
