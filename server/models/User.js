@@ -7,6 +7,7 @@ const { Schema } = mongoose;
 const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+
     email: {
       type: String,
       required: true,
@@ -14,26 +15,39 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: true,
       select: false,
     },
+
     role: {
       type: String,
       enum: ['admin', 'user', 'manager', 'company_admin', 'cabinet_admin'],
       default: 'user',
     },
+
     profileType: {
       type: String,
       enum: ['company', 'cabinet', 'employee', 'student'],
       required: true,
     },
-    tenantId: { type: Schema.Types.ObjectId, ref: 'Organization', default: null },
+
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Organization',
+      default: null,
+    },
+
     avatar: { type: String, default: '' },
+
     isActive: { type: Boolean, default: true },
+
     lastLogin: { type: Date },
+
     refreshToken: { type: String },
+
     preferences: {
       theme: { type: String, default: 'dark' },
       emailNotifications: { type: Boolean, default: true },
@@ -42,46 +56,55 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-// Hash password before save
+
+// ✅ HASH PASSWORD BEFORE SAVE (clean & safe)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
-  // Check if password is already hashed (bcrypt format: $2a, $2b, $2y, $2x)
-  if (this.password.startsWith('$2')) {
-    console.log('ℹ️  Password already hashed. Skipping...');
-    return next();
-  }
-  
-  // Hash plain text password
+
   try {
-    this.password = await bcrypt.hash(this.password, 12);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (err) {
     next(err);
   }
 });
 
-// Create index for email queries - CRITICAL for login performance
+
+// ✅ INDEX (keep one only)
 userSchema.index({ email: 1 });
 
-// Compare candidate password
+
+// ✅ COMPARE PASSWORD (robust)
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (err) {
+    console.error('❌ Password compare error:', err);
+    return false;
+  }
 };
 
-// Generate access token
+
+// ✅ ACCESS TOKEN
 userSchema.methods.generateAccessToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '15m',
-  });
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE || '15m' }
+  );
 };
 
-// Generate refresh token
+
+// ✅ REFRESH TOKEN
 userSchema.methods.generateRefreshToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d',
-  });
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
+  );
 };
+
 
 const User = mongoose.model('User', userSchema);
 export default User;
