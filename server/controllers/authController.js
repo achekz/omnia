@@ -5,86 +5,109 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 // POST /api/auth/register
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, profileType, orgName } = req.body;
-
-  if (!name || !email || !password || !profileType) {
-    throw new ApiError(400, 'name, email, password and profileType are required');
-  }
-
-  const existing = await User.findOne({ email });
-  if (existing) throw new ApiError(409, 'Email already registered');
-
-  // 🟢 NEW: profileType → role (RBAC)
-  let role = 'user';
-
-  if (profileType === 'company' || profileType === 'cabinet') {
-    role = 'admin';
-  } else if (profileType === 'manager') {
-    role = 'manager';
-  }
-
-  let tenantId = null;
-  let org = null;
-
-  if (profileType === 'company' || profileType === 'cabinet') {
-    if (!orgName) throw new ApiError(400, 'orgName is required for company/cabinet');
-
-    org = await Organization.create({
-      name: orgName,
-      type: profileType,
-    });
-
-    tenantId = org._id;
-  }
-
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role,
-    profileType,
-    tenantId,
-  });
-
-  if (org) {
-    org.ownerId = user._id;
-    org.members.push(user._id);
-    await org.save();
-  }
-
-  // Generate tokens
-  let accessToken, refreshToken;
-
   try {
-    accessToken = user.generateAccessToken();
-    refreshToken = user.generateRefreshToken();
-  } catch (err) {
-    throw new ApiError(500, 'Token generation failed');
-  }
+    const { name, email, password, profileType, orgName } = req.body;
 
-  user.refreshToken = refreshToken;
-  await user.save();
+    console.log('📝 [REGISTER] Attempting registration:', { name, email, profileType });
 
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      {
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          profileType: user.profileType,
-          tenantId: user.tenantId,
-          avatar: user.avatar,
-          preferences: user.preferences,
+    if (!name || !email || !password || !profileType) {
+      throw new ApiError(400, 'name, email, password and profileType are required');
+    }
+
+    // Check if email already exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      console.log('⚠️  [REGISTER] Email already registered:', email);
+      throw new ApiError(409, 'Email already registered');
+    }
+
+    // 🟢 NEW: profileType → role (RBAC)
+    let role = 'user';
+
+    if (profileType === 'company' || profileType === 'cabinet') {
+      role = 'admin';
+    } else if (profileType === 'manager') {
+      role = 'manager';
+    }
+
+    let tenantId = null;
+    let org = null;
+
+    // Create organization if needed
+    if (profileType === 'company' || profileType === 'cabinet') {
+      if (!orgName) throw new ApiError(400, 'orgName is required for company/cabinet');
+
+      console.log('🏢 [REGISTER] Creating organization:', orgName);
+      org = await Organization.create({
+        name: orgName,
+        type: profileType,
+      });
+      console.log('✅ [REGISTER] Organization created:', org._id);
+
+      tenantId = org._id;
+    }
+
+    // Create user
+    console.log('👤 [REGISTER] Creating user:', email);
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+      profileType,
+      tenantId,
+      isActive: true,
+    });
+    console.log('✅ [REGISTER] User created:', user._id);
+
+    // Update organization with user reference
+    if (org) {
+      org.ownerId = user._id;
+      org.members.push(user._id);
+      await org.save();
+      console.log('✅ [REGISTER] Organization updated with user');
+    }
+
+    // Generate tokens
+    let accessToken, refreshToken;
+
+    try {
+      accessToken = user.generateAccessToken();
+      refreshToken = user.generateRefreshToken();
+      console.log('✅ [REGISTER] Tokens generated');
+    } catch (err) {
+      console.error('❌ [REGISTER] Token generation failed:', err);
+      throw new ApiError(500, 'Token generation failed');
+    }
+
+    user.refreshToken = refreshToken;
+    await user.save();
+    console.log('✅ [REGISTER] Registration completed successfully');
+
+    return res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            profileType: user.profileType,
+            tenantId: user.tenantId,
+            avatar: user.avatar,
+            preferences: user.preferences,
+          },
+          accessToken,
+          refreshToken,
         },
-        accessToken,
-        refreshToken,
-      },
-      'Registered successfully'
-    )
-  );
+        'Registered successfully'
+      )
+    );
+  } catch (error) {
+    console.error('❌ [REGISTER] Error:', error.message);
+    throw error;
+  }
 });
 
 // POST /api/auth/login
