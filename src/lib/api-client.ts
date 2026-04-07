@@ -11,7 +11,7 @@ export const api = axios.create({
 
 // Request Interceptor: Attach Access Token
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('omniAI_token'); // accessToken
+  const token = localStorage.getItem('omni_ai_token'); // accessToken
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -27,18 +27,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        const refreshToken = localStorage.getItem('omniAI_refreshToken');
+        const refreshToken = localStorage.getItem('omni_ai_refreshToken');
         if (!refreshToken) throw new Error('No refresh token');
 
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh-token`, { refreshToken });
         
-        localStorage.setItem('omniAI_token', data.data.accessToken);
+        localStorage.setItem('omni_ai_token', data.data.accessToken);
         original.headers.Authorization = `Bearer ${data.data.accessToken}`;
         return api(original);
       } catch (refreshErr) {
-        localStorage.removeItem('omniAI_token');
-        localStorage.removeItem('omniAI_refreshToken');
-        localStorage.removeItem('omniAI_user');
+        localStorage.removeItem('omni_ai_token');
+        localStorage.removeItem('omni_ai_refreshToken');
+        localStorage.removeItem('omni_ai_user');
         window.location.href = '/login';
         return Promise.reject(refreshErr);
       }

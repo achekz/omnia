@@ -110,7 +110,7 @@ export default function AIDashboard() {
                     {msg.role === "ai" && (
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-indigo-500" />
-                        <span className="text-xs font-semibold text-indigo-600">OmniAI</span>
+                        <span className="text-xs font-semibold text-indigo-600">Omni AI</span>
                       </div>
                     )}
                     <p className="whitespace-pre-line">{msg.text}</p>

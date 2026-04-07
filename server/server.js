@@ -65,7 +65,7 @@ app.use('/api/ai', aiRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('✅ OmniAI API is running...');
+  res.send('✅ Omni AI API is running...');
 });
 
 // Global Error Handler

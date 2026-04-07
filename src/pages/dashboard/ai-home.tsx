@@ -43,7 +43,7 @@ export default function AIHome() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("omniAI_token");
+      const token = localStorage.getItem("omni_ai_token");
       const res = await fetch("/api/ml/recommend", {
         method: "POST",
         headers: {
@@ -109,7 +109,7 @@ export default function AIHome() {
                   {m.role === "ai" && (
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles className="w-4 h-4 text-purple-500" />
-                      <span className="text-xs font-semibold text-purple-600">OmniAI</span>
+                      <span className="text-xs font-semibold text-purple-600">Omni AI</span>
                     </div>
                   )}
                   <p className="whitespace-pre-line">{m.text}</p>

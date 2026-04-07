@@ -11,10 +11,10 @@ images:
     description: "Abstract 3D dark mode technology background with glowing purple and emerald neural network nodes and data streams, very sleek and professional SaaS feel"
     aspect_ratio: "16:9"
   - path: "artifacts/omni-ai/public/images/logo.png"
-    description: "A minimal, modern geometric logo for an AI company named OmniAI, using deep indigo and vibrant emerald green colors, transparent background"
+    description: "A minimal, modern geometric logo for an AI company named Omni AI, using deep indigo and vibrant emerald green colors, transparent background"
     aspect_ratio: "1:1"
 
 notes:
-  - "Authentication: Token is stored in localStorage as 'omniAI_token'."
+  - "Authentication: Token is stored in localStorage as 'omni_ai_token'."
   - "Since we are using generated hooks without modifying the customFetch file, we patch window.fetch in App.tsx to automatically inject the Bearer token."
   - "All API endpoints are prefixed with /api."

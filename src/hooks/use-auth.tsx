@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem("omniAI_token");
+      const storedToken = localStorage.getItem("omni_ai_token");
       if (storedToken) {
         try {
           // Verify token by fetching user profile
@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setToken(storedToken);
           setUser(data.data.user);
         } catch (e) {
-          localStorage.removeItem("omniAI_token");
-          localStorage.removeItem("omniAI_user");
+          localStorage.removeItem("omni_ai_token");
+          localStorage.removeItem("omni_ai_user");
         }
       }
       setIsLoading(false);
@@ -47,9 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.post('/auth/login', data);
       const { user: userData, accessToken, refreshToken } = res.data.data;
       
-      localStorage.setItem("omniAI_token", accessToken);
-      localStorage.setItem("omniAI_refreshToken", refreshToken);
-      localStorage.setItem("omniAI_user", JSON.stringify(userData));
+      localStorage.setItem("omni_ai_token", accessToken);
+      localStorage.setItem("omni_ai_refreshToken", refreshToken);
+      localStorage.setItem("omni_ai_user", JSON.stringify(userData));
       
       setToken(accessToken);
       setUser(userData);
@@ -79,14 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.post('/auth/register', data);
       const { user: userData, accessToken, refreshToken } = res.data.data;
       
-      localStorage.setItem("omniAI_token", accessToken);
-      localStorage.setItem("omniAI_refreshToken", refreshToken);
-      localStorage.setItem("omniAI_user", JSON.stringify(userData));
+      localStorage.setItem("omni_ai_token", accessToken);
+      localStorage.setItem("omni_ai_refreshToken", refreshToken);
+      localStorage.setItem("omni_ai_user", JSON.stringify(userData));
       
       setToken(accessToken);
       setUser(userData);
       
-      toast({ title: "Account created!", description: "Welcome to OmniAI." });
+      toast({ title: "Account created!", description: "Welcome to Omni AI." });
       
       // Route based on profile type
       if (userData.profileType === "student") setLocation("/dashboard/student");
@@ -108,9 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     try { api.post('/auth/logout'); } catch (_) {}
-    localStorage.removeItem("omniAI_token");
-    localStorage.removeItem("omniAI_refreshToken");
-    localStorage.removeItem("omniAI_user");
+    localStorage.removeItem("omni_ai_token");
+    localStorage.removeItem("omni_ai_refreshToken");
+    localStorage.removeItem("omni_ai_user");
     setToken(null);
     setUser(null);
     setLocation("/login");

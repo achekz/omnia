@@ -156,7 +156,7 @@ node --version
 ## ✅ Success Signs
 
 After fix, you should see:
-- ✅ OmniAI logo and landing page
+- ✅ Omni AI logo and landing page
 - ✅ Login/Register links visible
 - ✅ No console errors (F12 check)
 - ✅ Can navigate to `/login` and `/register`

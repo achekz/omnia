@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/omni-ai/"
-title = "OmniAI Platform"
+title = "Omni AI Platform"
 version = "1.0.0"
 id = "artifacts/omni-ai"
 router = "path"

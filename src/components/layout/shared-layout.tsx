@@ -81,7 +81,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
           <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-purple-500/20">
             <SparklesIcon className="w-6 h-6 text-white" />
           </div>
-          <span className="font-display font-bold text-2xl tracking-tight gradient-text">OmniAI</span>
+          <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
         </div>
 
         <div className="px-6 pb-4">

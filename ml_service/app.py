@@ -18,7 +18,7 @@ app.register_blueprint(ai.bp, url_prefix='/ai')
 def health_check():
     return jsonify({
         "status": "healthy",
-        "service": "OmniAI ML Service",
+        "service": "Omni AI ML Service",
         "ai": "ollama (tinyllama)"
     })
 

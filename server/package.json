@@ -1,7 +1,7 @@
 {
-  "name": "omniAI-server",
+  "name": "omni-ai-server",
   "version": "1.0.0",
-  "description": "OmniAI Backend - Node.js + Express + MongoDB",
+  "description": "Omni AI Backend - Node.js + Express + MongoDB",
   "main": "server.js",
   "type": "module",
   "scripts": {

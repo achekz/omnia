@@ -104,7 +104,7 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="font-display font-bold text-2xl tracking-tight gradient-text">OmniAI</span>
+              <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
             </div>
             
             <div className="hidden md:flex space-x-8">
@@ -256,7 +256,7 @@ export default function LandingPage() {
             Prêt à transformer votre gestion ?
           </h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            Rejoignez des milliers d'entreprises qui font confiance à OmniAI pour piloter leur croissance.
+            Rejoignez des milliers d'entreprises qui font confiance à Omni AI pour piloter leur croissance.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="/login" className="bg-white text-purple-600 rounded-full px-8 py-4 text-lg font-bold hover:shadow-xl transition-all hover:-translate-y-1 text-center">
@@ -278,7 +278,7 @@ export default function LandingPage() {
                 <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-display font-bold text-2xl tracking-tight text-white">OmniAI</span>
+                <span className="font-display font-bold text-2xl tracking-tight text-white">Omni AI</span>
               </div>
               <p className="text-gray-400 leading-relaxed">
                 La plateforme de gestion tout-en-un propulsée par l'intelligence artificielle.
@@ -318,7 +318,7 @@ export default function LandingPage() {
           
           <div className="pt-8 border-t border-gray-800 text-center flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} OmniAI. Tous droits réservés.
+              © {new Date().getFullYear()} Omni AI. Tous droits réservés.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-all">

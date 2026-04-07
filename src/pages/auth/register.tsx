@@ -61,7 +61,7 @@ export default function Register() {
             <SparklesIcon className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">Create your account</h2>
-          <p className="text-lg text-muted-foreground">Join OmniAI and transform your workflow today.</p>
+          <p className="text-lg text-muted-foreground">Join Omni AI and transform your workflow today.</p>
         </div>
 
         <div className="glass-panel rounded-3xl p-8 md:p-10 border border-white/10 shadow-2xl">

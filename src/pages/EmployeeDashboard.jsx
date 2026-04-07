@@ -120,7 +120,7 @@ export default function EmployeeDashboard() {
         color: "#fff",
         padding: "20px"
       }}>
-        <h2>OmniAI</h2>
+        <h2>Omni AI</h2>
         <button onClick={() => setDarkMode(!darkMode)}>🌙</button>
       </div>
 

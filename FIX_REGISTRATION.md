@@ -88,7 +88,7 @@ Si vous voyez ``❌ MongoDB Connection Error``, vérifier :
 #### Vérifier 2: API répond ?
 ```bash
 curl http://localhost:5000
-# Should return: ✅ OmniAI API is running...
+# Should return: ✅ Omni AI API is running...
 ```
 
 #### Vérifier 3: Vérifier les logs détaillés

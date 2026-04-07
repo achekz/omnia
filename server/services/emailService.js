@@ -32,7 +32,7 @@ export const sendAlert = async (to, subject, htmlContent) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>✨ OmniAI</h1>
+            <h1>✨ Omni AI</h1>
             <p>Intelligent Business Platform</p>
           </div>
           <div class="body">
@@ -40,7 +40,7 @@ export const sendAlert = async (to, subject, htmlContent) => {
             ${htmlContent}
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} OmniAI. This is an automated alert.</p>
+            <p>© ${new Date().getFullYear()} Omni AI. This is an automated alert.</p>
           </div>
         </div>
       </body>
@@ -48,7 +48,7 @@ export const sendAlert = async (to, subject, htmlContent) => {
   `;
 
   const info = await transporter.sendMail({
-    from: `"OmniAI" <${process.env.EMAIL_USER}>`,
+    from: `"Omni AI" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,

@@ -1,6 +1,6 @@
-# OmniAI - Multi-Tenant AI Platform
+# Omni AI - Multi-Tenant AI Platform
 
-OmniAI is a sophisticated multi-tenant SaaS platform built with a high-performance Node.js/Express backend, a Python ML microservice, and a stunning React/TypeScript frontend following an ERP-style dual-navigation layout.
+Omni AI is a sophisticated multi-tenant SaaS platform built with a high-performance Node.js/Express backend, a Python ML microservice, and a stunning React/TypeScript frontend following an ERP-style dual-navigation layout.
 
 ## 🚀 Features
 

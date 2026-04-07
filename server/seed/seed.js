@@ -194,7 +194,7 @@ const run = async () => {
     // ── SEED NOTIFICATIONS ──
     for (const u of users) {
       await Notification.create([
-        { userId: u._id, tenantId: u.tenantId, title: 'Welcome to OmniAI!', message: 'Your workspace is ready.', type: 'success' },
+        { userId: u._id, tenantId: u.tenantId, title: 'Welcome to Omni AI!', message: 'Your workspace is ready.', type: 'success' },
         { userId: u._id, tenantId: u.tenantId, title: 'Profile Setup', message: 'Please complete your profile.', type: 'info' },
         { userId: u._id, tenantId: u.tenantId, title: 'System Update', message: 'New features available.', type: 'info' },
       ]);

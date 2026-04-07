@@ -52,7 +52,7 @@ export default function Login() {
             </div>
             
             <h1 className="font-display text-4xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-500 mb-8">Enter your details to access your OmniAI dashboard.</p>
+            <p className="text-gray-500 mb-8">Enter your details to access your Omni AI dashboard.</p>
 
             {error && (
               <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-sm">
@@ -155,7 +155,7 @@ export default function Login() {
         
         <div className="absolute bottom-16 left-16 right-16 z-20 bg-white/60 backdrop-blur-xl p-8 rounded-2xl border border-white shadow-xl">
           <blockquote className="text-xl font-medium text-gray-900 leading-relaxed mb-4">
-            "OmniAI transformed our cabinet operations completely. The anomaly detection caught issues we would have missed, saving thousands."
+            "Omni AI transformed our cabinet operations completely. The anomaly detection caught issues we would have missed, saving thousands."
           </blockquote>
           <div className="flex items-center gap-4">
             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop" alt="Sarah J." className="w-12 h-12 rounded-full border-2 border-purple-500" />

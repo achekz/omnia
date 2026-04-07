@@ -12,7 +12,7 @@ async function createTestAccount() {
     console.log('✅ Connected to MongoDB\n');
 
     // Test credentials
-    const testEmail = 'test@omniai.com';
+    const testEmail = 'test@omniAI.com';
     const testPassword = 'Test@12345';
 
     console.log('📝 Creating test account:');
