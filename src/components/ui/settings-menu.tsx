@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { DisplayAccessibilityModal } from "./display-accessibility-modal";
+import { PrivacyModal } from "./privacy-modal";
 
 interface MenuItem {
   icon?: React.ReactNode;
@@ -13,11 +15,14 @@ interface MenuItem {
   link?: string;
   divider?: boolean;
   color?: string;
+  onModalOpen?: () => void;
 }
 
 export function SettingsMenu() {
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showDisplayModal, setShowDisplayModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -41,19 +46,24 @@ export function SettingsMenu() {
     {
       icon: <Palette className="w-4 h-4" />,
       label: "Display & Accessibility",
+      onModalOpen: () => {
+        setShowDisplayModal(true);
+        setIsOpen(false);
+      },
     },
     {
       icon: <Lock className="w-4 h-4" />,
       label: "Privacy",
+      onModalOpen: () => {
+        setShowPrivacyModal(true);
+        setIsOpen(false);
+      },
     },
     { divider: true },
     {
-      icon: <Settings className="w-4 h-4" />,
-      label: "Settings and privacy",
-    },
-    {
       icon: <HelpCircle className="w-4 h-4" />,
       label: "Help Center",
+      link: "/help",
     },
     { divider: true },
     {
@@ -68,6 +78,8 @@ export function SettingsMenu() {
     if (item.action) {
       item.action();
       setIsOpen(false);
+    } else if (item.onModalOpen) {
+      item.onModalOpen();
     } else if (item.link) {
       setIsOpen(false);
     }
@@ -139,6 +151,10 @@ export function SettingsMenu() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <DisplayAccessibilityModal isOpen={showDisplayModal} onClose={() => setShowDisplayModal(false)} />
+      <PrivacyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
     </div>
   );
 }

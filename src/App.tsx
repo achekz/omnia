@@ -24,6 +24,7 @@ import AIDashboard from "@/pages/ai/index";
 import EmployesRedesign from "@/pages/rh/employes";
 import PaieTunisieDashboard from "@/pages/paie/dashboard";
 import LandingPage from "@/pages/landing";
+import HelpCenterPage from "@/pages/help/center";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +79,7 @@ function Router() {
   
   if (pathname === "/tasks") return <ProtectedRoute component={MyTasks} />;
   if (pathname === "/settings") return <ProtectedRoute component={SettingsPage} />;
+  if (pathname === "/help") return <ProtectedRoute component={HelpCenterPage} />;
   
   if (pathname === "/planner") return <ProtectedRoute component={StudyPlannerPage} allowedProfiles={['student']} />;
   if (pathname === "/budget") return <ProtectedRoute component={BudgetTrackerPage} allowedProfiles={['student']} />;
