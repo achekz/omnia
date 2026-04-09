@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function BackButton() {
+  const [pathname] = useLocation();
   const [, setLocation] = useLocation();
   const [canGoBack, setCanGoBack] = useState(false);
 
@@ -14,6 +15,9 @@ export function BackButton() {
   const handleGoBack = () => {
     window.history.back();
   };
+
+  // Don't show back button on landing/home page or dashboard pages
+  if (pathname === "/" || pathname === "" || pathname.startsWith("/dashboard")) return null;
 
   if (!canGoBack) return null;
 
