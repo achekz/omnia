@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { 
-  Settings, LogOut, HelpCircle, Palette, Lock, User as UserIcon, ChevronRight
+  Settings, LogOut, HelpCircle, Palette, User as UserIcon, ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { DisplayAccessibilityModal } from "./display-accessibility-modal";
-import { PrivacyModal } from "./privacy-modal";
 
 interface MenuItem {
   icon?: React.ReactNode;
@@ -22,7 +21,6 @@ export function SettingsMenu() {
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -48,14 +46,6 @@ export function SettingsMenu() {
       label: "Display & Accessibility",
       onModalOpen: () => {
         setShowDisplayModal(true);
-        setIsOpen(false);
-      },
-    },
-    {
-      icon: <Lock className="w-4 h-4" />,
-      label: "Privacy",
-      onModalOpen: () => {
-        setShowPrivacyModal(true);
         setIsOpen(false);
       },
     },
@@ -154,7 +144,6 @@ export function SettingsMenu() {
 
       {/* Modals */}
       <DisplayAccessibilityModal isOpen={showDisplayModal} onClose={() => setShowDisplayModal(false)} />
-      <PrivacyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
     </div>
   );
 }

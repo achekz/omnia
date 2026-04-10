@@ -4,7 +4,6 @@ import {
   HelpCircle,
   MessageSquare,
   Book,
-  Shield,
   Zap,
   Bug,
   Mail,
@@ -102,11 +101,6 @@ export default function HelpCenterPage() {
       name: "Features",
       icon: <Book className="w-5 h-5" />,
       items: faqItems.filter((item) => item.category === "Features"),
-    },
-    {
-      name: "Security & Privacy",
-      icon: <Shield className="w-5 h-5" />,
-      items: faqItems.filter((item) => item.category === "Security" || item.category === "Privacy"),
     },
     {
       name: "Troubleshooting",

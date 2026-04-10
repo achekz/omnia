@@ -21,34 +21,49 @@ export function DisplayAccessibilityModal({ isOpen, onClose }: DisplayModalProps
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'auto' | null;
     if (savedTheme) {
       setTheme(savedTheme);
+      applyTheme(savedTheme);
     } else {
       // Check system preference
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         setTheme('dark');
+        applyTheme('dark');
       }
     }
   }, [isOpen]);
 
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-
-    // Apply theme to document
+  const applyTheme = (newTheme: 'light' | 'dark' | 'auto') => {
     const html = document.documentElement;
+    
     if (newTheme === 'dark') {
       html.classList.add('dark');
       html.style.colorScheme = 'dark';
+      document.body.style.backgroundColor = '#0f172a';
+      document.body.style.color = '#ffffff';
     } else if (newTheme === 'light') {
       html.classList.remove('dark');
       html.style.colorScheme = 'light';
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#000000';
     } else {
       // Auto: follow system preference
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         html.classList.add('dark');
+        html.style.colorScheme = 'dark';
+        document.body.style.backgroundColor = '#0f172a';
+        document.body.style.color = '#ffffff';
       } else {
         html.classList.remove('dark');
+        html.style.colorScheme = 'light';
+        document.body.style.backgroundColor = '#ffffff';
+        document.body.style.color = '#000000';
       }
     }
+  };
+
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
   };
 
   return (
@@ -136,7 +151,7 @@ export function DisplayAccessibilityModal({ isOpen, onClose }: DisplayModalProps
         </div>
 
         <div className="text-center text-sm text-gray-500">
-          ✅ Theme saved automatically
+          ✅ Theme saved and applied to all pages
         </div>
       </DialogContent>
     </Dialog>

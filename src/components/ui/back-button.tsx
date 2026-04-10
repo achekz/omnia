@@ -16,8 +16,8 @@ export function BackButton() {
     window.history.back();
   };
 
-  // Don't show back button on landing/home page, dashboard pages, or help pages
-  if (pathname === "/" || pathname === "" || pathname.startsWith("/dashboard") || pathname.startsWith("/help")) return null;
+  // Don't show back button on landing/home page or dashboard pages
+  if (pathname === "/" || pathname === "" || pathname.startsWith("/dashboard")) return null;
 
   if (!canGoBack) return null;
 
