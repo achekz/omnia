@@ -203,18 +203,20 @@ export default function SettingsPage() {
     <ModuleLayout activeItem="settings">
       <div className="max-w-4xl mx-auto p-4 sm:p-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-display font-bold text-gray-900">Settings</h2>
-          <p className="text-gray-500 mt-1">Manage your account preferences and personal information.</p>
+          <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-gray-100">Settings</h2>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm flex flex-col md:flex-row">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col md:flex-row">
           {/* Sidebar Tabs */}
-          <div className="w-full md:w-64 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200 p-4">
+          <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-4">
+            <div className="px-4 py-3 mb-4 bg-gray-900 dark:bg-gray-950 rounded-xl border border-gray-700 dark:border-gray-800">
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Settings</p>
+            </div>
             <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto">
               <button 
                 onClick={() => setActiveTab('profile')}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'profile' ? 'bg-white text-purple-700 shadow-sm border border-gray-200/50' : 'text-gray-600 hover:bg-gray-100'
+                  activeTab === 'profile' ? 'bg-white dark:bg-gray-700 text-purple-700 dark:text-purple-300 shadow-sm border border-gray-200/50 dark:border-gray-600/50' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <User className="w-4 h-4" /> Personal Info
@@ -222,7 +224,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => setActiveTab('security')}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'security' ? 'bg-white text-purple-700 shadow-sm border border-gray-200/50' : 'text-gray-600 hover:bg-gray-100'
+                  activeTab === 'security' ? 'bg-white dark:bg-gray-700 text-purple-700 dark:text-purple-300 shadow-sm border border-gray-200/50 dark:border-gray-600/50' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <Shield className="w-4 h-4" /> Security
@@ -230,7 +232,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => setActiveTab('notifications')}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'notifications' ? 'bg-white text-purple-700 shadow-sm border border-gray-200/50' : 'text-gray-600 hover:bg-gray-100'
+                  activeTab === 'notifications' ? 'bg-white dark:bg-gray-700 text-purple-700 dark:text-purple-300 shadow-sm border border-gray-200/50 dark:border-gray-600/50' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <Bell className="w-4 h-4" /> Notifications
@@ -276,21 +278,21 @@ export default function SettingsPage() {
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Full Name</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                         <User className="w-4 h-4" />
                       </div>
                       <input 
                         type="text" 
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none" 
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none" 
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Email Address</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input 
@@ -316,7 +318,7 @@ export default function SettingsPage() {
                         <div className="space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">New Email Address</label>
                           <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                               <Mail className="w-4 h-4" />
                             </div>
                             <input 
@@ -340,9 +342,9 @@ export default function SettingsPage() {
                       <>
                         <div className="space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">Verification Code</label>
-                          <p className="text-xs text-gray-600">We sent a code to {newEmail}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">We sent a code to {newEmail}</p>
                           <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                               <Key className="w-4 h-4" />
                             </div>
                             <input 
@@ -350,7 +352,7 @@ export default function SettingsPage() {
                               placeholder="Enter 6-digit code"
                               value={emailVerificationCode}
                               onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none text-center tracking-widest" 
+                              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none text-center tracking-widest" 
                             />
                           </div>
                         </div>
@@ -371,7 +373,7 @@ export default function SettingsPage() {
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Role</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                         <Briefcase className="w-4 h-4" />
                       </div>
                       <input type="text" value={user.role} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
@@ -380,7 +382,7 @@ export default function SettingsPage() {
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Profile Type</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                         <Building className="w-4 h-4" />
                       </div>
                       <input type="text" value={user.profileType} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
@@ -390,24 +392,24 @@ export default function SettingsPage() {
 
                 <hr className="border-gray-100" />
 
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {isPublic ? <Globe className="w-5 h-5 text-blue-600" /> : <Lock className="w-5 h-5 text-gray-600" />}
+                    {isPublic ? <Globe className="w-5 h-5 text-blue-600" /> : <Lock className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
                     Account Visibility
                   </h3>
-                  <p className="text-sm text-gray-500">Control who can view your profile and information</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Control who can view your profile and information</p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                     <button
                       onClick={() => setIsPublic(false)}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         !isPublic 
-                          ? 'border-purple-500 bg-purple-50' 
-                          : 'border-gray-200 bg-white hover:border-gray-300'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-600' 
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Lock className={`w-5 h-5 ${!isPublic ? 'text-purple-600' : 'text-gray-400'}`} />
+                        <Lock className={`w-5 h-5 ${!isPublic ? 'text-purple-600' : 'text-gray-400 dark:text-gray-600'}`} />
                         <div>
                           <p className={`font-semibold text-sm ${!isPublic ? 'text-purple-900' : 'text-gray-900'}`}>Private</p>
                           <p className="text-xs text-gray-500 mt-0.5">Only you can see your profile</p>
@@ -419,12 +421,12 @@ export default function SettingsPage() {
                       onClick={() => setIsPublic(true)}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         isPublic 
-                          ? 'border-purple-500 bg-purple-50' 
-                          : 'border-gray-200 bg-white hover:border-gray-300'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-600' 
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Globe className={`w-5 h-5 ${isPublic ? 'text-purple-600' : 'text-gray-400'}`} />
+                        <Globe className={`w-5 h-5 ${isPublic ? 'text-purple-600' : 'text-gray-400 dark:text-gray-600'}`} />
                         <div>
                           <p className={`font-semibold text-sm ${isPublic ? 'text-purple-900' : 'text-gray-900'}`}>Public</p>
                           <p className="text-xs text-gray-500 mt-0.5">Your profile is visible to everyone</p>
@@ -456,14 +458,14 @@ export default function SettingsPage() {
                 
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
-                  <p className="text-sm text-gray-500">Update your password to keep your account secure.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Update your password to keep your account secure.</p>
                 </div>
 
                 <div className="space-y-4 max-w-md">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Current Password</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                         <Key className="w-4 h-4" />
                       </div>
                       <input 
@@ -471,7 +473,7 @@ export default function SettingsPage() {
                         placeholder="••••••••"
                         value={passwords.current}
                         onChange={(e) => setPasswords({...passwords, current: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none" 
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none" 
                       />
                     </div>
                   </div>
@@ -519,7 +521,7 @@ export default function SettingsPage() {
 
                 <div className="space-y-1 mb-6">
                   <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
-                  <p className="text-sm text-gray-500">Choose what alerts you want to receive.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Choose what alerts you want to receive.</p>
                 </div>
 
                 <div className="space-y-4">

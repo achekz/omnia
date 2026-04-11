@@ -19,7 +19,7 @@ export default function AIDashboard() {
   if (!user) {
     return (
       <ModuleLayout activeItem="ia">
-        <div className="p-8 text-center text-gray-500">Loading...</div>
+        <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
       </ModuleLayout>
     );
   }
@@ -84,7 +84,7 @@ export default function AIDashboard() {
         <div className="w-full max-w-4xl relative z-10 flex flex-col items-center h-full">
           
           <div className="w-full flex justify-end mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-semibold text-gray-600 shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <Activity className="w-4 h-4" />
               Historique
             </button>
@@ -104,7 +104,7 @@ export default function AIDashboard() {
                     className={`max-w-2xl px-5 py-3 rounded-2xl text-sm leading-relaxed ${
                       msg.role === "user"
                         ? "bg-blue-500 text-white rounded-br-none"
-                        : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
+                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none shadow-sm"
                     }`}
                   >
                     {msg.role === "ai" && (
@@ -120,10 +120,10 @@ export default function AIDashboard() {
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-5 py-3 shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-none px-5 py-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                      <span className="text-sm text-gray-600">Réflexion en cours...</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Réflexion en cours...</span>
                     </div>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function AIDashboard() {
                 {domains.map((domain, i) => (
                   <button 
                     key={i} 
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full text-sm font-bold text-slate-700 shadow-sm border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all hover:-translate-y-0.5"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 rounded-full text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-600 hover:shadow-md dark:hover:bg-gray-800 transition-all hover:-translate-y-0.5"
                   >
                     {domain.icon}
                     {domain.label}
@@ -172,7 +172,7 @@ export default function AIDashboard() {
             transition={{ delay: 0.2 }}
             className="w-full max-w-3xl"
           >
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 shadow-xl shadow-indigo-500/10 border border-white/60 mb-6">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-4 shadow-xl shadow-indigo-500/10 border border-white/60 dark:border-gray-700/60 mb-6">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -185,13 +185,13 @@ export default function AIDashboard() {
                 placeholder="Décrivez votre besoin : analyse, prédiction, automatisation... Notre IA s'occupe du reste."
                 className="w-full h-32 bg-transparent text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none px-2 text-lg font-medium"
               />
-              <div className="flex items-center justify-between mt-4 border-t border-gray-100 pt-3">
+              <div className="flex items-center justify-between mt-4 border-t border-gray-100 dark:border-gray-700 pt-3">
                 <div className="flex gap-2">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-bold text-slate-600 transition-colors border border-gray-200">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700">
                     <Paperclip className="w-4 h-4" />
                     Files
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-bold text-slate-600 transition-colors border border-gray-200">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700">
                     <FileText className="w-4 h-4" />
                     Documents
                   </button>
@@ -218,7 +218,7 @@ export default function AIDashboard() {
                     key={i}
                     onClick={() => sendMessage(sug)}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-white/60 backdrop-blur-md rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:text-blue-600 transition-colors border border-white disabled:opacity-50"
+                    className="px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors border border-white dark:border-gray-700 disabled:opacity-50"
                   >
                     {sug}
                   </button>

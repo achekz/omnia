@@ -84,7 +84,7 @@ export function SettingsMenu() {
           "p-2.5 rounded-full transition-all duration-200",
           isOpen
             ? "bg-purple-100 text-purple-700 border border-purple-300"
-            : "bg-gray-50 border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
         )}
         title="Settings"
       >
@@ -95,8 +95,8 @@ export function SettingsMenu() {
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Header */}
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Settings</h3>
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Settings</h3>
           </div>
 
           {/* Menu Items */}
@@ -107,16 +107,16 @@ export function SettingsMenu() {
               }
 
               const content = (
-                <div className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-gray-50 group cursor-pointer">
+                <div className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-700 group cursor-pointer">
                   <div className="flex items-center gap-3">
-                    <span className={cn("text-gray-600 group-hover:text-gray-900 transition-colors", item.color)}>
+                    <span className={cn("text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors", item.color)}>
                       {item.icon}
                     </span>
                     <span className={cn("text-gray-700 group-hover:text-gray-900", item.color)}>
                       {item.label}
                     </span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100" />
+                  <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-600 group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100" />
                 </div>
               );
 

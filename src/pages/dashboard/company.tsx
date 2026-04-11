@@ -13,7 +13,7 @@ export default function CompanyDashboard() {
     <ModuleLayout>
       <div className="mb-8">
         <h2 className="text-3xl font-display font-bold text-white">Company Overview</h2>
-        <p className="text-muted-foreground mt-1">Monitor your team's performance and AI insights.</p>
+        <p className="text-muted-foreground dark:text-gray-400 mt-1">Monitor your team's performance and AI insights.</p>
       </div>
 
       {/* Row 1: Stats */}
@@ -66,7 +66,7 @@ export default function CompanyDashboard() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
+              <div className="h-full flex items-center justify-center text-muted-foreground dark:text-gray-400">Loading chart...</div>
             )}
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function CompanyDashboard() {
                     </div>
                     <div>
                       <p className="font-medium text-sm text-white">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.role}</p>
+                      <p className="text-xs text-muted-foreground dark:text-gray-400">{member.role}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -102,7 +102,7 @@ export default function CompanyDashboard() {
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">AI Behavioral Risk Analysis</h3>
-            <p className="text-sm text-muted-foreground">Real-time burnout and churn prediction based on activity.</p>
+            <p className="text-sm text-muted-foreground dark:text-gray-400">Real-time burnout and churn prediction based on activity.</p>
           </div>
           <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors">View All</button>
         </div>
@@ -125,7 +125,7 @@ export default function CompanyDashboard() {
                   <tr key={member._id || member.id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-white">{member.name}</div>
-                      <div className="text-xs text-muted-foreground">{member.email}</div>
+                      <div className="text-xs text-muted-foreground dark:text-gray-400">{member.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-foreground">{teamData.tasksCompleted || 0}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-rose-400">{0}</td>

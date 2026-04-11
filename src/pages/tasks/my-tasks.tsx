@@ -30,10 +30,10 @@ export default function MyTasks() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-3xl font-display font-bold text-gray-900">My Tasks</h2>
-            <p className="text-gray-500 mt-1">Manage your pending actions and assignments.</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your pending actions and assignments.</p>
           </div>
           
-          <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+          <div className="flex bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm border border-gray-200 dark:border-gray-700">
             {(['all', 'todo', 'in_progress', 'done'] as const).map((f) => (
               <button
                 key={f}
@@ -42,7 +42,7 @@ export default function MyTasks() {
                   "px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors",
                   filter === f
                     ? "bg-purple-50 text-purple-700"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
                 {f.replace('_', ' ')}
@@ -59,7 +59,7 @@ export default function MyTasks() {
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               placeholder="What needs to be done?"
-              className="w-full pl-4 pr-12 py-3 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
+              className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-gray-900 dark:text-gray-100"
             />
             <button
               type="submit"
@@ -72,21 +72,21 @@ export default function MyTasks() {
         </form>
 
         {/* Task List */}
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading tasks...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading tasks...</div>
           ) : filteredTasks.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle2 className="w-8 h-8 text-gray-300" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">No tasks found</h3>
-              <p className="text-gray-500">You're all caught up!</p>
+              <p className="text-gray-500 dark:text-gray-400">You're all caught up!</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
               {filteredTasks.map((task) => (
-                <div key={task._id || task.id} className="p-4 hover:bg-gray-50 transition-colors flex items-start gap-4">
+                <div key={task._id || task.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-start gap-4">
                   
                   {/* Status Toggle Button */}
                   <button 
@@ -109,7 +109,7 @@ export default function MyTasks() {
                   <div className="flex-1 min-w-0">
                     <p className={cn(
                       "font-medium truncate transition-all duration-200", 
-                      task.status === 'done' ? "text-gray-400 line-through" : "text-gray-900"
+                      task.status === 'done' ? "text-gray-400 dark:text-gray-600 line-through" : "text-gray-900 dark:text-gray-100"
                     )}>
                       {task.title}
                     </p>
@@ -121,28 +121,28 @@ export default function MyTasks() {
                           task.priority === 'critical' ? "bg-rose-50 text-rose-700" :
                           task.priority === 'high' ? "bg-orange-50 text-orange-700" :
                           task.priority === 'medium' ? "bg-blue-50 text-blue-700" :
-                          "bg-gray-100 text-gray-600"
+                          "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                         )}>
                           {task.priority}
                         </span>
                       )}
                       
                       {task.dueDate && (
-                        <span className="flex items-center gap-1 text-gray-500 whitespace-nowrap">
+                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                           <Clock className="w-3.5 h-3.5" />
                           {new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       )}
                       
                       {task.description && (
-                        <span className="flex items-center gap-1 text-gray-500">
+                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                           <AlignLeft className="w-3.5 h-3.5" />
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <button className="text-gray-400 hover:text-gray-600 p-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 p-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 </div>

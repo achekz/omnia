@@ -19,7 +19,7 @@ export default function PaieTunisieDashboard() {
   if (!user || (user.profileType !== 'company' && user.profileType !== 'cabinet')) {
     return (
       <ModuleLayout activeItem="dashboard">
-        <div className="p-8 text-center text-gray-500">Access Restricted</div>
+        <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>
       </ModuleLayout>
     );
   }
@@ -44,21 +44,21 @@ export default function PaieTunisieDashboard() {
       <div className="p-8 max-w-[1600px] mx-auto">
         
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-gray-900">Paie Tunisie</h1>
-          <p className="text-gray-500 mt-1">Tableau de bord - Vue d'ensemble de la paie</p>
+          <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-gray-100">Paie Tunisie</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Tableau de bord - Vue d'ensemble de la paie</p>
         </div>
 
         {/* Filters bar */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-8 flex flex-wrap items-center gap-6 shadow-sm">
-          <div className="flex items-center gap-2 text-gray-500 text-sm font-semibold">
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 mb-8 flex flex-wrap items-center gap-6 shadow-sm">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm font-semibold">
             <Calendar className="w-4 h-4" /> Periode
           </div>
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-md shadow-sm">Année</button>
-            <button className="px-4 py-1.5 text-gray-600 text-xs font-bold hover:bg-gray-200 rounded-md transition-colors">Trimestre</button>
-            <button className="px-4 py-1.5 text-gray-600 text-xs font-bold hover:bg-gray-200 rounded-md transition-colors">Mois</button>
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <button className="px-4 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs font-bold rounded-md shadow-sm">Année</button>
+            <button className="px-4 py-1.5 text-gray-600 dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors">Trimestre</button>
+            <button className="px-4 py-1.5 text-gray-600 dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors">Mois</button>
           </div>
-          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-700">
+          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300">
              <Calendar className="w-4 h-4" /> 2026
           </div>
         </div>
@@ -66,16 +66,16 @@ export default function PaieTunisieDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {stats.map((stat, i) => (
-            <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
+            <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`p-1.5 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
                   {stat.icon}
                 </div>
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter truncate">{stat.label}</span>
+                <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tighter truncate">{stat.label}</span>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className={`text-2xl font-black ${stat.color}`}>{stat.value}</span>
-                <span className="text-[10px] text-gray-400 font-bold">TND</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">TND</span>
               </div>
             </div>
           ))}
@@ -83,23 +83,23 @@ export default function PaieTunisieDashboard() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-sm">
             <div className="flex items-center gap-2 mb-8">
-               <Timer className="w-5 h-5 text-gray-400" />
-               <h3 className="font-bold text-gray-900 text-lg">Salariés par type de contrat</h3>
+               <Timer className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+               <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">Salariés par type de contrat</h3>
             </div>
-            <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+            <div className="h-64 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
                <div className="w-16 h-16 rounded-full border-4 border-gray-50 mb-4 animate-pulse" />
                <p className="font-medium">Aucun salarié actif pour cette période</p>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-sm">
             <div className="flex items-center gap-2 mb-8">
-               <ShieldAlert className="w-5 h-5 text-gray-400" />
-               <h3 className="font-bold text-gray-900 text-lg">Cotisations et retenues - 2026</h3>
+               <ShieldAlert className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+               <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">Cotisations et retenues - 2026</h3>
             </div>
-            <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+            <div className="h-64 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
                <div className="w-16 h-16 rounded-full border-4 border-gray-50 mb-4 animate-pulse" />
                <p className="font-medium">Aucune donnée disponible</p>
             </div>

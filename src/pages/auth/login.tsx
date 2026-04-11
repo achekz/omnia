@@ -38,9 +38,9 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* Left side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-24 relative z-10">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-24 relative z-10 bg-white dark:bg-gray-900">
         <div className="max-w-md w-full mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -51,20 +51,20 @@ export default function Login() {
               <SparklesIcon className="w-7 h-7 text-white" />
             </div>
             
-            <h1 className="font-display text-4xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-500 mb-8">Enter your details to access your Omni AI dashboard.</p>
+            <h1 className="font-display text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome back</h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Enter your details to access your Omni AI dashboard.</p>
 
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-sm">
+              <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-sm">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">Email Address</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Email Address</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                     <Mail className="h-5 w-5" />
                   </div>
                   <input
@@ -72,7 +72,7 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
+                    className="w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
                     placeholder="name@company.com"
                   />
                 </div>
@@ -80,11 +80,11 @@ export default function Login() {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-900">Password</label>
-                  <a href="#" className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors">Forgot password?</a>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Password</label>
+                  <a href="#" className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">Forgot password?</a>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                     <Lock className="h-5 w-5" />
                   </div>
                   <input
@@ -92,7 +92,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
+                    className="w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
                     placeholder="••••••••"
                   />
                 </div>
@@ -107,7 +107,7 @@ export default function Login() {
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-gray-500">
+            <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Don't have an account?{' '}
               <Link href="/register" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">
                 Sign up
@@ -117,10 +117,10 @@ export default function Login() {
             <div className="mt-10">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
+                  <div className="w-full border-t border-gray-200 dark:border-gray-700" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or use demo accounts</span>
+                  <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">Or use demo accounts</span>
                 </div>
               </div>
 
@@ -131,14 +131,14 @@ export default function Login() {
                     type="button"
                     onClick={() => handleDemoSelect(demo.email)}
                     disabled={isLoading}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-purple-200 hover:shadow-sm transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 hover:border-purple-200 dark:hover:border-purple-600 hover:shadow-sm dark:hover:shadow-purple-500/10 transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <div className="p-2 rounded-lg bg-white shadow-sm border border-gray-100 group-hover:scale-110 transition-transform">
+                    <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm dark:shadow-md border border-gray-100 dark:border-gray-600 group-hover:scale-110 transition-transform">
                       {demo.icon}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-900">{demo.type}</p>
-                      <p className="text-[10px] text-gray-500 truncate">{demo.email}</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{demo.type}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{demo.email}</p>
                     </div>
                   </button>
                 ))}
@@ -149,19 +149,19 @@ export default function Login() {
       </div>
 
       {/* Right side - Image */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-purple-50">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 z-0" />
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-purple-50 dark:bg-gradient-to-br dark:from-purple-900/50 dark:via-pink-900/30 dark:to-blue-900/40">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 dark:from-purple-900/30 dark:via-pink-900/20 dark:to-blue-900/30 z-0" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0" />
         
-        <div className="absolute bottom-16 left-16 right-16 z-20 bg-white/60 backdrop-blur-xl p-8 rounded-2xl border border-white shadow-xl">
-          <blockquote className="text-xl font-medium text-gray-900 leading-relaxed mb-4">
+        <div className="absolute bottom-16 left-16 right-16 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl p-8 rounded-2xl border border-white dark:border-gray-700 shadow-xl">
+          <blockquote className="text-xl font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-4">
             "Omni AI transformed our cabinet operations completely. The anomaly detection caught issues we would have missed, saving thousands."
           </blockquote>
           <div className="flex items-center gap-4">
             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop" alt="Sarah J." className="w-12 h-12 rounded-full border-2 border-purple-500" />
             <div>
-              <p className="font-semibold text-gray-900">Sarah Jenkins</p>
-              <p className="text-sm text-gray-600">Lead Partner, Financial Cabinet</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">Sarah Jenkins</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Lead Partner, Financial Cabinet</p>
             </div>
           </div>
         </div>

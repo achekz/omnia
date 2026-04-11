@@ -108,14 +108,14 @@ export default function LandingPage() {
             </div>
             
             <div className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Accueil</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Produits</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Tarifs</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Contact</a>
+              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Accueil</a>
+              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Produits</a>
+              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Tarifs</a>
+              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Contact</a>
             </div>
 
             <div className="flex items-center gap-6">
-              <a href="#" className="hidden md:block text-gray-600 hover:text-gray-900 font-medium transition-colors">Documentation</a>
+              <a href="#" className="hidden md:block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Documentation</a>
               <a href="/login" className="gradient-bg rounded-full px-6 py-2.5 text-white font-medium hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5">
                 Se connecter
               </a>

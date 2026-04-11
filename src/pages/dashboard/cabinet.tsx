@@ -16,7 +16,7 @@ export default function CabinetDashboard() {
     <ModuleLayout>
       <div className="mb-8">
         <h2 className="text-3xl font-display font-bold text-white">Cabinet Dashboard</h2>
-        <p className="text-muted-foreground mt-1">Financial overview, anomalies, and client tracking.</p>
+        <p className="text-muted-foreground dark:text-gray-400 mt-1">Financial overview, anomalies, and client tracking.</p>
       </div>
 
       {anomalies.length > 0 && (
@@ -84,7 +84,7 @@ export default function CabinetDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
+              <div className="h-full flex items-center justify-center text-muted-foreground dark:text-gray-400">Loading chart...</div>
             )}
           </div>
         </div>
@@ -100,9 +100,9 @@ export default function CabinetDashboard() {
                 <div>
                   <p className="font-medium text-white">{record.description || record.category}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">{record.clientName}</span>
+                    <span className="text-xs text-muted-foreground dark:text-gray-400">{record.clientName}</span>
                     <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                    <span className="text-xs text-muted-foreground">{new Date(record.date).toLocaleDateString()}</span>
+                    <span className="text-xs text-muted-foreground dark:text-gray-400">{new Date(record.date).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <div className="text-right">

@@ -58,7 +58,7 @@ export default function EmployeeDashboard() {
       <div className="mb-8 flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-display font-bold text-white">My Workspace</h2>
-          <p className="text-muted-foreground mt-1">Manage your tasks and view productivity insights.</p>
+          <p className="text-muted-foreground dark:text-gray-400 mt-1">Manage your tasks and view productivity insights.</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
           <Plus className="w-5 h-5" /> New Task
@@ -69,12 +69,12 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center border-primary/30 relative overflow-hidden">
           <div className="absolute inset-0 bg-primary/5"></div>
-          <p className="text-sm font-medium text-muted-foreground z-10">Daily AI Score</p>
+          <p className="text-sm font-medium text-muted-foreground dark:text-gray-400 z-10">Daily AI Score</p>
           <div className="mt-2 flex items-baseline gap-1 z-10">
             <span className="text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               {stats?.currentScore || 92}
             </span>
-            <span className="text-muted-foreground">/100</span>
+            <span className="text-muted-foreground dark:text-gray-300">/100</span>
           </div>
         </div>
         

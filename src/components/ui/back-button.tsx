@@ -24,7 +24,7 @@ export function BackButton() {
   return (
     <button
       onClick={handleGoBack}
-      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors duration-200 group"
+      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200 group"
       title="Go back"
     >
       <ArrowLeft className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />

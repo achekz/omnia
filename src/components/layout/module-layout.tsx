@@ -230,9 +230,9 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col font-sans overflow-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col font-sans overflow-hidden">
       {/* ─── TOP NAVBAR (ERP Style) ─── */}
-      <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4 shrink-0 shadow-sm relative z-40">
+      <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-4 shrink-0 shadow-sm relative z-40">
         {/* Logo */}
         <div className="flex items-center gap-3 shrink-0 mr-4 w-[208px]">
           <Link href="/" className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-105">
@@ -242,7 +242,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             <span className="font-display font-bold text-xl text-gray-900 tracking-tight">Omni AI</span>
           </Link>
           <button className="hidden lg:flex w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center transition-colors">
-            <ChevronDown className="w-4 h-4 text-gray-600 rotate-90" />
+            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400 rotate-90" />
           </button>
         </div>
 
@@ -258,7 +258,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                   "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 border border-transparent",
                   isActive
                     ? `${mod.bg} text-white shadow-sm`
-                    : `text-gray-600 hover:bg-gray-100 hover:border-gray-200`
+                    : `text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700`
                 )}
               >
                 <span className={isActive ? "text-white" : mod.textColor}>{mod.icon}</span>
@@ -274,19 +274,19 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                 onClick={() => setShowMoreModules(!showMoreModules)}
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                  showMoreModules ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-100"
+                  showMoreModules ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
                 <LayoutDashboard className="w-4 h-4" /> Plus
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
               {showMoreModules && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-50 min-w-[200px]">
+                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-2 z-50 min-w-[200px]">
                   {moreModules.map((mod) => (
                     <button
                       key={mod.id}
                       onClick={() => handleModuleClick(mod.id)}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <span className={mod.textColor}>{mod.icon}</span>
                       {mod.label}
@@ -312,7 +312,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
           
           <button
             onClick={() => setIsNotifOpen(true)}
-            className="relative p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="relative p-2 rounded-full text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -320,12 +320,12 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             )}
           </button>
 
-          <div className="flex items-center gap-3 pl-3 border-l border-gray-200 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition-colors">
+          <div className="flex items-center gap-3 pl-3 border-l border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-1.5 rounded-lg transition-colors">
             <div className="hidden sm:block text-right">
               <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
-              <p className="text-xs text-gray-400 mt-1 capitalize">{user.profileType} {user.tenantId ? '' : '(Demo)'}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-600 mt-1 capitalize">{user.profileType} {user.tenantId ? '' : '(Demo)'}</p>
             </div>
-            <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block" />
+            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-600 hidden sm:block" />
           </div>
         </div>
       </header>
@@ -334,9 +334,9 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Contextual Left Sidebar */}
         {activeModule && (
-          <aside className="w-[240px] bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden relative z-30">
+          <aside className="w-[240px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 overflow-hidden relative z-30">
             <div className="p-4 flex flex-col items-center">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Modules</p>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-3">Modules</p>
               
               {/* large Active Module Indicator */}
               <div className={cn(
@@ -359,11 +359,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                       "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all duration-200 border border-transparent",
                       isActive
                         ? activeModule.activeSidebarStyle
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 font-medium"
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={cn(isActive ? activeModule.textColor : "text-gray-400")}>
+                      <span className={cn(isActive ? activeModule.textColor : "text-gray-400 dark:text-gray-600")}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -377,10 +377,10 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             </nav>
 
             {/* Logout docked at bottom */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Déconnexion
@@ -390,7 +390,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
         )}
 
         {/* Main Application Content Area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 relative">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 relative">
           {children}
         </main>
       </div>
@@ -399,10 +399,10 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
       {isNotifOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm" onClick={() => setIsNotifOpen(false)} />
-          <div className="w-full max-w-sm bg-white border-l border-gray-200 h-full relative z-10 flex flex-col shadow-2xl animate-in slide-in-from-right">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div className="w-full max-w-sm bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 h-full relative z-10 flex flex-col shadow-2xl animate-in slide-in-from-right">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
               <h3 className="font-display font-bold text-lg text-gray-900">Notifications</h3>
-              <button onClick={() => setIsNotifOpen(false)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500 transition-colors">
+              <button onClick={() => setIsNotifOpen(false)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -410,7 +410,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
               {!notifications?.length ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-50">
                   <Bell className="w-12 h-12 text-gray-300" />
-                  <p className="text-gray-500 text-sm">Vous n'avez aucune notification.</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Vous n'avez aucune notification.</p>
                 </div>
               ) : (
                 notifications.map((notif: any) => (
@@ -418,7 +418,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                     key={notif._id || notif.id}
                     className={cn(
                       "p-4 rounded-2xl border text-sm transition-all cursor-pointer hover:shadow-md",
-                      notif.isRead ? "bg-white border-gray-100 opacity-60" : "bg-purple-50/30 border-purple-100 shadow-sm"
+                      notif.isRead ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-60" : "bg-purple-50/30 border-purple-100 shadow-sm dark:bg-purple-950/20 dark:border-purple-900"
                     )}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -429,12 +429,12 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                         notif.type === "success" ? "bg-emerald-500" :
                         "bg-blue-500"
                       )} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         {new Date(notif.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     <h4 className="font-bold text-gray-900 leading-tight">{notif.title}</h4>
-                    <p className="text-gray-600 mt-1.5 leading-relaxed">{notif.message}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">{notif.message}</p>
                   </div>
                 ))
               )}

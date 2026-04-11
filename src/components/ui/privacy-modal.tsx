@@ -64,7 +64,7 @@ export function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
                 <p className="text-gray-700">
                   <strong>Make your account private?</strong>
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Only people you approve can see your profile, posts, and activity. You'll need to approve follow requests.
                 </p>
               </>
@@ -73,7 +73,7 @@ export function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
                 <p className="text-gray-700">
                   <strong>Make your account public?</strong>
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Anyone can see your profile, posts, and activity. No approval needed to follow you.
                 </p>
               </>
@@ -126,7 +126,7 @@ export function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
               <p className={`font-medium ${!isPrivate ? 'text-purple-900' : 'text-gray-900'}`}>
                 Public Account
               </p>
-              <p className="text-sm text-gray-500">Anyone can find and follow you</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Anyone can find and follow you</p>
             </div>
             {!isPrivate && (
               <div className="flex-shrink-0 w-4 h-4 rounded-full bg-purple-600" />
@@ -149,7 +149,7 @@ export function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
               <p className={`font-medium ${isPrivate ? 'text-purple-900' : 'text-gray-900'}`}>
                 Private Account
               </p>
-              <p className="text-sm text-gray-500">Only approved followers can see your activity</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Only approved followers can see your activity</p>
             </div>
             {isPrivate && (
               <div className="flex-shrink-0 w-4 h-4 rounded-full bg-purple-600" />
@@ -157,7 +157,7 @@ export function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
           </button>
         </div>
 
-        <div className="text-center text-sm text-gray-500">
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
           Current: <strong>{isPrivate ? "Private" : "Public"}</strong> account
         </div>
       </DialogContent>

@@ -20,7 +20,6 @@ export default function StudentDashboard() {
     <ModuleLayout>
       <div className="mb-8">
         <h2 className="text-3xl font-display font-bold text-white">Student Hub</h2>
-        <p className="text-muted-foreground mt-1">AI-powered study planning and budget management.</p>
       </div>
 
       {/* Row 1: Stats */}
@@ -29,9 +28,9 @@ export default function StudentDashboard() {
           <p className="text-sm font-medium text-accent">Next Exam In</p>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-5xl font-display font-bold text-white">12</span>
-            <span className="text-muted-foreground">days</span>
+            <span className="text-muted-foreground dark:text-gray-300">days</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Advanced Calculus</p>
+          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">Advanced Calculus</p>
         </div>
         
         <StatCard
@@ -74,23 +73,23 @@ export default function StudentDashboard() {
             ].map((session, i) => (
               <div key={i} className="flex items-stretch gap-4">
                 <div className="w-20 text-right shrink-0 pt-3">
-                  <span className="text-sm font-medium text-muted-foreground">{session.time}</span>
+                  <span className="text-sm font-medium text-muted-foreground dark:text-gray-400">{session.time}</span>
                 </div>
                 <div className="relative flex flex-col items-center">
                   <div className={`w-3 h-3 rounded-full mt-3.5 z-10 ${
                     session.status === 'completed' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' :
-                    session.status === 'current' ? 'bg-primary shadow-[0_0_15px_rgba(99,102,241,0.8)]' : 'bg-white/20'
+                    session.status === 'current' ? 'bg-primary shadow-[0_0_15px_rgba(99,102,241,0.8)]' : 'bg-white/20 dark:bg-white/10'
                   }`} />
-                  {i !== 3 && <div className="w-0.5 h-full bg-white/10 absolute top-6" />}
+                  {i !== 3 && <div className="w-0.5 h-full bg-white/10 dark:bg-white/20 absolute top-6" />}
                 </div>
                 <div className={`flex-1 p-4 rounded-xl border ${
                     session.status === 'current' ? 'bg-primary/5 border-primary/30 glow-shadow' : 'bg-card border-white/5'
                   }`}>
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-semibold text-white">{session.subject}</span>
-                    <span className="text-xs text-muted-foreground bg-background px-2 py-0.5 rounded">{session.duration}</span>
+                    <span className="text-xs text-muted-foreground dark:text-gray-400 bg-background px-2 py-0.5 rounded">{session.duration}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">{session.topic}</p>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">{session.topic}</p>
                 </div>
               </div>
             ))}

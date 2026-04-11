@@ -8,7 +8,7 @@ export default function EmployesRedesign() {
   if (!user || user.profileType !== 'company') {
     return (
       <ModuleLayout activeItem="employes">
-        <div className="p-8 text-center text-gray-500">Access Restricted</div>
+        <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>
       </ModuleLayout>
     );
   }
@@ -81,7 +81,7 @@ export default function EmployesRedesign() {
           {cards.map((card, i) => (
             <div 
               key={i} 
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-100 transition-all cursor-pointer group relative overflow-hidden flex flex-col min-h-[180px]"
+              className="bg-white dark:bg-gray-900 rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-orange-100 dark:hover:border-orange-800 transition-all cursor-pointer group relative overflow-hidden flex flex-col min-h-[180px]"
             >
               {/* Decorative Circle matching screenshot */}
               <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-orange-50 rounded-full transition-transform group-hover:scale-150 group-hover:bg-orange-100/50" />
