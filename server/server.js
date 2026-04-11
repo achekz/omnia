@@ -12,6 +12,7 @@ import connectDB from './config/db.js';
 import { initSocket } from './config/socket.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ruleEngine } from './services/ruleEngine.js';
+import { setupSwagger } from './config/swagger.js';
 
 // Route Imports
 import authRoutes from './routes/auth.js';
@@ -22,6 +23,8 @@ import financeRoutes from './routes/finance.js';
 import analyticsRoutes from './routes/analytics.js';
 import userRoutes from './routes/users.js';
 import aiRoutes from './routes/ai.routes.js';
+import searchRoutes from './routes/search.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 
 // Load Env
 dotenv.config();
@@ -53,6 +56,9 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Setup Swagger Documentation
+setupSwagger(app);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -62,6 +68,8 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Root route
 app.get('/', (req, res) => {
