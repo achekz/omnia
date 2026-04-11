@@ -153,17 +153,52 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 dark:from-purple-900/30 dark:via-pink-900/20 dark:to-blue-900/30 z-0" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0" />
         
-        <div className="absolute bottom-16 left-16 right-16 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl p-8 rounded-2xl border border-white dark:border-gray-700 shadow-xl">
-          <blockquote className="text-xl font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-4">
-            "Omni AI transformed our cabinet operations completely. The anomaly detection caught issues we would have missed, saving thousands."
-          </blockquote>
-          <div className="flex items-center gap-4">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop" alt="Sarah J." className="w-12 h-12 rounded-full border-2 border-purple-500" />
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">Sarah Jenkins</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Lead Partner, Financial Cabinet</p>
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-between items-center p-16">
+          {/* Logo/Title at center-top */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mt-12"
+          >
+            <h2 className="text-6xl font-display font-bold gradient-text mb-3">Omni AI</h2>
+            <p className="text-lg font-medium tracking-widest gradient-text">PLATFORM · SaaS · IA</p>
+          </motion.div>
+
+          {/* Description in center */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-sm w-full"
+          >
+            <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-md rounded-3xl p-10 border border-white/60 dark:border-gray-700/60 shadow-2xl">
+              <h3 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-6 leading-relaxed">
+                Votre entreprise<br />
+                <span className="gradient-text">tout en un.</span>
+              </h3>
+              
+              <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-8 font-light">
+                Gérez l'ensemble de votre activité avec une plateforme intelligente. Du ML prédictif à la gestion complète, transformez votre organisation dès aujourd'hui.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mt-2 flex-shrink-0" />
+                  <p className="text-gray-700 dark:text-gray-300">Prévisions IA et anomalies détectées</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mt-2 flex-shrink-0" />
+                  <p className="text-gray-700 dark:text-gray-300">12+ modules adaptés à vos besoins</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mt-2 flex-shrink-0" />
+                  <p className="text-gray-700 dark:text-gray-300">Sécurité d'entreprise garantie</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

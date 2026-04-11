@@ -1,0 +1,55 @@
+<svg width="120" height="120" viewBox="0 0 240 240" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>OmniAI Logo Icon</title>
+  <desc>OmniAI brain AI icon - connected neural network with orbits</desc>
+
+  <!-- Background circle (optional, remove if not needed) -->
+  <!-- <circle cx="120" cy="120" r="115" fill="none" stroke="#e060a0" stroke-width="2" opacity="0.1"/> -->
+
+  <!-- ======= ICÔNE : Cerveau IA stylisé en orbites ======= -->
+  
+  <!-- Cercle central (noyau IA) - Couche 1 -->
+  <circle cx="120" cy="120" r="28" fill-opacity="0.18" fill="rgb(224, 96, 144)"/>
+  
+  <!-- Cercle central - Couche 2 -->
+  <circle cx="120" cy="120" r="20" fill-opacity="0.35" fill="rgb(224, 96, 144)"/>
+  
+  <!-- Cercle central - Couche 3 (solide) -->
+  <circle cx="120" cy="120" r="12" fill="rgb(224, 96, 144)"/>
+
+  <!-- Point blanc central (étincelle IA) -->
+  <circle cx="120" cy="120" r="4" fill="white" fill-opacity="0.95"/>
+
+  <!-- Orbite extérieure elliptique (horizontale) -->
+  <ellipse cx="120" cy="120" rx="70" ry="28" fill="none" stroke="rgb(224, 96, 144)" stroke-width="1.5" opacity="1"/>
+
+  <!-- Orbite elliptique inclinée 60° -->
+  <ellipse cx="120" cy="120" rx="70" ry="28" fill="none" stroke="rgb(247, 168, 196)" stroke-width="1.2" transform="rotate(60 120 120)" opacity="0.9"/>
+
+  <!-- Orbite elliptique inclinée -60° -->
+  <ellipse cx="120" cy="120" rx="70" ry="28" fill="none" stroke="rgb(247, 168, 196)" stroke-width="1" transform="rotate(-60 120 120)" opacity="0.8"/>
+
+  <!-- Noeuds orbite horizontale -->
+  <circle cx="190" cy="120" r="7" fill="rgb(224, 96, 144)"/>
+  <circle cx="50" cy="120" r="7" fill="rgb(224, 96, 144)"/>
+
+  <!-- Noeuds orbite 60° -->
+  <circle cx="155" cy="180" r="6" fill="rgb(247, 168, 196)" fill-opacity="0.85"/>
+  <circle cx="85" cy="60" r="6" fill="rgb(247, 168, 196)" fill-opacity="0.85"/>
+
+  <!-- Noeuds orbite -60° -->
+  <circle cx="155" cy="60" r="5" fill="rgb(247, 168, 196)" fill-opacity="0.7"/>
+  <circle cx="85" cy="180" r="5" fill="rgb(247, 168, 196)" fill-opacity="0.7"/>
+
+  <!-- Connexions lignes noeuds → centre (synapse IA) -->
+  <line x1="183" y1="120" x2="132" y2="120" stroke="rgb(224, 128, 168)" stroke-width="0.8" opacity="0.5"/>
+  <line x1="57" y1="120" x2="108" y2="120" stroke="rgb(224, 128, 168)" stroke-width="0.8" opacity="0.5"/>
+  <line x1="150" y1="174" x2="126" y2="130" stroke="rgb(224, 128, 168)" stroke-width="0.8" opacity="0.5"/>
+  <line x1="90" y1="66" x2="114" y2="110" stroke="rgb(224, 128, 168)" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Petits arcs décoratifs autour du noyau (forme neuronale) -->
+  <path d="M 108 100 Q 120 88 132 100" fill="none" stroke="rgb(245, 184, 208)" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 105 135 Q 120 148 135 135" fill="none" stroke="rgb(245, 184, 208)" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 98 112 Q 85 120 98 128" fill="none" stroke="rgb(245, 184, 208)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 142 112 Q 155 120 142 128" fill="none" stroke="rgb(245, 184, 208)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+
+</svg>
