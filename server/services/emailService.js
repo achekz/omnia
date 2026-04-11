@@ -56,3 +56,19 @@ export const sendAlert = async (to, subject, htmlContent) => {
 
   return info;
 };
+
+export const sendEmailVerificationCode = async (email, code) => {
+  const htmlContent = `
+    <p>Hello,</p>
+    <p>You requested to change your email address. Use the verification code below to confirm your new email:</p>
+    <div style="text-align: center; margin: 32px 0;">
+      <div style="background: #334155; padding: 20px; border-radius: 8px; display: inline-block;">
+        <p style="font-size: 24px; letter-spacing: 2px; margin: 0; color: #7c3aed; font-weight: bold;">${code}</p>
+      </div>
+    </div>
+    <p style="color: #94a3b8;">This code is valid for 10 minutes only.</p>
+    <p>If you didn't request this, please ignore this email.</p>
+  `;
+
+  return await sendAlert(email, 'Email Verification Code', htmlContent);
+};

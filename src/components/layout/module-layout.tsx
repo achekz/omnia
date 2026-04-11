@@ -239,7 +239,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="font-display font-bold text-xl text-gray-900 tracking-tight">Lynara</span>
+            <span className="font-display font-bold text-xl text-gray-900 tracking-tight">Omni AI</span>
           </Link>
           <button className="hidden lg:flex w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center transition-colors">
             <ChevronDown className="w-4 h-4 text-gray-600 rotate-90" />

@@ -52,6 +52,21 @@ const userSchema = new Schema(
       theme: { type: String, default: 'dark' },
       emailNotifications: { type: Boolean, default: true },
     },
+
+    isPublic: { type: Boolean, default: false },
+
+    notificationPreferences: {
+      emailNotifications: { type: Boolean, default: true },
+      inAppMentions: { type: Boolean, default: true },
+      taskUpdates: { type: Boolean, default: true },
+      aiInsights: { type: Boolean, default: true },
+      marketingUpdates: { type: Boolean, default: false },
+    },
+
+    // For email verification during change
+    emailVerificationCode: { type: String },
+    emailVerificationCodeExpiry: { type: Date },
+    pendingEmail: { type: String }, // Temporary storage for new email during verification
   },
   { timestamps: true }
 );
