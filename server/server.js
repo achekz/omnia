@@ -13,6 +13,7 @@ import { initSocket } from './config/socket.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ruleEngine } from './services/ruleEngine.js';
 import { setupSwagger } from './config/swagger.js';
+import ragService from './services/ragService-memory.js';
 
 // Route Imports
 import authRoutes from './routes/auth.js';
@@ -75,6 +76,29 @@ app.use('/api/upload', uploadRoutes);
 app.get('/', (req, res) => {
   res.send('✅ Omni AI API is running...');
 });
+
+// Load RAG documents into memory on startup
+async function initializeRAG() {
+  try {
+    console.log('[RAG] 🔄 Loading project documents into memory...');
+    
+    // Wait a bit for initialization
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const result = await ragService.loadProjectDocuments();
+    
+    if (result.success) {
+      console.log(`[RAG] ✅ Loaded ${result.documentsLoaded} documents, ${result.chunksLoaded} chunks into memory`);
+    } else {
+      console.log('[RAG] ⚠️ Failed to load documents:', result.error);
+    }
+  } catch (error) {
+    console.error('[RAG] Error initializing:', error.message);
+  }
+}
+
+// Initialize RAG immediately
+initializeRAG();
 
 // Global Error Handler
 app.use(errorHandler);
