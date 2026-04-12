@@ -6,8 +6,8 @@
  */
 
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import { protect } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   upload,
   uploadFile,
@@ -51,7 +51,7 @@ const router = express.Router();
  *       500:
  *         description: Upload failed
  */
-router.post('/', authenticateToken, upload.single('file'),
+router.post('/', protect, upload.single('file'),
   asyncHandler(async (req, res) => {
     await uploadFile(req, res);
   })
@@ -61,7 +61,7 @@ router.post('/', authenticateToken, upload.single('file'),
  * POST /api/upload/multiple
  * Upload multiple files at once
  */
-router.post('/multiple', authenticateToken, upload.array('files', 10),
+router.post('/multiple', protect, upload.array('files', 10),
   asyncHandler(async (req, res) => {
     await uploadMultipleFiles(req, res);
   })
@@ -71,7 +71,7 @@ router.post('/multiple', authenticateToken, upload.array('files', 10),
  * POST /api/upload/avatar
  * Upload user profile avatar
  */
-router.post('/avatar', authenticateToken, upload.single('avatar'),
+router.post('/avatar', protect, upload.single('avatar'),
   asyncHandler(async (req, res) => {
     await uploadAvatar(req, res);
   })
@@ -81,7 +81,7 @@ router.post('/avatar', authenticateToken, upload.single('avatar'),
  * POST /api/upload/task/:taskId
  * Upload file as task attachment
  */
-router.post('/task/:taskId', authenticateToken, upload.single('attachment'),
+router.post('/task/:taskId', protect, upload.single('attachment'),
   asyncHandler(async (req, res) => {
     await uploadTaskAttachment(req, res);
   })
@@ -109,7 +109,7 @@ router.post('/task/:taskId', authenticateToken, upload.single('attachment'),
  *       200:
  *         description: Signed URL returned
  */
-router.get('/download/:fileKey', authenticateToken,
+router.get('/download/:fileKey', protect,
   asyncHandler(async (req, res) => {
     await getDownloadUrl(req, res);
   })
@@ -119,7 +119,7 @@ router.get('/download/:fileKey', authenticateToken,
  * DELETE /api/upload/:fileKey
  * Delete file from S3
  */
-router.delete('/:fileKey', authenticateToken,
+router.delete('/:fileKey', protect,
   asyncHandler(async (req, res) => {
     await deleteFile(req, res);
   })
@@ -129,7 +129,7 @@ router.delete('/:fileKey', authenticateToken,
  * GET /api/upload/list
  * List all user files
  */
-router.get('/list', authenticateToken,
+router.get('/list', protect,
   asyncHandler(async (req, res) => {
     await listUserFiles(req, res);
   })
@@ -139,7 +139,7 @@ router.get('/list', authenticateToken,
  * POST /api/upload/progress
  * Upload with progress tracking (WebSocket compatible)
  */
-router.post('/progress', authenticateToken, upload.single('file'),
+router.post('/progress', protect, upload.single('file'),
   asyncHandler(async (req, res) => {
     await uploadWithProgress(req, res);
   })

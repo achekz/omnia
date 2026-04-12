@@ -6,8 +6,8 @@
  */
 
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import { protect } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   searchTasks,
   searchUsers,
@@ -64,7 +64,7 @@ const router = express.Router();
  *       200:
  *         description: Search results
  */
-router.post('/tasks', authenticateToken, validateSearch, handleValidationErrors, 
+router.post('/tasks', protect, validateSearch, handleValidationErrors, 
   asyncHandler(async (req, res) => {
     const { q, status, priority, sort, startDate, endDate, page = 1, limit = 15 } = req.body;
     const pagination = validatePagination(page, limit);
@@ -91,7 +91,7 @@ router.post('/tasks', authenticateToken, validateSearch, handleValidationErrors,
  * POST /api/search/finance
  * Search financial records with amount and date filters
  */
-router.post('/finance', authenticateToken, validateSearch, handleValidationErrors,
+router.post('/finance', protect, validateSearch, handleValidationErrors,
   asyncHandler(async (req, res) => {
     const {
       q,
@@ -135,7 +135,7 @@ router.post('/finance', authenticateToken, validateSearch, handleValidationError
  * POST /api/search/users
  * Search users (admin/manager only)
  */
-router.post('/users', authenticateToken, validateSearch, handleValidationErrors,
+router.post('/users', protect, validateSearch, handleValidationErrors,
   asyncHandler(async (req, res) => {
     // Check if user has permission
     if (!['admin', 'manager'].includes(req.user.role)) {
@@ -167,7 +167,7 @@ router.post('/users', authenticateToken, validateSearch, handleValidationErrors,
  * GET /api/search/global
  * Global full-text search across all collections
  */
-router.get('/global', authenticateToken,
+router.get('/global', protect,
   asyncHandler(async (req, res) => {
     const { q, page = 1, limit = 10 } = req.query;
     
@@ -192,7 +192,7 @@ router.get('/global', authenticateToken,
  * GET /api/search/suggest
  * Get suggestions based on user activity
  */
-router.get('/suggest', authenticateToken,
+router.get('/suggest', protect,
   asyncHandler(async (req, res) => {
     const suggestions = await getSuggestions(req.user.id, req.user.tenantId);
     
@@ -207,7 +207,7 @@ router.get('/suggest', authenticateToken,
  * GET /api/search/analytics
  * Get activity analytics for user
  */
-router.get('/analytics', authenticateToken,
+router.get('/analytics', protect,
   asyncHandler(async (req, res) => {
     const { days = 30 } = req.query;
     const dateRange = parseInt(days) || 30;
@@ -232,7 +232,7 @@ router.get('/analytics', authenticateToken,
  * GET /api/search/export
  * Export search results as CSV/JSON
  */
-router.get('/export', authenticateToken,
+router.get('/export', protect,
   asyncHandler(async (req, res) => {
     const { format = 'json', type = 'tasks' } = req.query;
     
