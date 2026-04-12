@@ -1,5 +1,6 @@
-import ragService from '../services/ragService.js';
+import ragService from '../services/ragService-complete.js';
 import documentLoader from '../services/documentLoader.js';
+import documentIndexer from '../services/documentIndexer.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -54,6 +55,54 @@ export const chatWithAI = asyncHandler(async (req, res) => {
   return res.json(
     new ApiResponse(200, ragResponse, 'Response generated successfully')
   );
+});
+
+/**
+ * INDEX PROJECT DOCUMENTS
+ * POST /api/ai/index-project
+ * Load and index all project documents for RAG
+ */
+export const indexProjectDocuments = asyncHandler(async (req, res) => {
+  try {
+    console.log('[AI] Starting project indexing...');
+    
+    const result = await documentIndexer.indexProjectDocuments();
+    
+    if (!result.success) {
+      return res.status(500).json(
+        new ApiResponse(500, result, 'Failed to index documents')
+      );
+    }
+
+    return res.json(
+      new ApiResponse(200, result, '✅ Project documents indexed successfully!')
+    );
+  } catch (error) {
+    console.error('[AI] Indexing error:', error);
+    return res.status(500).json(
+      new ApiResponse(500, { error: error.message }, 'Indexing failed')
+    );
+  }
+});
+
+/**
+ * GET INDEX STATUS
+ * GET /api/ai/index-status
+ * Get current indexing statistics
+ */
+export const getIndexStatus = asyncHandler(async (req, res) => {
+  try {
+    const status = await ragService.getIndexingStatus();
+    
+    return res.json(
+      new ApiResponse(200, status, 'Index status retrieved')
+    );
+  } catch (error) {
+    console.error('[AI] Status error:', error);
+    return res.status(500).json(
+      new ApiResponse(500, { error: error.message }, 'Failed to get status')
+    );
+  }
 });
 
 /**

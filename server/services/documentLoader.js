@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import ragService from '../services/ragService.js';
+import ragService from '../services/ragService-simple.js';
 
 /**
  * DOCUMENT LOADER

@@ -9,6 +9,8 @@ import {
   getAISuggestions,
   advancedSearch,
   getContextForQuery,
+  indexProjectDocuments,
+  getIndexStatus,
 } from '../controllers/aiAssistantController.js';
 
 const router = express.Router();
@@ -70,6 +72,22 @@ router.post('/index', protect, indexDocuments);
  * @returns { totalChunks: number, byType: Array, lastUpdated: Date }
  */
 router.get('/status', protect, getIndexingStatus);
+
+/**
+ * @route   POST /api/ai/index-project
+ * @desc    Load and index all project documents for RAG
+ * @access  Public (for setup)
+ * @returns { success: boolean, documentsIndexed: number, chunksCreated: number }
+ */
+router.post('/index-project', indexProjectDocuments);
+
+/**
+ * @route   GET /api/ai/index-status
+ * @desc    Get current index statistics
+ * @access  Public
+ * @returns { status: string, totalChunks: number, documentsIndexed: number }
+ */
+router.get('/index-status', getIndexStatus);
 
 /**
  * @route   POST /api/ai/reload
