@@ -1,4 +1,4 @@
-import ragService from '../services/ragService-memory.js';
+import ragService from '../services/ragService-mongodb.js';
 import documentLoader from '../services/documentLoader.js';
 import documentIndexer from '../services/documentIndexer.js';
 import { ApiResponse } from '../utils/ApiResponse.js';

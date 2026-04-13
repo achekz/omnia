@@ -13,7 +13,9 @@ import { initSocket } from './config/socket.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ruleEngine } from './services/ruleEngine.js';
 import { setupSwagger } from './config/swagger.js';
-import ragService from './services/ragService-memory.js';
+import ragService from './services/ragService-mongodb.js';
+import fs from 'fs';
+import path from 'path';
 
 // Route Imports
 import authRoutes from './routes/auth.js';
@@ -77,28 +79,77 @@ app.get('/', (req, res) => {
   res.send('✅ Omni AI API is running...');
 });
 
-// Load RAG documents into memory on startup
-async function initializeRAG() {
+// Index project documents in MongoDB on startup
+async function indexProjectDocuments() {
   try {
-    console.log('[RAG] 🔄 Loading project documents into memory...');
-    
-    // Wait a bit for initialization
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const result = await ragService.loadProjectDocuments();
-    
+    console.log('[RAG] 🔄 Indexing project documents in MongoDB...');
+
+    // Wait for DB connection
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const projectRoot = process.cwd();
+    const documents = [];
+    const excludeDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', '.env', '.next', 'public'];
+    const includeExtensions = ['.md', '.js', '.ts', '.py', '.json'];
+
+    function findFiles(dir) {
+      try {
+        const items = fs.readdirSync(dir);
+        for (const item of items) {
+          const fullPath = path.join(dir, item);
+          const stat = fs.statSync(fullPath);
+
+          if (stat.isDirectory()) {
+            if (!excludeDirs.includes(item)) {
+              findFiles(fullPath);
+            }
+          } else if (stat.isFile()) {
+            const ext = path.extname(item);
+            if (includeExtensions.includes(ext)) {
+              try {
+                const content = fs.readFileSync(fullPath, 'utf-8');
+                if (content.length < 1024 * 1024) { // Max 1MB per file
+                  documents.push({
+                    id: `doc_${fullPath.replace(/[^a-z0-9]/gi, '_')}`,
+                    name: path.basename(fullPath),
+                    path: fullPath,
+                    type: ext.substring(1),
+                    content,
+                  });
+                }
+              } catch (error) {
+                // Skip unreadable files
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors on restricted dirs
+      }
+    }
+
+    findFiles(projectRoot);
+
+    if (documents.length === 0) {
+      console.log('[RAG] ⚠️ No documents found to index');
+      return;
+    }
+
+    // Index in MongoDB
+    const result = await ragService.indexDocuments(documents);
+
     if (result.success) {
-      console.log(`[RAG] ✅ Loaded ${result.documentsLoaded} documents, ${result.chunksLoaded} chunks into memory`);
+      console.log(`[RAG] ✅ MongoDB indexed: ${result.documentsIndexed} documents, ${result.chunksCreated} chunks`);
     } else {
-      console.log('[RAG] ⚠️ Failed to load documents:', result.error);
+      console.log('[RAG] ⚠️ Indexing failed:', result.error);
     }
   } catch (error) {
-    console.error('[RAG] Error initializing:', error.message);
+    console.error('[RAG] Error indexing:', error.message);
   }
 }
 
-// Initialize RAG immediately
-initializeRAG();
+// Auto-index on startup
+indexProjectDocuments();
 
 // Global Error Handler
 app.use(errorHandler);

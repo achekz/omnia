@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
+import ragService from '../services/ragService-mongodb.js';
 import {
   chatWithAI,
   semanticSearch,
@@ -21,25 +22,71 @@ const router = express.Router();
  */
 
 /**
- * @route   POST /api/ai/chat
- * @desc    Chat with AI assistant (RAG-enhanced)
- * @access  Private
- * @body    { query: string, conversationId?: string }
- * @returns { response: string, sources: Array, success: boolean }
- *
- * @example
- * POST /api/ai/chat
- * {
- *   "query": "Comment faire l'authentification?"
- * }
- * Response:
- * {
- *   "response": "L'authentification utilise JWT...",
- *   "sources": [{name: "auth.js", section: "Authentication"}],
- *   "success": true
- * }
+ * SIMPLE CHAT ENDPOINT (No Auth Required)
+ * Frontend hits: POST /api/ai/ask
  */
-router.post('/chat', protect, chatWithAI);
+router.post('/chat', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query || query.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        response: 'Please provide a query',
+      });
+    }
+
+    console.log('[AI] Chat query:', query);
+
+    // Get response from RAG
+    const result = await ragService.generateResponseWithRAG(query, null);
+
+    return res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('[AI] Chat error:', error);
+    return res.status(500).json({
+      success: false,
+      response: 'Error processing query: ' + error.message,
+    });
+  }
+});
+
+/**
+ * ASK ENDPOINT (for frontend compatibility)
+ * Frontend hits: POST /api/ai/ask with { message: "..." }
+ */
+router.post('/ask', async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.json({
+        success: false,
+        response: 'Please provide a message',
+      });
+    }
+
+    console.log('[AI] Ask message:', message);
+
+    // Get response from RAG
+    const result = await ragService.generateResponseWithRAG(message, null);
+
+    return res.json({
+      response: result.response,
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('[AI] Ask error:', error);
+    return res.json({
+      success: false,
+      response: 'Error: ' + error.message,
+    });
+  }
+});
 
 /**
  * @route   POST /api/ai/search

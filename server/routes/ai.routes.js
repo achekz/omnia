@@ -1,33 +1,39 @@
 import express from "express";
-import { askAI } from "../services/ai.service.js";
-import { getContext } from "../services/contextBuilder.js";
+import ragService from "../services/ragService-mongodb.js";
 import { protect } from "../middleware/auth.js";
 import Task from "../models/Task.js";
 
 const router = express.Router();
 
-// 🤖 AI CHAT
+// 🤖 AI CHAT (RAG-POWERED)
 router.post("/ask", async (req, res) => {
   try {
     const message = req.body.message;
 
-    // Optional: get user context if authenticated
-    let context = { user: null };
-    if (req.user) {
-      context = await getContext(req.user);
+    if (!message || message.trim().length === 0) {
+      return res.json({
+        success: false,
+        response: 'Please provide a message',
+      });
     }
 
-    const response = await askAI({
-      user: req.user || null,
-      message,
-      context,
-    });
+    console.log('[AI] Ask message:', message);
 
-    res.json({ response });
+    // Get response from RAG service
+    const result = await ragService.generateResponseWithRAG(message, null);
+
+    res.json({
+      response: result.response,
+      success: true,
+      ...result,
+    });
 
   } catch (err) {
     console.error("AI ROUTE ERROR:", err.message);
-    res.status(500).json({ error: "AI error" });
+    res.json({
+      success: false,
+      response: 'Error: ' + err.message,
+    });
   }
 });
 
