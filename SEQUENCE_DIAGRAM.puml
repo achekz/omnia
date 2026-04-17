@@ -1,0 +1,88 @@
+@startuml Omni_AI_Sequence
+title Omni AI - Global System Sequence Diagram
+
+actor User
+participant Frontend
+participant Backend
+participant MongoDB
+participant RAGService
+participant S3
+participant MLService
+
+== LOGIN ==
+User -> Frontend: Open App
+Frontend -> Backend: POST /auth/login
+Backend -> MongoDB: Query user
+MongoDB --> Backend: User data
+Backend -> Backend: Verify password
+Backend --> Frontend: JWT token
+Frontend --> User: Dashboard
+
+== AI CHAT ==
+User -> Frontend: Ask question
+Frontend -> Backend: POST /api/ai/ask
+Backend -> RAGService: Generate response
+RAGService -> MongoDB: Search docs
+MongoDB --> RAGService: Chunks
+RAGService --> Backend: Response
+Backend --> Frontend: Answer
+Frontend --> User: Display
+
+== TASKS ==
+User -> Frontend: Create task
+Frontend -> Backend: POST /api/tasks
+Backend -> MongoDB: Save
+MongoDB --> Backend: Task ID
+Backend --> Frontend: Success
+Frontend --> User: Added
+
+== FILE UPLOAD ==
+User -> Frontend: Select file
+Frontend -> Backend: POST /upload
+Backend -> S3: Upload
+S3 --> Backend: URL
+Backend -> MongoDB: Metadata
+Backend --> Frontend: Done
+Frontend --> User: Uploaded
+
+== FINANCE ==
+User -> Frontend: Add expense
+Frontend -> Backend: POST /finance
+Backend -> MongoDB: Create
+Backend -> MLService: Anomaly check
+MLService --> Backend: Result
+Backend --> Frontend: Success
+Frontend --> User: Recorded
+
+== ML PREDICT ==
+User -> Frontend: Prediction
+Frontend -> Backend: POST /predict
+Backend -> MongoDB: Get history
+Backend -> MLService: Analyze
+MLService --> Backend: Results
+Backend --> Frontend: Insights
+Frontend --> User: Display
+
+== SEARCH ==
+User -> Frontend: Search
+Frontend -> Backend: POST /search
+Backend -> MongoDB: Query
+MongoDB --> Backend: Results
+Backend --> Frontend: List
+Frontend --> User: Display
+
+== LOGOUT ==
+User -> Frontend: Logout
+Frontend -> Backend: POST /logout
+Backend -> MongoDB: Clear
+MongoDB --> Backend: Done
+Backend --> Frontend: Success
+Frontend --> User: Login page
+
+== AUTO-INDEX ==
+Backend -> Backend: Start
+Backend -> MongoDB: Index docs
+MongoDB --> Backend: 2000 chunks
+Backend -> Backend: Done
+
+@enduml
