@@ -16,15 +16,13 @@ export const protect = asyncHandler(async (req, res, next) => {
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      throw new ApiError(401, 'Token expired');
-    }
-    throw new ApiError(401, 'Invalid token');
+    throw new ApiError(401, 'Invalid or expired token');
   }
 
-  const user = await User.findById(decoded.id).select('-password -refreshToken');
+  const user = await User.findById(decoded.id).select('-password');
+
   if (!user || !user.isActive) {
-    throw new ApiError(401, 'User not found or inactive');
+    throw new ApiError(401, 'User not found');
   }
 
   req.user = user;

@@ -24,8 +24,8 @@ const userSchema = new Schema(
 
     role: {
       type: String,
-      enum: ['admin', 'user', 'manager', 'company_admin', 'cabinet_admin'],
-      default: 'user',
+      enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'STUDENT', 'ACCOUNTANT'],
+      default: 'EMPLOYEE', // ✅ FIX
     },
 
     profileType: {
@@ -36,8 +36,8 @@ const userSchema = new Schema(
 
     tenantId: {
       type: Schema.Types.ObjectId,
-      ref: 'Organization',
-      default: null,
+      ref: 'Tenant',
+      required: true,
     },
 
     avatar: { type: String, default: '' },
@@ -46,7 +46,7 @@ const userSchema = new Schema(
 
     lastLogin: { type: Date },
 
-    refreshToken: { type: String },
+    refreshToken: { type: String, select: false }, // ✅ SECURITY
 
     preferences: {
       theme: { type: String, default: 'dark' },
@@ -63,71 +63,47 @@ const userSchema = new Schema(
       marketingUpdates: { type: Boolean, default: false },
     },
 
-    // For email verification during change
-    emailVerificationCode: { type: String },
-    emailVerificationCodeExpiry: { type: Date },
-    pendingEmail: { type: String }, // Temporary storage for new email during verification
+    emailVerificationCode: String,
+    emailVerificationCodeExpiry: Date,
+    pendingEmail: String,
   },
   { timestamps: true }
 );
 
-
-// ✅ HASH PASSWORD BEFORE SAVE (clean & safe)
+// 🔐 HASH PASSWORD
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
-  try {
-    // ✅ Check if password is already hashed (starts with $2a$, $2b$, or $2y$)
-    const isBcryptHash = /^\$2[aby]\$\d{2}\$/.test(this.password);
-    
-    if (isBcryptHash) {
-      console.log('⚠️  Password already hashed, skipping hash');
-      return next();
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (err) {
-    next(err);
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-
-// ✅ INDEX (keep one only)
-userSchema.index({ email: 1 });
-
-
-// ✅ COMPARE PASSWORD (robust)
+// 🔑 COMPARE PASSWORD
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.password);
-  } catch (err) {
-    console.error('❌ Password compare error:', err);
-    return false;
-  }
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-
-// ✅ ACCESS TOKEN
+// 🔐 ACCESS TOKEN
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
-    { id: this._id },
+    {
+      id: this._id,
+      role: this.role,
+      tenantId: this.tenantId,
+    },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE || '15m' }
+    { expiresIn: '15m' }
   );
 };
 
-
-// ✅ REFRESH TOKEN
+// 🔄 REFRESH TOKEN
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     { id: this._id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
+    { expiresIn: '7d' }
   );
 };
 
-
-const User = mongoose.model('User', userSchema);
-export default User;
+export default mongoose.model('User', userSchema);

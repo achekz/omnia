@@ -65,6 +65,16 @@ export default function EmployeeDashboard() {
     await axios.post("/api/ai/create-task-from-ai", { title });
   };
 
+  const API = axios.create({
+  baseURL: "http://localhost:5000",
+});
+
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
   // 🤖 SEND MESSAGE
   const sendMessage = async () => {
     if (!input.trim()) return;

@@ -26,6 +26,7 @@ import EmployesRedesign from "@/pages/rh/employes";
 import PaieTunisieDashboard from "@/pages/paie/dashboard";
 import LandingPage from "@/pages/landing";
 import HelpCenterPage from "@/pages/help/center";
+import AccountantDashboard from "./pages/AccountantDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,32 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function App() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const data = localStorage.getItem("user");
+    if (data) setUser(JSON.parse(data));
+  }, []);
+
+  if (!user) return <div>Loading...</div>;
+
+  switch (user.role) {
+    case "ADMIN":
+      return <AdminDashboard />;
+    case "EMPLOYEE":
+      return <EmployeeDashboard />;
+    case "STUDENT":
+      return <StudentDashboard />;
+    case "ACCOUNTANT":
+      return <AccountantDashboard />;
+    default:
+      return <div>No dashboard</div>;
+  }
+}
+
+export default App;
 
 function ProtectedRoute({ component: Component, allowedProfiles }: { component: any, allowedProfiles?: string[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -94,23 +121,3 @@ function Router() {
   return <NotFound />;
 }
 
-function App() {
-  return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <WouterRouter base="/">
-            <AuthProvider>
-              <SocketProvider>
-                <Router />
-              </SocketProvider>
-            </AuthProvider>
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  );
-}
-
-export default App;

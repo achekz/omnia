@@ -1,29 +1,25 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-# Import routes
-from routes import predict, recommend, anomaly, ai
+import joblib
 
 app = Flask(__name__)
 CORS(app)
 
-# ✅ REGISTER ROUTES
-app.register_blueprint(predict.bp, url_prefix='/predict')
-app.register_blueprint(recommend.bp, url_prefix='/recommend')
-app.register_blueprint(anomaly.bp, url_prefix='/anomaly')
-app.register_blueprint(ai.bp, url_prefix='/ai')
+model = joblib.load("model.pkl")
 
-# ✅ HEALTH CHECK
-@app.route('/', methods=['GET'])
-def health_check():
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.json
+    result = model.predict([data["features"]])
     return jsonify({
-        "status": "healthy",
-        "service": "Omni AI ML Service",
-        "ai": "ollama (tinyllama)"
+        "risk_score": int(result[0]),
+        "risk_level": "medium",
+        "confidence": 0.8
     })
 
-# 🚀 START SERVER
-if __name__ == '__main__':
-    from waitress import serve
-    print("🚀 ML Service running on http://localhost:5001")
-    serve(app, host="0.0.0.0", port=5001)
+@app.route("/")
+def health():
+    return jsonify({"status": "ok"})
+
+if __name__ == "__main__":
+    app.run(port=5001)
