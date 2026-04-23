@@ -29,8 +29,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const toast = useToast(); // Note: This requires toast context
-    const [, setLocation] = useLocation();
+// Centralized axios client - use in components
+// Context hooks available via useToast(), useLocation() in consuming components
 
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');

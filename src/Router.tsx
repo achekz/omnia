@@ -6,13 +6,13 @@ import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
-import AdminDashboard from "@/pages/AdminDashboard";
+import AdminDashboard from "@/pages/AdminDashboard.jsx";
 import DashboardHub from "@/pages/dashboard/index";
 import CompanyDashboard from "@/pages/dashboard/company";
 import CabinetDashboard from "@/pages/dashboard/cabinet";
 import EmployeeDashboard from "@/pages/dashboard/employee";
 import StudentDashboard from "@/pages/dashboard/student";
-import AccountantDashboard from "@/pages/AccountantDashboard";
+import AccountantDashboard from "@/pages/AccountantDashboard.jsx";
 
 function ProtectedRoute({ component: Component }: any) {
   const { isAuthenticated, isLoading } = useAuth();

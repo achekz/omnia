@@ -82,14 +82,14 @@ export const getSystemAnalytics = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, analytics, 'System analytics'));
 });
 
-export const getAIInsights = asyncHandler(async (req, res) => {
+export const getAIInsights = asyncHandler (async (req, res) => {
   // AI system insights for admin
   res.json(new ApiResponse(200, {
     ragStatus: '751 chunks indexed',
     modelUsage: 'GPT-4o-mini',
     queryPerformance: 'Avg 1.2s response'
   }, 'AI insights'));
-};
+});
 
 export default {
   getAdminDashboard,
