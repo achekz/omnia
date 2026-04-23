@@ -10,7 +10,7 @@ export async function getContext(user) {
   }
 
   try {
-    if (user.role === "employee") {
+  if (user.role === "EMPLOYEE") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
       const logs = await ActivityLog.find({ userId: user._id }).limit(5).catch(() => []);
 
@@ -23,7 +23,7 @@ export async function getContext(user) {
       };
     }
 
-    if (user.role === "company_admin") {
+  if (user.role === "COMPANY_ADMIN") {
       const employees = await ActivityLog.find({ tenantId: user.tenantId }).limit(10).catch(() => []);
 
       return {
@@ -34,7 +34,7 @@ export async function getContext(user) {
       };
     }
 
-    if (user.role === "cabinet_admin") {
+  if (user.role === "CABINET_ADMIN") {
       return {
         userType: "cabinet_admin",
         userRole: user.role,
@@ -43,7 +43,7 @@ export async function getContext(user) {
       };
     }
 
-    if (user.role === "student") {
+  if (user.role === "STUDENT") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
 
       return {
@@ -56,8 +56,7 @@ export async function getContext(user) {
 
     // Default for other roles
     return {
-      userType: user.role || "user",
-      userRole: user.role,
+    userType: user.role || "USER",\n      userRole: user.role,
       timestamp: new Date(),
     };
 

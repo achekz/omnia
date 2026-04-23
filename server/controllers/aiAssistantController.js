@@ -160,10 +160,7 @@ export const semanticSearch = asyncHandler(async (req, res) => {
  * Load and index documents from workspace
  */
 export const indexDocuments = asyncHandler(async (req, res) => {
-  // Check admin permission
-  if (req.user.role !== 'admin' && req.user.role !== 'cabinet_admin') {
-    return res.status(403).json(new ApiResponse(403, null, 'Not authorized'));
-  }
+  // Check admin permission\n  if (req.user.role !== 'ADMIN' && req.user.role !== 'CABINET_ADMIN') {\n    return res.status(403).json(new ApiResponse(403, null, 'Not authorized'));\n  }
 
   const result = await documentLoader.loadAndIndex();
 
@@ -193,10 +190,7 @@ export const getIndexingStatus = asyncHandler(async (req, res) => {
  * Reload documents for development/updates
  */
 export const reloadDocuments = asyncHandler(async (req, res) => {
-  // Admin only
-  if (req.user.role !== 'admin' && req.user.role !== 'cabinet_admin') {
-    return res.status(403).json(new ApiResponse(403, null, 'Not authorized'));
-  }
+  // Admin only\n  if (req.user.role !== 'ADMIN' && req.user.role !== 'CABINET_ADMIN') {\n    return res.status(403).json(new ApiResponse(403, null, 'Not authorized'));\n  }
 
   const result = await documentLoader.reloadDocuments();
 

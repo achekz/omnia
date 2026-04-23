@@ -9,10 +9,7 @@ export function buildPrompt(user, message, context) {
   }
 
   const roleDescriptions = {
-    employee: "You are a productivity assistant for an employee",
-    company_admin: "You are a strategic consultant for company management",
-    cabinet_admin: "You are a financial advisor for accounting",
-    student: "You are an academic assistant for students"
+    EMPLOYEE: "You are a productivity assistant for an employee",\n    COMPANY_ADMIN: "You are a strategic consultant for company management",\n    CABINET_ADMIN: "You are a financial advisor for accounting",\n    STUDENT: "You are an academic assistant for students"
   };
 
   const roleDesc = roleDescriptions[user?.role] || "You are a general assistant";
@@ -54,11 +51,11 @@ function formatContext(context, role) {
   const parts = [];
 
   // Extract relevant context based on role
-  if (role === "employee" && context.tasks?.length > 0) {
+  if (role === "EMPLOYEE" && context.tasks?.length > 0) {
     parts.push(`- ${context.tasks.length} tasks available`);
   }
   
-  if (role === "company_admin") {
+  if (role === "COMPANY_ADMIN") {
     if (context.teamActivity?.length > 0) {
       parts.push(`- ${context.teamActivity.length} team activities`);
     }
@@ -67,13 +64,13 @@ function formatContext(context, role) {
     }
   }
 
-  if (role === "cabinet_admin") {
+  if (role === "CABINET_ADMIN") {
     if (context.financialData?.length > 0) {
       parts.push(`- Financial records available`);
     }
   }
 
-  if (role === "student") {
+  if (role === "STUDENT") {
     if (context.courses?.length > 0) {
       parts.push(`- ${context.courses.length} courses enrolled`);
     }

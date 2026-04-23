@@ -30,9 +30,7 @@ async function createTestAccount() {
       name: 'Test User',
       email: testEmail,
       password: hashedPassword,
-      role: 'user',
-      profileType: 'employee',
-      isActive: true,
+      role: 'USER',\n      profileType: 'employee',\n      isActive: true,
     });
 
     console.log('✅ Test account created successfully!\n');

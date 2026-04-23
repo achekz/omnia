@@ -2,6 +2,7 @@ import Organization from '../models/Organization.js';
 import User from '../models/User.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import Tenant from "../models/Tenant.js";
 
 // POST /api/auth/register
 export const register = asyncHandler(async (req, res) => {
@@ -20,17 +21,21 @@ export const register = asyncHandler(async (req, res) => {
       console.log('⚠️  [REGISTER] Email already registered:', email);
       throw new ApiError(409, 'Email already registered');
     }
+    const tenant = await Tenant.create({
+      name: "Default Company",
+      type: "company"
+    });
 
     // 🟢 NEW: profileType → role (RBAC)
-    let role = 'user';
+    let role = 'EMPLOYEE';
 
     if (profileType === 'company' || profileType === 'cabinet') {
-      role = 'admin';
+      role = 'ADMIN';
     } else if (profileType === 'manager') {
-      role = 'manager';
+      role = 'MANAGER';
     }
 
-    let tenantId = null;
+    let tenantId = tenant._id;
     let org = null;
 
     // Create organization if needed
@@ -131,10 +136,7 @@ export const login = asyncHandler(async (req, res) => {
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  // ✅ IMPORTANT: always return response
+  // Use findByIdAndUpdate to avoid full validation on login\n  await User.findByIdAndUpdate(user._id, {\n    refreshToken,\n    lastLogin: new Date()\n  });\n\n  // ✅ IMPORTANT: always return response
   return res.status(200).json(
     new ApiResponse(
       200,

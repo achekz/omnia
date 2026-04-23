@@ -24,8 +24,8 @@ const userSchema = new Schema(
 
     role: {
       type: String,
-      enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'STUDENT', 'ACCOUNTANT'],
-      default: 'EMPLOYEE', // ✅ FIX
+      enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'STUDENT', 'ACCOUNTANT', 'USER', 'COMPANY_ADMIN', 'CABINET_ADMIN'],
+      default: 'EMPLOYEE'
     },
 
     profileType: {
@@ -36,8 +36,7 @@ const userSchema = new Schema(
 
     tenantId: {
       type: Schema.Types.ObjectId,
-      ref: 'Tenant',
-      required: true,
+      required: false
     },
 
     avatar: { type: String, default: '' },
@@ -46,7 +45,7 @@ const userSchema = new Schema(
 
     lastLogin: { type: Date },
 
-    refreshToken: { type: String, select: false }, // ✅ SECURITY
+    refreshToken: { type: String, select: false },
 
     preferences: {
       theme: { type: String, default: 'dark' },

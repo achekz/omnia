@@ -3,6 +3,17 @@ import axios from "axios";
 import AnalyticsChart from "../components/AnalyticsChart";
 import TaskBoard from "../components/TaskBoard";
 
+// ✅ API CONFIG
+const API = axios.create({
+  baseURL: "http://localhost:5000",
+});
+
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 export default function EmployeeDashboard() {
   const [prediction, setPrediction] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -17,8 +28,12 @@ export default function EmployeeDashboard() {
   // 🔽 FETCH TASKS
   useEffect(() => {
     const fetchTasks = async () => {
-      const res = await axios.get("/api/tasks");
-      setTasks(res.data);
+      try {
+        const res = await API.get("/api/tasks");
+        setTasks(res.data);
+      } catch (err) {
+        console.error("Tasks error", err);
+      }
     };
     fetchTasks();
   }, []);
@@ -27,10 +42,10 @@ export default function EmployeeDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/analytics/activity");
+        const res = await API.get("/api/analytics/activity");
         setChartData(res.data);
-      } catch {
-        console.error("Analytics error");
+      } catch (err) {
+        console.error("Analytics error", err);
       }
     };
     fetchData();
@@ -43,6 +58,11 @@ export default function EmployeeDashboard() {
 
   // 🎤 VOICE
   const startVoice = () => {
+    if (!("webkitSpeechRecognition" in window)) {
+      alert("Voice not supported");
+      return;
+    }
+
     const recognition = new window.webkitSpeechRecognition();
     recognition.lang = "fr-FR";
 
@@ -62,18 +82,12 @@ export default function EmployeeDashboard() {
 
   // 🤖 CREATE TASK
   const createTask = async (title) => {
-    await axios.post("/api/ai/create-task-from-ai", { title });
+    try {
+      await API.post("/api/ai/create-task-from-ai", { title });
+    } catch (err) {
+      console.error("Create task error", err);
+    }
   };
-
-  const API = axios.create({
-  baseURL: "http://localhost:5000",
-});
-
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
   // 🤖 SEND MESSAGE
   const sendMessage = async () => {
@@ -83,7 +97,7 @@ API.interceptors.request.use((config) => {
     setIsTyping(true);
 
     try {
-      const res = await axios.post("/api/ai/ask", {
+      const res = await API.post("/api/ai/ask", {
         message: input,
       });
 
@@ -102,7 +116,7 @@ API.interceptors.request.use((config) => {
 
       setPrediction(res.data.prediction || null);
 
-    } catch {
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
         { text: "Erreur AI", type: "ai" },
@@ -122,29 +136,31 @@ API.interceptors.request.use((config) => {
         color: darkMode ? "#fff" : "#000",
       }}
     >
-
       {/* SIDEBAR */}
-      <div style={{
-        width: "250px",
-        background: "#0f172a",
-        color: "#fff",
-        padding: "20px"
-      }}>
+      <div
+        style={{
+          width: "250px",
+          background: "#0f172a",
+          color: "#fff",
+          padding: "20px",
+        }}
+      >
         <h2>Omni AI</h2>
         <button onClick={() => setDarkMode(!darkMode)}>🌙</button>
       </div>
 
       {/* MAIN */}
       <div style={{ flex: 1, padding: "20px" }}>
-
         <h2>Dashboard</h2>
 
         {/* AI CHAT */}
-        <div style={{
-          background: darkMode ? "#1e293b" : "#fff",
-          padding: "15px",
-          borderRadius: "10px"
-        }}>
+        <div
+          style={{
+            background: darkMode ? "#1e293b" : "#fff",
+            padding: "15px",
+            borderRadius: "10px",
+          }}
+        >
           <h3>🤖 AI Assistant</h3>
 
           <div ref={chatRef} style={{ height: "200px", overflowY: "auto" }}>
@@ -171,18 +187,11 @@ API.interceptors.request.use((config) => {
           <p>{prediction || "No prediction yet"}</p>
         </div>
 
-        {/* AI INSIGHTS */}
-        <div style={{ marginTop: "20px" }}>
-          <h3>📊 AI Insights</h3>
-          <p>Productivity: 78%</p>
-        </div>
-
-        {/* 📊 CHART */}
+        {/* CHART */}
         <AnalyticsChart data={chartData} />
 
-        {/* 🧲 TASK BOARD */}
+        {/* TASKS */}
         <TaskBoard tasks={tasks} setTasks={setTasks} />
-
       </div>
     </div>
   );
