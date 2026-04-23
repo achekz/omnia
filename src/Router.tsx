@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
+import AdminDashboard from "@/pages/AdminDashboard";
 import DashboardHub from "@/pages/dashboard/index";
 import CompanyDashboard from "@/pages/dashboard/company";
 import CabinetDashboard from "@/pages/dashboard/cabinet";
@@ -41,6 +42,7 @@ function Router() {
   if (pathname === "/dashboard/employee") return <ProtectedRoute component={EmployeeDashboard} />;
   if (pathname === "/dashboard/student") return <ProtectedRoute component={StudentDashboard} />;
   if (pathname === "/dashboard/accountant") return <ProtectedRoute component={AccountantDashboard} />;
+  if (pathname === "/admin") return <ProtectedRoute component={AdminDashboard} />;
 
   if (pathname === "/") return <Login />;
 
