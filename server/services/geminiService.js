@@ -1,5 +1,6 @@
-const DEFAULT_MODEL = "grok-4";
+const DEFAULT_MODEL = "grok-4.20-reasoning";
 const XAI_BASE_URL = "https://api.x.ai/v1/chat/completions";
+const FALLBACK_MODELS = ["grok-4.20-reasoning", "grok-4"];
 
 function getXaiApiKey() {
   const apiKey = process.env.XAI_API_KEY;
@@ -64,6 +65,25 @@ function extractReply(payload) {
   return "";
 }
 
+function getModelCandidates() {
+  const configuredModel = process.env.XAI_MODEL?.trim();
+  const models = [configuredModel, DEFAULT_MODEL, ...FALLBACK_MODELS].filter(Boolean);
+  return [...new Set(models)];
+}
+
+function buildApiError(status, payload, rawText) {
+  const message =
+    payload?.error?.message ||
+    payload?.message ||
+    rawText ||
+    `xAI request failed with status ${status}`;
+
+  const error = new Error(message);
+  error.code = payload?.error?.code || `XAI_HTTP_${status}`;
+  error.status = status;
+  return error;
+}
+
 export async function generateResponse(prompt, role = "employee") {
   if (!prompt || !prompt.trim()) {
     const error = new Error("Prompt is required.");
@@ -72,50 +92,82 @@ export async function generateResponse(prompt, role = "employee") {
   }
 
   const apiKey = getXaiApiKey();
+  const models = getModelCandidates();
+  let lastError;
 
-  try {
-    const response = await fetch(XAI_BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: process.env.XAI_MODEL || DEFAULT_MODEL,
-        messages: buildMessages(prompt, role),
-        stream: false,
-        temperature: 0.7,
-      }),
-    });
+  for (const model of models) {
+    try {
+      const response = await fetch(XAI_BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: buildMessages(prompt, role),
+          stream: false,
+        }),
+      });
 
-    const payload = await response.json().catch(() => null);
+      const rawText = await response.text();
+      const payload = rawText ? JSON.parse(rawText) : null;
 
-    if (!response.ok) {
-      const error = new Error(
-        payload?.error?.message ||
-        payload?.message ||
-        `xAI request failed with status ${response.status}`,
-      );
-      error.code = payload?.error?.code || `XAI_HTTP_${response.status}`;
-      error.status = response.status;
-      throw error;
+      if (!response.ok) {
+        const error = buildApiError(response.status, payload, rawText);
+
+        console.error("[GROK] Request failed for model:", {
+          model,
+          message: error.message,
+          code: error.code,
+          status: error.status,
+        });
+
+        lastError = error;
+
+        if (response.status === 400 || response.status === 404) {
+          continue;
+        }
+
+        throw error;
+      }
+
+      const reply = extractReply(payload);
+
+      if (!reply) {
+        const error = new Error("Grok returned an empty response.");
+        error.code = "XAI_EMPTY_RESPONSE";
+        throw error;
+      }
+
+      return reply;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        lastError = new Error("xAI returned an invalid JSON response.");
+        lastError.code = "XAI_INVALID_JSON";
+      } else {
+        lastError = error;
+      }
+
+      if (lastError.status === 400 || lastError.status === 404) {
+        continue;
+      }
+
+      console.error("[GROK] Failed to generate response:", {
+        model,
+        message: lastError.message,
+        code: lastError.code,
+        status: lastError.status,
+      });
+      throw lastError;
     }
-
-    const reply = extractReply(payload);
-
-    if (!reply) {
-      const error = new Error("Grok returned an empty response.");
-      error.code = "XAI_EMPTY_RESPONSE";
-      throw error;
-    }
-
-    return reply;
-  } catch (error) {
-    console.error("[GROK] Failed to generate response:", {
-      message: error.message,
-      code: error.code,
-      status: error.status,
-    });
-    throw error;
   }
+
+  console.error("[GROK] All model attempts failed:", {
+    message: lastError?.message,
+    code: lastError?.code,
+    status: lastError?.status,
+    triedModels: models,
+  });
+  throw lastError || new Error("Failed to generate AI response");
 }
