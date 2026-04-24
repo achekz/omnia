@@ -1,5 +1,5 @@
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Clock, BookOpen, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function StudyPlannerPage() {

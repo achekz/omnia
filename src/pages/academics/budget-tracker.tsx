@@ -1,5 +1,5 @@
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Calculator, TrendingDown, TrendingUp, DollarSign, Wallet } from "lucide-react";
 
 export default function BudgetTrackerPage() {

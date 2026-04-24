@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { api } from "@/lib/api-client";
-import type { User, LoginRequest, RegisterRequest } from "@/lib/types";
+import type { AxiosError } from "axios";
+import apiClient from "../lib/api-client";
+import type { LoginRequest, RegisterRequest, User } from "../lib/types";
 import { useToast } from "./use-toast";
 
 interface AuthContextType {
@@ -16,6 +17,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getRedirectPath(user: User) {
+  switch (user.role) {
+    case "student":
+      return "/dashboard/student";
+    case "employee":
+      return "/dashboard/employee";
+    case "accountant":
+      return "/dashboard/accountant";
+    default:
+      return "/dashboard";
+  }
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  const axiosError = error as AxiosError<{ message?: string }>;
+  return axiosError.response?.data?.message || fallback;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -28,47 +47,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = localStorage.getItem("omni_ai_token");
       if (storedToken) {
         try {
-          // Verify token by fetching user profile
-          const { data } = await api.get('/auth/me');
+          const { data } = await apiClient.get("/auth/me");
           setToken(storedToken);
-          setUser(data.data.user);
-        } catch (e) {
+          setUser(data.data.user as User);
+        } catch {
           localStorage.removeItem("omni_ai_token");
+          localStorage.removeItem("omni_ai_refreshToken");
           localStorage.removeItem("omni_ai_user");
         }
       }
       setIsLoading(false);
     };
-    initAuth();
+
+    void initAuth();
   }, []);
 
   const login = async (data: LoginRequest) => {
     try {
-      const res = await api.post('/auth/login', data);
-      const { user: userData, accessToken, refreshToken } = res.data.data;
-      
+      const response = await apiClient.post("/auth/login", data);
+      const { user: userData, accessToken, refreshToken } = response.data.data as {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      };
+
       localStorage.setItem("omni_ai_token", accessToken);
       localStorage.setItem("omni_ai_refreshToken", refreshToken);
       localStorage.setItem("omni_ai_user", JSON.stringify(userData));
-      
+
       setToken(accessToken);
       setUser(userData);
-      
-      toast({ title: "Welcome back!", description: "Successfully logged in." });
 
-      // Route to appropriate dashboard based on user type
-      if (userData.profileType === "student") setLocation("/dashboard/student");
-      else if (userData.profileType === "employee") setLocation("/dashboard/employee");
-      else if (userData.profileType === "cabinet") setLocation("/dashboard/cabinet");
-      else if (userData.profileType === "company") setLocation("/dashboard/company");
-      else setLocation("/dashboard");
-      
-    } catch (error: any) {
-      console.error("[Auth] Login error:", error);
+      toast({ title: "Welcome back!", description: "Successfully logged in." });
+      setLocation(getRedirectPath(userData));
+    } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.response?.data?.message || "Invalid credentials."
+        description: getErrorMessage(error, "Invalid credentials."),
       });
       throw error;
     }
@@ -76,38 +92,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterRequest) => {
     try {
-      const res = await api.post('/auth/register', data);
-      const { user: userData, accessToken, refreshToken } = res.data.data;
-      
+      const response = await apiClient.post("/auth/register", data);
+      const { user: userData, accessToken, refreshToken } = response.data.data as {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      };
+
       localStorage.setItem("omni_ai_token", accessToken);
       localStorage.setItem("omni_ai_refreshToken", refreshToken);
       localStorage.setItem("omni_ai_user", JSON.stringify(userData));
-      
+
       setToken(accessToken);
       setUser(userData);
-      
-      toast({ title: "Account created!", description: "Welcome to Omni AI." });
-      
-      // Route based on profile type
-      if (userData.profileType === "student") setLocation("/dashboard/student");
-      else if (userData.profileType === "employee") setLocation("/dashboard/employee");
-      else if (userData.profileType === "cabinet") setLocation("/dashboard/cabinet");
-      else if (userData.profileType === "company") setLocation("/dashboard/company");
-      else setLocation("/dashboard");
 
-    } catch (error: any) {
-      console.error("[Auth] Register error:", error);
-       toast({
+      toast({ title: "Account created!", description: "Your account is ready." });
+      setLocation(getRedirectPath(userData));
+    } catch (error: unknown) {
+      toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.response?.data?.message || "Could not create account."
+        description: getErrorMessage(error, "Could not create account."),
       });
       throw error;
     }
   };
 
   const logout = () => {
-    try { api.post('/auth/logout'); } catch (_) {}
+    try {
+      void apiClient.post("/auth/logout");
+    } catch {
+      // noop
+    }
     localStorage.removeItem("omni_ai_token");
     localStorage.removeItem("omni_ai_refreshToken");
     localStorage.removeItem("omni_ai_user");
@@ -117,15 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      isAuthenticated: !!token && !!user,
-      isLoading,
-      login,
-      register,
-      logout
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!token && !!user,
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -133,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

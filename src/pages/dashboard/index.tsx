@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardHub() {
@@ -12,7 +12,11 @@ export default function DashboardHub() {
       if (!user) {
         setLocation("/login");
       } else {
-        setLocation(`/dashboard/${user.profileType}`);
+        setLocation(
+          user.profileType === "accountant"
+            ? "/dashboard/accountant"
+            : `/dashboard/${user.profileType}`,
+        );
       }
     }
   }, [user, isLoading, setLocation]);

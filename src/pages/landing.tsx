@@ -1,25 +1,24 @@
-import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { 
-  Users, 
-  Landmark, 
-  ShoppingCart, 
-  Calculator, 
-  Handshake, 
-  Package, 
-  Building2, 
-  BookOpen, 
-  Wrench, 
-  HardHat, 
-  Factory, 
-  Megaphone,
+import {
   ArrowRight,
-  Sparkles,
   BarChart3,
-  ShieldCheck,
-  Zap,
+  BookOpen,
+  Building2,
+  Factory,
   Globe,
-  Star
+  Handshake,
+  HardHat,
+  Landmark,
+  Megaphone,
+  Package,
+  Calculator,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Users,
+  Wrench,
+  Zap,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -42,61 +41,60 @@ export default function LandingPage() {
     {
       title: "Machine Learning Prédictif",
       desc: "Anticipez vos ventes et détectez les anomalies financières avant qu'elles n'arrivent.",
-      icon: <Zap className="w-6 h-6 text-white" />
+      icon: <Zap className="w-6 h-6 text-white" />,
     },
     {
       title: "Gestion Complète",
       desc: "De la comptabilité aux ressources humaines, gérez toutes les facettes de votre entreprise.",
-      icon: <BarChart3 className="w-6 h-6 text-white" />
+      icon: <BarChart3 className="w-6 h-6 text-white" />,
     },
     {
       title: "Sécurité & Conformité",
       desc: "Vos données sont cryptées et hébergées selon les normes de sécurité les plus strictes.",
-      icon: <ShieldCheck className="w-6 h-6 text-white" />
+      icon: <ShieldCheck className="w-6 h-6 text-white" />,
     },
     {
       title: "Collaboration en Temps Réel",
       desc: "Invitez votre équipe, vos experts-comptables ou vos partenaires sur une seule plateforme.",
-      icon: <Users className="w-6 h-6 text-white" />
+      icon: <Users className="w-6 h-6 text-white" />,
     },
     {
       title: "Déploiement Mondial",
       desc: "Gérez plusieurs devises, langues et filiales dans différents pays avec facilité.",
-      icon: <Globe className="w-6 h-6 text-white" />
+      icon: <Globe className="w-6 h-6 text-white" />,
     },
     {
       title: "Insights Automatisés",
       desc: "Recevez des recommandations hebdomadaires basées sur les performances de votre activité.",
-      icon: <Star className="w-6 h-6 text-white" />
-    }
+      icon: <Star className="w-6 h-6 text-white" />,
+    },
   ];
 
   const profiles = [
     {
       title: "Entreprises",
       desc: "Pilotez vos opérations, suivez la trésorerie et gérez votre équipe efficacement.",
-      icon: <Building2 className="w-8 h-8 text-purple-600" />
+      icon: <Building2 className="w-8 h-8 text-purple-600" />,
     },
     {
       title: "Cabinets",
       desc: "Supervisez tous vos clients, détectez les anomalies et gagnez du temps sur la saisie.",
-      icon: <BriefcaseIcon className="w-8 h-8 text-pink-600" />
+      icon: <BriefcaseIcon className="w-8 h-8 text-pink-600" />,
     },
     {
       title: "Employés",
       desc: "Accédez à vos fiches de paie, posez vos congés et gérez vos tâches quotidiennes.",
-      icon: <Users className="w-8 h-8 text-purple-600" />
+      icon: <Users className="w-8 h-8 text-purple-600" />,
     },
     {
       title: "Étudiants",
       desc: "Suivez votre budget, vos candidatures et organisez votre emploi du temps.",
-      icon: <BookOpen className="w-8 h-8 text-pink-600" />
-    }
+      icon: <BookOpen className="w-8 h-8 text-pink-600" />,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-purple-200">
-      {/* Sticky Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
@@ -106,7 +104,7 @@ export default function LandingPage() {
               </div>
               <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
             </div>
-            
+
             <div className="hidden md:flex space-x-8">
               <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Accueil</a>
               <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Produits</a>
@@ -124,21 +122,14 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="relative pt-24 pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 -z-10" />
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-200/40 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3 -z-10" />
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-pink-200/40 blur-[100px] rounded-full translate-y-1/3 -translate-x-1/3 -z-10" />
-        
+
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-5xl md:text-7xl font-display font-extrabold tracking-tight text-gray-900 mb-6">
-              Tout votre business.
-            </h1>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <h1 className="text-5xl md:text-7xl font-display font-extrabold tracking-tight text-gray-900 mb-6">Tout votre business.</h1>
             <div className="gradient-bg text-white rounded-full px-8 py-3 inline-block text-3xl md:text-4xl font-bold mb-8 shadow-xl shadow-purple-500/20 transform -rotate-2">
               Une seule plateforme.
             </div>
@@ -158,106 +149,88 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Module Chips Row */}
       <section className="py-12 bg-white border-y border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm font-bold text-gray-400 uppercase tracking-widest mb-8">Plus de 12 modules intégrés</p>
           <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-            {modules.map((mod, i) => (
+            {modules.map((moduleEntry, index) => (
               <motion.div
-                key={mod.name}
+                key={moduleEntry.name}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: index * 0.05 }}
                 className="rounded-full border border-gray-200 bg-white px-5 py-2.5 flex items-center gap-2.5 text-sm font-medium text-gray-600 hover:border-purple-400 hover:text-purple-600 hover:shadow-md hover:shadow-purple-500/10 transition-all cursor-default"
               >
-                <div className="text-purple-500">{mod.icon}</div>
-                {mod.name}
+                <div className="text-purple-500">{moduleEntry.icon}</div>
+                {moduleEntry.name}
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Profiles Section */}
       <section className="py-24 bg-purple-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-display font-bold text-gray-900 mb-4">Pour tous les profils</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Une interface adaptée à vos besoins spécifiques, que vous soyez un grand groupe ou un étudiant.
-            </p>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Une interface adaptée à vos besoins spécifiques, que vous soyez un grand groupe ou un étudiant.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {profiles.map((profile, i) => (
-              <motion.div 
+            {profiles.map((profile, index) => (
+              <motion.div
                 key={profile.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: index * 0.1 }}
                 className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
               >
-                <div className="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center mb-6">
-                  {profile.icon}
-                </div>
+                <div className="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center mb-6">{profile.icon}</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{profile.title}</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {profile.desc}
-                </p>
+                <p className="text-gray-600 leading-relaxed">{profile.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-display font-bold text-gray-900 mb-4">Fonctionnalités puissantes</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Tout ce dont vous avez besoin pour faire passer votre gestion au niveau supérieur.
-            </p>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Tout ce dont vous avez besoin pour faire passer votre gestion au niveau supérieur.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feat, i) => (
-              <motion.div 
-                key={feat.title}
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: index * 0.1 }}
                 className="group p-8 rounded-3xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-xl transition-all"
               >
                 <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
-                  {feat.icon}
+                  {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feat.title}</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feat.desc}
-                </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Banner */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 gradient-bg" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-        
+
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">
-            Prêt à transformer votre gestion ?
-          </h2>
-          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            Rejoignez des milliers d'entreprises qui font confiance à Omni AI pour piloter leur croissance.
-          </p>
+          <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">Prêt à transformer votre gestion ?</h2>
+          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">Rejoignez des milliers d&apos;entreprises qui font confiance à Omni AI pour piloter leur croissance.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="/login" className="bg-white text-purple-600 rounded-full px-8 py-4 text-lg font-bold hover:shadow-xl transition-all hover:-translate-y-1 text-center">
               Créer un compte gratuit
@@ -269,7 +242,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 pt-16 pb-8 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -280,11 +252,9 @@ export default function LandingPage() {
                 </div>
                 <span className="font-display font-bold text-2xl tracking-tight text-white">Omni AI</span>
               </div>
-              <p className="text-gray-400 leading-relaxed">
-                La plateforme de gestion tout-en-un propulsée par l'intelligence artificielle.
-              </p>
+              <p className="text-gray-400 leading-relaxed">La plateforme de gestion tout-en-un propulsée par l&apos;intelligence artificielle.</p>
             </div>
-            
+
             <div>
               <h4 className="text-white font-bold mb-4">Produits</h4>
               <ul className="space-y-3">
@@ -294,17 +264,17 @@ export default function LandingPage() {
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Ressources Humaines</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-white font-bold mb-4">Ressources</h4>
               <ul className="space-y-3">
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API & Webhooks</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Centre d'aide</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Centre d&apos;aide</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-white font-bold mb-4">Entreprise</h4>
               <ul className="space-y-3">
@@ -315,11 +285,9 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          
+
           <div className="pt-8 border-t border-gray-800 text-center flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} Omni AI. Tous droits réservés.
-            </p>
+            <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Omni AI. Tous droits réservés.</p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition-all">
                 <span className="sr-only">Twitter</span>
@@ -341,11 +309,11 @@ export default function LandingPage() {
   );
 }
 
-function BriefcaseIcon(props: any) {
+function BriefcaseIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
     </svg>
   );
 }

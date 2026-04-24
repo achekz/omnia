@@ -306,16 +306,4 @@ export const getRateLimitStatus = async (userId) => {
   };
 };
 
-export default {
-  rateLimit,
-  createRateLimiter,
-  userRateLimit,
-  ipRateLimit,
-  slidingWindowRateLimit,
-  tokenBucketRateLimit,
-  burstProtection,
-  exponentialBackoffLimiter,
-  recordFailedAttempt,
-  resetFailedAttempts,
-  getRateLimitStatus
-};
+export default rateLimit;

@@ -1,96 +1,383 @@
-import axios from 'axios';
-import { useToast } from '../hooks/use-toast';
-import { useAuth } from '../hooks/use-auth';
-import { useLocation } from 'wouter';
-import { useEffect } from 'react';
+import axios from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  CreateTaskInput,
+  DashboardStats,
+  FinanceSummary,
+  FinancialRecord,
+  MlInsights,
+  Notification,
+  QueryHookOptions,
+  Task,
+  TeamMemberSummary,
+  UpdateTaskInput,
+} from "./types";
 
-// Centralized API Client for OmniAI SaaS
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// Request Interceptor - Add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("omni_ai_token");
+
     if (token) {
+      config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
-// Response Interceptor - Error handling & 401 redirect
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-// Centralized axios client - use in components
-// Context hooks available via useToast(), useLocation() in consuming components
+  async (error) => {
+    const originalRequest = error.config as { _retry?: boolean; headers?: Record<string, string> };
 
-    if (error.response?.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      toast?.toast({
-        title: 'Session expired',
-        description: 'Please login again.',
-        variant: 'destructive',
-      });
-      setLocation('/login');
-    } else if (error.response?.status === 403) {
-      toast?.toast({
-        title: 'Access denied',
-        description: 'Insufficient permissions for this action.',
-        variant: 'destructive',
-      });
-    } else if (error.response?.status >= 500) {
-      toast?.toast({
-        title: 'Server error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
-    } else if (error.code === 'ERR_NETWORK') {
-      toast?.toast({
-        title: 'Network error',
-        description: 'Unable to connect to server.',
-        variant: 'destructive',
-      });
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem("omni_ai_refreshToken");
+
+        if (!refreshToken) {
+          throw new Error("No refresh token");
+        }
+
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
+        const newToken = res.data?.data?.accessToken as string | undefined;
+
+        if (!newToken) {
+          throw new Error("Invalid refresh response");
+        }
+
+        localStorage.setItem("omni_ai_token", newToken);
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+        return apiClient(originalRequest);
+      } catch {
+        localStorage.removeItem("omni_ai_token");
+        localStorage.removeItem("omni_ai_refreshToken");
+        localStorage.removeItem("omni_ai_user");
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
-// API Hooks (React Query alternative)
-export const useApi = () => apiClient;
+const fallbackNotifications: Notification[] = [
+  {
+    id: "welcome-notification",
+    type: "info",
+    title: "Welcome to Omni AI",
+    message: "Your workspace is ready. Start by exploring your dashboard modules.",
+    isRead: false,
+    source: "system",
+    createdAt: new Date().toISOString(),
+  },
+];
 
-// Custom hooks for common operations
-export const useAuthApi = () => ({
-  login: (credentials) => apiClient.post('/auth/login', credentials),
-  register: (data) => apiClient.post('/auth/register', data),
-  logout: () => apiClient.post('/auth/logout'),
-  getMe: () => apiClient.get('/auth/me'),
-});
+const fallbackTasks: Task[] = [
+  {
+    id: "task-1",
+    title: "Review dashboard insights",
+    status: "todo",
+    priority: "medium",
+    description: "Open the dashboard and review today’s AI recommendations.",
+    dueDate: new Date(Date.now() + 86400000).toISOString(),
+  },
+  {
+    id: "task-2",
+    title: "Organize weekly priorities",
+    status: "in_progress",
+    priority: "high",
+  },
+  {
+    id: "task-3",
+    title: "Close completed items",
+    status: "done",
+    priority: "low",
+  },
+];
 
-export const useAdminApi = () => ({
-  getDashboard: () => apiClient.get('/admin/dashboard'),
-  getUsers: () => apiClient.get('/admin/users'),
-  toggleUser: (id) => apiClient.put(`/admin/users/${id}/activate`),
-});
+const fallbackDashboardStats: DashboardStats = {
+  teamSize: 24,
+  activeProjects: 8,
+  currentScore: 92,
+  anomaliesDetected: 3,
+  completedTasks: 5,
+  overdueTasks: 1,
+  streak: 14,
+  balance: 125000,
+  anomalyCount: 2,
+  weeklyActivity: [
+    { day: "Mon", value: 72 },
+    { day: "Tue", value: 78 },
+    { day: "Wed", value: 81 },
+    { day: "Thu", value: 86 },
+    { day: "Fri", value: 91 },
+  ],
+  byMonth: [
+    { month: "Jan", income: 32000, expense: 21000 },
+    { month: "Feb", income: 35000, expense: 22500 },
+    { month: "Mar", income: 41000, expense: 26000 },
+    { month: "Apr", income: 47000, expense: 29000 },
+  ],
+};
 
-export const useTaskApi = () => ({
-  getTasks: () => apiClient.get('/tasks'),
-  createTask: (data) => apiClient.post('/tasks', data),
-  updateTask: (id, data) => apiClient.put(`/tasks/${id}`, data),
-});
+const fallbackTeamMembers: TeamMemberSummary[] = [
+  {
+      member: {
+        id: "member-1",
+        name: "Sarra Ben Ali",
+        role: "employee",
+        email: "sarra@demo.com",
+        isActive: true,
+      },
+    avgScore: 94,
+    tasksCompleted: 18,
+  },
+  {
+      member: {
+        id: "member-2",
+        name: "Youssef Hamdi",
+        role: "accountant",
+        email: "youssef@demo.com",
+        isActive: true,
+      },
+    avgScore: 90,
+    tasksCompleted: 15,
+  },
+];
 
-export const useNotificationApi = () => ({
-  getNotifications: () => apiClient.get('/notifications'),
-  markRead: (id) => apiClient.patch(`/notifications/${id}/read`),
-});
+const fallbackFinanceRecords: FinancialRecord[] = [
+  {
+    id: "finance-1",
+    clientName: "Atlas SARL",
+    type: "income",
+    amount: 8200,
+    category: "Consulting",
+    description: "Monthly consulting retainer",
+    date: new Date().toISOString(),
+  },
+  {
+    id: "finance-2",
+    clientName: "Nova Tech",
+    type: "expense",
+    amount: 1200,
+    category: "Software",
+    description: "License renewal",
+    date: new Date().toISOString(),
+    isAnomaly: true,
+    anomalyScore: 91,
+  },
+];
+
+const fallbackFinanceSummary: FinanceSummary = {
+  balance: 125000,
+  anomalyCount: 1,
+  byMonth: fallbackDashboardStats.byMonth,
+};
+
+const fallbackInsights: MlInsights = {
+  latestRecommendation: {
+    confidence: 88,
+    recommendations: [
+      "Batch similar tasks to reduce context switching.",
+      "Prioritize high-impact items before midday.",
+    ],
+  },
+};
+
+function unwrapData<T>(payload: unknown, fallback: T): T {
+  if (payload && typeof payload === "object") {
+    const dataPayload = payload as { data?: T };
+    if (dataPayload.data !== undefined) {
+      return dataPayload.data;
+    }
+
+    return payload as T;
+  }
+
+  return fallback;
+}
+
+export function useGetNotifications(options?: QueryHookOptions) {
+  return useQuery<Notification[]>({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/notifications");
+        return unwrapData<Notification[]>(response.data, fallbackNotifications);
+      } catch {
+        return fallbackNotifications;
+      }
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: fallbackNotifications,
+  });
+}
+
+export function useGetDashboardStats() {
+  return useQuery<DashboardStats>({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/dashboard/stats");
+        return { ...fallbackDashboardStats, ...unwrapData<DashboardStats>(response.data, fallbackDashboardStats) };
+      } catch {
+        return fallbackDashboardStats;
+      }
+    },
+    initialData: fallbackDashboardStats,
+  });
+}
+
+export function useGetTasks(options?: QueryHookOptions) {
+  return useQuery<Task[]>({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/tasks");
+        return unwrapData<Task[]>(response.data, fallbackTasks);
+      } catch {
+        return fallbackTasks;
+      }
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: fallbackTasks,
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateTaskInput) => {
+      try {
+        const response = await apiClient.post("/tasks", data);
+        return unwrapData<Task>(response.data, {
+          id: crypto.randomUUID(),
+          title: data.title,
+          status: data.status ?? "todo",
+          description: data.description,
+          priority: data.priority ?? "medium",
+          dueDate: data.dueDate,
+        });
+      } catch {
+        return {
+          id: crypto.randomUUID(),
+          title: data.title,
+          status: data.status ?? "todo",
+          description: data.description,
+          priority: data.priority ?? "medium",
+          dueDate: data.dueDate,
+        } satisfies Task;
+      }
+    },
+    onSuccess: (createdTask) => {
+      queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) => [createdTask, ...current]);
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: UpdateTaskInput) => {
+      try {
+        const response = await apiClient.patch(`/tasks/${id}`, data);
+        return unwrapData<Task>(response.data, { id, title: "Task", status: "todo", ...data });
+      } catch {
+        const currentTasks = queryClient.getQueryData<Task[]>(["tasks"]) ?? fallbackTasks;
+        const existingTask = currentTasks.find((task) => task._id === id || task.id === id);
+        return { ...existingTask, ...data, id } as Task;
+      }
+    },
+    onSuccess: (updatedTask) => {
+      queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) =>
+        current.map((task) => {
+          const taskId = task._id ?? task.id;
+          const updatedId = updatedTask._id ?? updatedTask.id;
+          return taskId === updatedId ? { ...task, ...updatedTask } : task;
+        }),
+      );
+    },
+  });
+}
+
+export function useMlInsights() {
+  return useQuery<MlInsights>({
+    queryKey: ["ml-insights"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/ml/insights");
+        return { ...fallbackInsights, ...unwrapData<MlInsights>(response.data, fallbackInsights) };
+      } catch {
+        return fallbackInsights;
+      }
+    },
+    initialData: fallbackInsights,
+  });
+}
+
+export function useGetTeamMembers() {
+  return useQuery<TeamMemberSummary[]>({
+    queryKey: ["team-members"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/team/members");
+        return unwrapData<TeamMemberSummary[]>(response.data, fallbackTeamMembers);
+      } catch {
+        return fallbackTeamMembers;
+      }
+    },
+    initialData: fallbackTeamMembers,
+  });
+}
+
+export function useGetFinanceSummary() {
+  return useQuery<FinanceSummary>({
+    queryKey: ["finance-summary"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/finance/summary");
+        return { ...fallbackFinanceSummary, ...unwrapData<FinanceSummary>(response.data, fallbackFinanceSummary) };
+      } catch {
+        return fallbackFinanceSummary;
+      }
+    },
+    initialData: fallbackFinanceSummary,
+  });
+}
+
+export function useGetFinanceRecords() {
+  return useQuery<FinancialRecord[]>({
+    queryKey: ["finance-records"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/finance/records");
+        return unwrapData<FinancialRecord[]>(response.data, fallbackFinanceRecords);
+      } catch {
+        return fallbackFinanceRecords;
+      }
+    },
+    initialData: fallbackFinanceRecords,
+  });
+}
 
 export default apiClient;

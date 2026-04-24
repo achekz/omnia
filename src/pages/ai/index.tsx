@@ -1,9 +1,20 @@
-import { ModuleLayout } from "@/components/layout/module-layout";
-import { useAuth } from "@/hooks/use-auth";
-import { Mic, Send, Paperclip, FileText, BarChart3, Users, Target, Activity, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
+import {
+  Activity,
+  BarChart3,
+  FileText,
+  Loader2,
+  Mic,
+  Paperclip,
+  Send,
+  Sparkles,
+  Target,
+  Users,
+} from "lucide-react";
+import { ModuleLayout } from "@/components/layout/module-layout";
+import { useAuth } from "@/hooks/useAuth";
+import apiClient from "@/lib/api-client";
 
 interface Message {
   role: "user" | "ai";
@@ -35,37 +46,37 @@ export default function AIDashboard() {
     "Analyser mes ventes",
     "Optimiser mes dépenses",
     "Gérer mon équipe",
-    "Automatiser mon CRM"
+    "Automatiser mon CRM",
   ];
 
   const sendMessage = async (message?: string) => {
     const textToSend = message || prompt.trim();
-    if (!textToSend) return;
+    if (!textToSend) {
+      return;
+    }
 
-    console.log("📤 Sending message:", textToSend);
-
-    // Add user message to state
     setMessages((prev) => [...prev, { role: "user", text: textToSend }]);
     setPrompt("");
     setIsLoading(true);
 
     try {
-      console.log("🔄 Calling API: POST /api/ai/ask");
-      const res = await axios.post("http://localhost:5000/api/ai/ask", { 
-        message: textToSend 
-      });
+      const res = await apiClient.post("/ai/ask", { message: textToSend });
+      const aiResponse =
+        res.data?.response ||
+        res.data?.data?.response ||
+        "Je suis en train d'analyser votre demande. Veuillez réessayer.";
 
-      console.log("✅ API Response:", res.data);
-
-      const aiResponse = res.data.response || "Je suis en train d'analyser votre demande. Veuillez réessayer.";
-
-      // Add AI response to state
       setMessages((prev) => [...prev, { role: "ai", text: aiResponse }]);
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+          : "Une erreur s'est produite. Veuillez réessayer.";
 
-    } catch (error: any) {
-      console.error("❌ API Error:", error.message);
-      const errorMessage = error.response?.data?.error || "Une erreur s'est produite. Veuillez réessayer.";
-      setMessages((prev) => [...prev, { role: "ai", text: errorMessage }]);
+      setMessages((prev) => [...prev, { role: "ai", text: errorMessage || "Une erreur s'est produite. Veuillez réessayer." }]);
     } finally {
       setIsLoading(false);
     }
@@ -76,13 +87,10 @@ export default function AIDashboard() {
   return (
     <ModuleLayout activeItem="ia">
       <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        
-        {/* Decorative Blur Orbs */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-200/40 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
         <div className="w-full max-w-4xl relative z-10 flex flex-col items-center h-full">
-          
           <div className="w-full flex justify-end mb-8">
             <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <Activity className="w-4 h-4" />
@@ -90,12 +98,11 @@ export default function AIDashboard() {
             </button>
           </div>
 
-          {/* Chat Messages Display */}
           {showChat && (
             <div className="flex-1 overflow-y-auto w-full max-w-3xl mb-6 space-y-4 px-4">
               {messages.map((msg, idx) => (
                 <motion.div
-                  key={idx}
+                  key={`${msg.role}-${idx}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -131,14 +138,9 @@ export default function AIDashboard() {
             </div>
           )}
 
-          {/* Hero Section (only when no messages) */}
           {!showChat && (
             <>
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-10"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
                 <h1 className="text-5xl md:text-6xl font-display font-extrabold tracking-tight text-slate-800 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                   Comment puis-je vous aider ?
                 </h1>
@@ -147,15 +149,15 @@ export default function AIDashboard() {
                 </p>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="flex flex-wrap justify-center gap-3 mb-8"
               >
-                {domains.map((domain, i) => (
-                  <button 
-                    key={i} 
+                {domains.map((domain) => (
+                  <button
+                    key={domain.label}
                     className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 rounded-full text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-600 hover:shadow-md dark:hover:bg-gray-800 transition-all hover:-translate-y-0.5"
                   >
                     {domain.icon}
@@ -166,7 +168,7 @@ export default function AIDashboard() {
             </>
           )}
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -175,11 +177,11 @@ export default function AIDashboard() {
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-4 shadow-xl shadow-indigo-500/10 border border-white/60 dark:border-gray-700/60 mb-6">
               <textarea
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !isLoading) {
-                    e.preventDefault();
-                    sendMessage();
+                onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey && !isLoading) {
+                    event.preventDefault();
+                    void sendMessage();
                   }
                 }}
                 placeholder="Décrivez votre besoin : analyse, prédiction, automatisation... Notre IA s'occupe du reste."
@@ -200,8 +202,8 @@ export default function AIDashboard() {
                   <button className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
                     <Mic className="w-5 h-5" />
                   </button>
-                  <button 
-                    onClick={() => sendMessage()}
+                  <button
+                    onClick={() => void sendMessage()}
                     disabled={!prompt.trim() || isLoading}
                     className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all disabled:opacity-50 disabled:scale-100 hover:scale-105 shadow-lg shadow-blue-500/30"
                   >
@@ -213,26 +215,21 @@ export default function AIDashboard() {
 
             {!showChat && (
               <div className="flex flex-wrap justify-center gap-3">
-                {suggestions.map((sug, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => sendMessage(sug)}
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => void sendMessage(suggestion)}
                     disabled={isLoading}
                     className="px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors border border-white dark:border-gray-700 disabled:opacity-50"
                   >
-                    {sug}
+                    {suggestion}
                   </button>
                 ))}
               </div>
             )}
           </motion.div>
 
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-sm text-slate-400 font-medium"
-          >
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8 text-sm text-slate-400 font-medium">
             Propulsé par l'IA • Sécurisé • Disponible 24/7
           </motion.p>
         </div>

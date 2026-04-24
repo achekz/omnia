@@ -1,6 +1,6 @@
 /**
  * Redis Client with In-Memory Fallback
- * Production-ready caching layer
+ * Production-ready caching layer + rate limiter support
  */
 
 import { createClient } from 'redis';
@@ -33,7 +33,7 @@ class CacheManager {
       });
 
       this.client.on('error', (err) => {
-        console.warn('Redis Error:', err.message);
+        // console.warn('Redis Error:', err.message);
         this.isRedisReady = false;
       });
 
@@ -44,11 +44,16 @@ class CacheManager {
 
       await this.client.connect();
       console.log('✅ Redis connected');
+
     } catch (error) {
-      console.warn('Redis unavailable - using in-memory fallback:', error.message);
+      console.log('ℹ️ Using in-memory cache');
       this.isRedisReady = false;
     }
   }
+
+  // ========================
+  // BASIC CACHE METHODS
+  // ========================
 
   async set(key, value, ttl = 3600) {
     try {
@@ -63,7 +68,7 @@ class CacheManager {
 
     // Fallback
     const data = typeof value === 'string' ? value : JSON.stringify(value);
-    this.fallback.set(key, { data, expiry: Date.now() + (ttl * 1000) });
+    this.fallback.set(key, { data, expiry: Date.now() + ttl * 1000 });
     return true;
   }
 
@@ -95,7 +100,6 @@ class CacheManager {
       console.warn('Redis del failed:', error.message);
     }
 
-    // Fallback
     this.fallback.delete(key);
   }
 
@@ -108,10 +112,82 @@ class CacheManager {
       console.warn('Redis clear failed:', error.message);
     }
 
-    // Fallback
     this.fallback.clear();
+  }
+
+  // ========================
+  // 🔥 RATE LIMITER METHODS
+  // ========================
+
+  async increment(key) {
+    try {
+      if (this.isRedisReady && this.client) {
+        return await this.client.incr(key);
+      }
+    } catch (error) {
+      console.warn('Redis incr failed:', error.message);
+    }
+
+    // fallback
+    const current = this.fallback.get(key) || { count: 0, expiry: Date.now() + 60000 };
+    current.count += 1;
+    this.fallback.set(key, current);
+    return current.count;
+  }
+
+  async expire(key, ttl = 60) {
+    try {
+      if (this.isRedisReady && this.client) {
+        await this.client.expire(key, ttl);
+        return;
+      }
+    } catch (error) {
+      console.warn('Redis expire failed:', error.message);
+    }
+
+    // fallback
+    const item = this.fallback.get(key);
+    if (item) {
+      item.expiry = Date.now() + ttl * 1000;
+    }
+  }
+
+  async ttl(key) {
+    try {
+      if (this.isRedisReady && this.client) {
+        return await this.client.ttl(key);
+      }
+    } catch (error) {
+      console.warn('Redis ttl failed:', error.message);
+    }
+
+    // fallback
+    const item = this.fallback.get(key);
+    if (!item) return -1;
+
+    const remaining = Math.floor((item.expiry - Date.now()) / 1000);
+    return remaining > 0 ? remaining : -1;
   }
 }
 
-export default new CacheManager();
+const cache = new CacheManager();
 
+// ========================
+// ✅ EXPORTS FOR RATE LIMITER
+// ========================
+
+export const incrementCounter = async (key) => {
+  const count = await cache.increment(key);
+
+  if (count === 1) {
+    await cache.expire(key, 60); // 1 minute window
+  }
+
+  return count;
+};
+
+export const getTTL = async (key) => {
+  return await cache.ttl(key);
+};
+
+export default cache;

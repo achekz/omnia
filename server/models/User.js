@@ -1,13 +1,28 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const { Schema } = mongoose;
 
+const allowedRoles = ["student", "employee", "accountant"];
+const allowedGenders = ["male", "female"];
+
 const userSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 50,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 50,
+    },
     email: {
       type: String,
       required: true,
@@ -15,45 +30,61 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-
+    name: {
+      type: String,
+      trim: true,
+    },
     password: {
       type: String,
       required: true,
       select: false,
     },
-
     role: {
       type: String,
-      enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'STUDENT', 'ACCOUNTANT', 'USER', 'COMPANY_ADMIN', 'CABINET_ADMIN'],
-      default: 'EMPLOYEE'
-    },
-
-    profileType: {
-      type: String,
-      enum: ['company', 'cabinet', 'employee', 'student'],
+      enum: allowedRoles,
       required: true,
     },
-
+    profileType: {
+      type: String,
+      enum: allowedRoles,
+      required: true,
+    },
+    gender: {
+      type: String,
+      enum: allowedGenders,
+      required: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: true,
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
     tenantId: {
       type: Schema.Types.ObjectId,
-      required: false
+      required: false,
     },
-
-    avatar: { type: String, default: '' },
-
-    isActive: { type: Boolean, default: true },
-
-    lastLogin: { type: Date },
-
-    refreshToken: { type: String, select: false },
-
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
     preferences: {
-      theme: { type: String, default: 'dark' },
+      theme: { type: String, default: "light" },
       emailNotifications: { type: Boolean, default: true },
     },
-
-    isPublic: { type: Boolean, default: false },
-
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
     notificationPreferences: {
       emailNotifications: { type: Boolean, default: true },
       inAppMentions: { type: Boolean, default: true },
@@ -61,48 +92,65 @@ const userSchema = new Schema(
       aiInsights: { type: Boolean, default: true },
       marketingUpdates: { type: Boolean, default: false },
     },
-
-    emailVerificationCode: String,
-    emailVerificationCodeExpiry: Date,
-    pendingEmail: String,
+    emailVerificationCode: {
+      type: String,
+      select: false,
+    },
+    emailVerificationCodeExpiry: {
+      type: Date,
+      select: false,
+    },
+    pendingEmail: {
+      type: String,
+      select: false,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
-// 🔐 HASH PASSWORD
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.virtual("fullName").get(function getFullName() {
+  return `${this.firstName} ${this.lastName}`.trim();
+});
+
+userSchema.pre("save", async function hashPassword(next) {
+  this.name = `${this.firstName} ${this.lastName}`.trim();
+
+  if (!this.isModified("password")) {
+    return next();
+  }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// 🔑 COMPARE PASSWORD
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// 🔐 ACCESS TOKEN
-userSchema.methods.generateAccessToken = function () {
+userSchema.methods.generateAccessToken = function generateAccessToken() {
   return jwt.sign(
     {
       id: this._id,
       role: this.role,
-      tenantId: this.tenantId,
+      profileType: this.profileType,
+      aiProfile: this.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: process.env.JWT_EXPIRE || "15m" },
   );
 };
 
-// 🔄 REFRESH TOKEN
-userSchema.methods.generateRefreshToken = function () {
+userSchema.methods.generateRefreshToken = function generateRefreshToken() {
   return jwt.sign(
     { id: this._id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRE || "7d" },
   );
 };
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model("User", userSchema);

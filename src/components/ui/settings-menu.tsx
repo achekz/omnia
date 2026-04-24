@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { 
   Settings, LogOut, HelpCircle, Palette, User as UserIcon, ChevronRight
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { DisplayAccessibilityModal } from "./display-accessibility-modal";
 
