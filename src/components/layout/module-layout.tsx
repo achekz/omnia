@@ -220,6 +220,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const [activeSidebarItem, setActiveSidebarItem] = useState(activeItem);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [showMoreModules, setShowMoreModules] = useState(false);
+  const currentProfile = (user?.profileType || user?.role || "employee") as ProfileType;
 
   const { data: notifications = [] } = useGetNotifications({
     query: { enabled: !!user, refetchInterval: 30000 },
@@ -230,7 +231,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
       return;
     }
 
-    const allowed = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(user.profileType as ProfileType));
+    const allowed = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(currentProfile));
     let foundParentId = allowed[0]?.id ?? "";
     let foundItemId = activeItem;
 
@@ -248,14 +249,14 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
 
     setActiveModuleId(foundParentId);
     setActiveSidebarItem(foundItemId);
-  }, [activeItem, pathname, user]);
+  }, [activeItem, currentProfile, pathname, user]);
 
   if (!user) {
     return null;
   }
 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
-  const allowedModules = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(user.profileType as ProfileType));
+  const allowedModules = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(currentProfile));
   const activeModule = allowedModules.find((moduleItem) => moduleItem.id === activeModuleId) ?? allowedModules[0];
   const visibleModules = allowedModules.slice(0, 7);
   const moreModules = allowedModules.slice(7);
@@ -380,7 +381,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             <div className="hidden sm:block text-right">
               <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
               <p className="text-xs text-gray-400 dark:text-gray-600 mt-1 capitalize">
-                {user.profileType} {user.tenantId ? "" : "(Demo)"}
+                {currentProfile} {user.tenantId ? "" : "(Demo)"}
               </p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-600 hidden sm:block" />

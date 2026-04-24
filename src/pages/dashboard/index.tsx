@@ -12,10 +12,11 @@ export default function DashboardHub() {
       if (!user) {
         setLocation("/login");
       } else {
+        const profile = user.profileType || user.role || "employee";
         setLocation(
-          user.profileType === "accountant"
+          profile === "accountant"
             ? "/dashboard/accountant"
-            : `/dashboard/${user.profileType}`,
+            : `/dashboard/${profile}`,
         );
       }
     }

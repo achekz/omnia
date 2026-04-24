@@ -17,8 +17,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function normalizeUser(user: User): User {
+  const firstName = user.firstName || user.name?.split(" ")[0] || "User";
+  const lastName = user.lastName || user.name?.split(" ").slice(1).join(" ") || "";
+  const role = user.role || user.profileType || "employee";
+  const profileType = user.profileType || user.role || "employee";
+
+  return {
+    ...user,
+    firstName,
+    lastName,
+    name: user.name || `${firstName} ${lastName}`.trim(),
+    role,
+    profileType,
+    isVerified: user.isVerified ?? true,
+  };
+}
+
 function getRedirectPath(user: User) {
-  switch (user.role) {
+  const profile = user.profileType || user.role;
+
+  switch (profile) {
     case "student":
       return "/dashboard/student";
     case "employee":
@@ -26,7 +45,7 @@ function getRedirectPath(user: User) {
     case "accountant":
       return "/dashboard/accountant";
     default:
-      return "/dashboard";
+      return "/dashboard/employee";
   }
 }
 
@@ -49,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { data } = await apiClient.get("/auth/me");
           setToken(storedToken);
-          setUser(data.data.user as User);
+          setUser(normalizeUser(data.data.user as User));
         } catch {
           localStorage.removeItem("omni_ai_token");
           localStorage.removeItem("omni_ai_refreshToken");
@@ -70,16 +89,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken: string;
         refreshToken: string;
       };
+      const normalizedUser = normalizeUser(userData);
 
       localStorage.setItem("omni_ai_token", accessToken);
       localStorage.setItem("omni_ai_refreshToken", refreshToken);
-      localStorage.setItem("omni_ai_user", JSON.stringify(userData));
+      localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
 
       setToken(accessToken);
-      setUser(userData);
+      setUser(normalizedUser);
 
       toast({ title: "Welcome back!", description: "Successfully logged in." });
-      setLocation(getRedirectPath(userData));
+      setLocation(getRedirectPath(normalizedUser));
     } catch (error: unknown) {
       toast({
         variant: "destructive",
@@ -98,16 +118,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken: string;
         refreshToken: string;
       };
+      const normalizedUser = normalizeUser(userData);
 
       localStorage.setItem("omni_ai_token", accessToken);
       localStorage.setItem("omni_ai_refreshToken", refreshToken);
-      localStorage.setItem("omni_ai_user", JSON.stringify(userData));
+      localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
 
       setToken(accessToken);
-      setUser(userData);
+      setUser(normalizedUser);
 
       toast({ title: "Account created!", description: "Your account is ready." });
-      setLocation(getRedirectPath(userData));
+      setLocation(getRedirectPath(normalizedUser));
     } catch (error: unknown) {
       toast({
         variant: "destructive",
