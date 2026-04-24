@@ -1,17 +1,16 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+const DEFAULT_MODEL = "grok-4";
+const XAI_BASE_URL = "https://api.x.ai/v1/chat/completions";
 
-const DEFAULT_MODEL = "gemini-1.5-flash";
-
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
+function getXaiApiKey() {
+  const apiKey = process.env.XAI_API_KEY;
 
   if (!apiKey) {
-    const error = new Error("GEMINI_API_KEY is not configured.");
-    error.code = "GEMINI_CONFIG_MISSING";
+    const error = new Error("XAI_API_KEY is not configured.");
+    error.code = "XAI_CONFIG_MISSING";
     throw error;
   }
 
-  return new GoogleGenerativeAI(apiKey);
+  return apiKey;
 }
 
 function getRoleInstruction(role) {
@@ -27,40 +26,92 @@ function getRoleInstruction(role) {
   }
 }
 
-function buildPrompt(prompt, role) {
+function buildMessages(prompt, role) {
   return [
-    "You are Omni AI, a production-ready assistant inside a business platform.",
-    getRoleInstruction(role),
-    "If the user asks for steps or recommendations, prefer concrete actions.",
-    `User message: ${prompt}`,
-  ].join("\n\n");
+    {
+      role: "system",
+      content: [
+        "You are Omni AI, a production-ready assistant inside a business platform.",
+        getRoleInstruction(role),
+        "If the user asks for steps or recommendations, prefer concrete actions.",
+      ].join("\n\n"),
+    },
+    {
+      role: "user",
+      content: prompt.trim(),
+    },
+  ];
+}
+
+function extractReply(payload) {
+  const content = payload?.choices?.[0]?.message?.content;
+
+  if (typeof content === "string") {
+    return content.trim();
+  }
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => (typeof item?.text === "string" ? item.text : ""))
+      .join("")
+      .trim();
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return "";
 }
 
 export async function generateResponse(prompt, role = "employee") {
   if (!prompt || !prompt.trim()) {
     const error = new Error("Prompt is required.");
-    error.code = "GEMINI_PROMPT_REQUIRED";
+    error.code = "XAI_PROMPT_REQUIRED";
     throw error;
   }
 
+  const apiKey = getXaiApiKey();
+
   try {
-    const client = getGeminiClient();
-    const model = client.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+    const response = await fetch(XAI_BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.XAI_MODEL || DEFAULT_MODEL,
+        messages: buildMessages(prompt, role),
+        stream: false,
+        temperature: 0.7,
+      }),
     });
 
-    const result = await model.generateContent(buildPrompt(prompt.trim(), role));
-    const reply = result.response.text().trim();
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const error = new Error(
+        payload?.error?.message ||
+        payload?.message ||
+        `xAI request failed with status ${response.status}`,
+      );
+      error.code = payload?.error?.code || `XAI_HTTP_${response.status}`;
+      error.status = response.status;
+      throw error;
+    }
+
+    const reply = extractReply(payload);
 
     if (!reply) {
-      const error = new Error("Gemini returned an empty response.");
-      error.code = "GEMINI_EMPTY_RESPONSE";
+      const error = new Error("Grok returned an empty response.");
+      error.code = "XAI_EMPTY_RESPONSE";
       throw error;
     }
 
     return reply;
   } catch (error) {
-    console.error("[GEMINI] Failed to generate response:", {
+    console.error("[GROK] Failed to generate response:", {
       message: error.message,
       code: error.code,
       status: error.status,

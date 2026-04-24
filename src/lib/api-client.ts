@@ -213,13 +213,53 @@ function unwrapData<T>(payload: unknown, fallback: T): T {
   return fallback;
 }
 
+function unwrapCollection<T>(payload: unknown, collectionKey: string, fallback: T[]): T[] {
+  if (payload && typeof payload === "object") {
+    const rootPayload = payload as Record<string, unknown>;
+    const nestedData =
+      rootPayload.data && typeof rootPayload.data === "object"
+        ? (rootPayload.data as Record<string, unknown>)
+        : null;
+
+    const candidate =
+      (nestedData?.[collectionKey] as T[] | undefined) ??
+      (rootPayload[collectionKey] as T[] | undefined);
+
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+  return fallback;
+}
+
+function unwrapEntity<T>(payload: unknown, entityKey: string, fallback: T): T {
+  if (payload && typeof payload === "object") {
+    const rootPayload = payload as Record<string, unknown>;
+    const nestedData =
+      rootPayload.data && typeof rootPayload.data === "object"
+        ? (rootPayload.data as Record<string, unknown>)
+        : null;
+
+    const candidate =
+      (nestedData?.[entityKey] as T | undefined) ??
+      (rootPayload[entityKey] as T | undefined);
+
+    if (candidate !== undefined) {
+      return candidate;
+    }
+  }
+
+  return unwrapData<T>(payload, fallback);
+}
+
 export function useGetNotifications(options?: QueryHookOptions) {
   return useQuery<Notification[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
       try {
         const response = await apiClient.get("/notifications");
-        return unwrapData<Notification[]>(response.data, fallbackNotifications);
+        return unwrapCollection<Notification>(response.data, "notifications", fallbackNotifications);
       } catch {
         return fallbackNotifications;
       }
@@ -251,7 +291,7 @@ export function useGetTasks(options?: QueryHookOptions) {
     queryFn: async () => {
       try {
         const response = await apiClient.get("/tasks");
-        return unwrapData<Task[]>(response.data, fallbackTasks);
+        return unwrapCollection<Task>(response.data, "tasks", fallbackTasks);
       } catch {
         return fallbackTasks;
       }
@@ -269,7 +309,7 @@ export function useCreateTask() {
     mutationFn: async (data: CreateTaskInput) => {
       try {
         const response = await apiClient.post("/tasks", data);
-        return unwrapData<Task>(response.data, {
+        return unwrapEntity<Task>(response.data, "task", {
           id: crypto.randomUUID(),
           title: data.title,
           status: data.status ?? "todo",
@@ -300,8 +340,8 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: async ({ id, data }: UpdateTaskInput) => {
       try {
-        const response = await apiClient.patch(`/tasks/${id}`, data);
-        return unwrapData<Task>(response.data, { id, title: "Task", status: "todo", ...data });
+        const response = await apiClient.put(`/tasks/${id}`, data);
+        return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "todo", ...data });
       } catch {
         const currentTasks = queryClient.getQueryData<Task[]>(["tasks"]) ?? fallbackTasks;
         const existingTask = currentTasks.find((task) => task._id === id || task.id === id);
@@ -371,7 +411,7 @@ export function useGetFinanceRecords() {
     queryFn: async () => {
       try {
         const response = await apiClient.get("/finance/records");
-        return unwrapData<FinancialRecord[]>(response.data, fallbackFinanceRecords);
+        return unwrapCollection<FinancialRecord>(response.data, "records", fallbackFinanceRecords);
       } catch {
         return fallbackFinanceRecords;
       }

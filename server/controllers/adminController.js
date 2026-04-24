@@ -85,8 +85,8 @@ export const getSystemAnalytics = asyncHandler(async (req, res) => {
 export const getAIInsights = asyncHandler (async (req, res) => {
   // AI system insights for admin
   res.json(new ApiResponse(200, {
-    provider: 'Google Gemini',
-    modelUsage: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    provider: 'xAI Grok',
+    modelUsage: process.env.XAI_MODEL || 'grok-4',
     queryPerformance: 'Live metrics unavailable'
   }, 'AI insights'));
 });
