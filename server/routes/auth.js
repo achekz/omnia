@@ -8,6 +8,7 @@ import {
   register,
   resetPassword,
   sendCode,
+  testEmail,
   verifyResetCode,
   verifyCode,
 } from "../controllers/authController.js";
@@ -35,5 +36,6 @@ router.post("/reset-password", validateResetPassword, handleValidationErrors, re
 router.post("/refresh-token", refreshToken);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
+router.get("/test-email", testEmail);
 
 export default router;

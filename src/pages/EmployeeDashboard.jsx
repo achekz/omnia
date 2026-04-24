@@ -97,11 +97,11 @@ export default function EmployeeDashboard() {
     setIsTyping(true);
 
     try {
-      const res = await API.post("/api/ai/ask", {
+      const res = await API.post("/api/ai/chat", {
         message: input,
       });
 
-      const aiText = res.data.response;
+      const aiText = res.data.reply;
 
       speak(aiText);
 

@@ -28,3 +28,26 @@ export const protect = asyncHandler(async (req, res, next) => {
   req.user = user;
   next();
 });
+
+export const optionalAuth = asyncHandler(async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (user && user.isActive) {
+      req.user = user;
+    }
+  } catch (error) {
+    console.error("[AUTH] Optional auth failed:", error.message);
+  }
+
+  next();
+});

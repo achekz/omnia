@@ -11,7 +11,6 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
-import aiAssistantRoutes from './routes/aiAssistant.routes.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.routes.js';
 import searchRoutes from './routes/search.routes.js';
@@ -20,9 +19,6 @@ import searchRoutes from './routes/search.routes.js';
 dotenv.config();
 
 const app = express();
-
-// Connect DB
-connectDB();
 
 // Middleware - Production Security Stack
 app.use(helmet({
@@ -60,7 +56,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);  // ADMIN only - authorize('ADMIN')
 app.use('/api/ai', aiRoutes);
-app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', searchRoutes);
@@ -69,10 +64,20 @@ app.use('/api/search', searchRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 OmniAI SaaS Server running on port ${PORT}`);
-  console.log(`📍 MongoDB: ${process.env.MONGO_URI?.slice(0, 50)}...`);
-  console.log('✅ All systems nominal');
+
+async function startServer() {
+  await connectDB();
+
+  app.listen(PORT, () => {
+    console.log(`🚀 OmniAI SaaS Server running on port ${PORT}`);
+    console.log(`📍 MongoDB: ${process.env.MONGO_URI?.slice(0, 50)}...`);
+    console.log('✅ All systems nominal');
+  });
+}
+
+startServer().catch((error) => {
+  console.error("❌ Failed to start server:", error.message);
+  process.exit(1);
 });
 
 export default app;

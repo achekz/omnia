@@ -61,11 +61,12 @@ export default function EmployeeDashboard() {
   };
 
   return (
-    <ModuleLayout>
-      <div className="mb-8 flex justify-between items-end">
+    <ModuleLayout activeItem="dashboard">
+      <div className="p-6 md:p-8">
+      <div className="mb-8 flex justify-between items-end gap-4">
         <div>
-          <h2 className="text-3xl font-display font-bold text-white">My Workspace</h2>
-          <p className="text-muted-foreground dark:text-gray-400 mt-1">Manage your tasks and view productivity insights.</p>
+          <h2 className="text-3xl font-display font-bold text-foreground">My Workspace</h2>
+          <p className="text-muted-foreground mt-1">Manage your tasks and view productivity insights.</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
           <Plus className="w-5 h-5" />
@@ -76,12 +77,12 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center border-primary/30 relative overflow-hidden">
           <div className="absolute inset-0 bg-primary/5" />
-          <p className="text-sm font-medium text-muted-foreground dark:text-gray-400 z-10">Daily AI Score</p>
+          <p className="text-sm font-medium text-muted-foreground z-10">Daily AI Score</p>
           <div className="mt-2 flex items-baseline gap-1 z-10">
             <span className="text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               {stats?.currentScore || 92}
             </span>
-            <span className="text-muted-foreground dark:text-gray-300">/100</span>
+            <span className="text-muted-foreground">/100</span>
           </div>
         </div>
 
@@ -92,7 +93,7 @@ export default function EmployeeDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <h3 className="text-lg font-semibold text-white mb-4">Task Board</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Task Board</h3>
 
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -100,10 +101,10 @@ export default function EmployeeDashboard() {
                 const columnTasks = tasks.filter((task) => task.status === column.id);
 
                 return (
-                  <div key={column.id} className="glass-panel rounded-xl border border-white/5 flex flex-col h-[500px]">
-                    <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                      <h4 className="font-semibold text-white">{column.title}</h4>
-                      <span className="bg-white/10 text-white text-xs px-2 py-1 rounded-full">{columnTasks.length}</span>
+                  <div key={column.id} className="glass-panel rounded-xl border border-border flex flex-col h-[500px]">
+                    <div className="p-4 border-b border-border flex justify-between items-center bg-muted/40">
+                      <h4 className="font-semibold text-foreground">{column.title}</h4>
+                      <span className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full">{columnTasks.length}</span>
                     </div>
 
                     <Droppable droppableId={column.id}>
@@ -125,7 +126,7 @@ export default function EmployeeDashboard() {
                                     {...dragProvided.dragHandleProps}
                                     className={cn(
                                       "bg-card border p-4 rounded-xl shadow-lg transition-all",
-                                      dragSnapshot.isDragging ? "border-primary glow-shadow scale-105" : "border-white/10 hover:border-white/20",
+                                      dragSnapshot.isDragging ? "border-primary glow-shadow scale-105" : "border-border hover:border-primary/30",
                                     )}
                                   >
                                     <div className="flex justify-between items-start mb-2">
@@ -142,7 +143,7 @@ export default function EmployeeDashboard() {
                                         {task.priority || "low"}
                                       </span>
                                     </div>
-                                    <h5 className="font-medium text-sm text-white mb-2 leading-tight">{task.title}</h5>
+                                    <h5 className="font-medium text-sm text-foreground mb-2 leading-tight">{task.title}</h5>
                                     {task.dueDate && (
                                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                                         <AlertCircle className="w-3 h-3" />
@@ -166,7 +167,7 @@ export default function EmployeeDashboard() {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">AI Recommendations</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">AI Recommendations</h3>
           <div className="space-y-4">
             {insights?.latestRecommendation?.recommendations?.map((recommendation, index) => (
               <MLInsightCard
@@ -186,6 +187,7 @@ export default function EmployeeDashboard() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </ModuleLayout>
   );

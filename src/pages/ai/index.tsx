@@ -60,10 +60,9 @@ export default function AIDashboard() {
     setIsLoading(true);
 
     try {
-      const res = await apiClient.post("/ai/ask", { message: textToSend });
+      const res = await apiClient.post("/ai/chat", { message: textToSend });
       const aiResponse =
-        res.data?.response ||
-        res.data?.data?.response ||
+        res.data?.reply ||
         "Je suis en train d'analyser votre demande. Veuillez réessayer.";
 
       setMessages((prev) => [...prev, { role: "ai", text: aiResponse }]);
@@ -72,8 +71,8 @@ export default function AIDashboard() {
         typeof error === "object" &&
         error !== null &&
         "response" in error &&
-        typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+        typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
           : "Une erreur s'est produite. Veuillez réessayer.";
 
       setMessages((prev) => [...prev, { role: "ai", text: errorMessage || "Une erreur s'est produite. Veuillez réessayer." }]);

@@ -111,6 +111,7 @@ const MODULES: NavModule[] = [
     activeSidebarStyle: "bg-orange-50 text-orange-600 font-semibold",
     allowedProfiles: ["company", "employee"],
     items: [
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
       { id: "organisation", label: "Organisation", icon: <Building2 className="w-4 h-4" /> },
       { id: "analytics-eng", label: "Analytics Engagement", icon: <BarChart3 className="w-4 h-4" /> },
       { id: "analytics-rh", label: "Analytics RH", icon: <TrendingUp className="w-4 h-4" /> },

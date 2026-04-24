@@ -1,7 +1,12 @@
 import User from "../models/User.js";
 import EmailVerificationCode from "../models/EmailVerificationCode.js";
 import bcrypt from "bcryptjs";
-import { sendEmailVerificationCode, sendPasswordResetCode } from "../services/emailService.js";
+import mongoose from "mongoose";
+import {
+  sendEmailVerificationCode,
+  sendPasswordResetCode,
+  verifyEmailTransport,
+} from "../services/emailService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -30,7 +35,8 @@ function sanitizeUser(user) {
 }
 
 export const sendCode = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, role, gender } = req.body;
+  const { firstName, lastName, role, gender } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -53,7 +59,20 @@ export const sendCode = asyncHandler(async (req, res) => {
 
   await verification.setCode(code);
   await verification.save();
-  await sendEmailVerificationCode(email, code, firstName);
+
+  try {
+    await sendEmailVerificationCode(email, code, firstName);
+  } catch (error) {
+    console.error("[AUTH] Failed to send verification code email:", {
+      email,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode,
+    });
+    await EmailVerificationCode.deleteOne({ _id: verification._id });
+    throw new ApiError(500, "Failed to send verification code");
+  }
 
   return res.status(200).json(
     new ApiResponse(
@@ -68,7 +87,8 @@ export const sendCode = asyncHandler(async (req, res) => {
 });
 
 export const verifyCode = asyncHandler(async (req, res) => {
-  const { email, code } = req.body;
+  const code = req.body.code;
+  const email = req.body.email?.trim().toLowerCase();
 
   const verification = await EmailVerificationCode.findOne({ email }).select("+codeHash");
 
@@ -102,7 +122,15 @@ export const verifyCode = asyncHandler(async (req, res) => {
 });
 
 export const register = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, role, gender, password } = req.body;
+  const { firstName, lastName, role, gender, password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
+
+  if (mongoose.connection.readyState !== 1) {
+    console.error("[AUTH] Registration blocked because MongoDB is not connected.", {
+      readyState: mongoose.connection.readyState,
+    });
+    throw new ApiError(503, "Database is not connected. Please try again.");
+  }
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -129,7 +157,7 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Registration details do not match the verified identity");
   }
 
-  const user = await User.create({
+  const user = new User({
     firstName,
     lastName,
     email,
@@ -141,11 +169,31 @@ export const register = asyncHandler(async (req, res) => {
     isActive: true,
   });
 
+  await user.save();
+
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
   await user.save();
+
+  const savedUser = await User.findById(user._id).select("_id email role createdAt");
+  if (!savedUser) {
+    console.error("[AUTH] User creation completed but document was not found in MongoDB.", {
+      email,
+      userId: user._id,
+      database: mongoose.connection.name,
+    });
+    throw new ApiError(500, "Account was not persisted to the database");
+  }
+
+  console.log("[AUTH] User registered and saved to MongoDB Atlas.", {
+    userId: savedUser._id,
+    email: savedUser.email,
+    role: savedUser.role,
+    database: mongoose.connection.name,
+  });
+
   await EmailVerificationCode.deleteMany({ email });
 
   return res.status(201).json(
@@ -162,7 +210,8 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   const user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user) {
@@ -204,7 +253,7 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
   if (!user) {
@@ -219,7 +268,18 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.resetCodeVerified = false;
   await user.save();
 
-  await sendPasswordResetCode(user.email, code, user.firstName);
+  try {
+    await sendPasswordResetCode(user.email, code, user.firstName);
+  } catch (error) {
+    console.error("[AUTH] Failed to send password reset email:", {
+      email: user.email,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode,
+    });
+    throw new ApiError(500, "Failed to send reset code");
+  }
 
   return res.status(200).json(
     new ApiResponse(
@@ -233,7 +293,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 });
 
 export const verifyResetCode = asyncHandler(async (req, res) => {
-  const { email, code } = req.body;
+  const code = req.body.code;
+  const email = req.body.email?.trim().toLowerCase();
 
   const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
   if (!user || !user.resetCode || !user.resetCodeExpire) {
@@ -270,7 +331,8 @@ export const verifyResetCode = asyncHandler(async (req, res) => {
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   const user = await User.findOne({ email }).select("+password +resetCode +resetCodeExpire +resetCodeVerified");
   if (!user || !user.resetCode || !user.resetCodeExpire || !user.resetCodeVerified) {
@@ -354,4 +416,40 @@ export const getMe = asyncHandler(async (req, res) => {
       "Current user fetched",
     ),
   );
+});
+
+export const testEmail = asyncHandler(async (req, res) => {
+  const to = req.query.email || process.env.EMAIL_USER;
+  const code = "123456";
+
+  if (!to) {
+    throw new ApiError(400, "Test email recipient is required");
+  }
+
+  try {
+    await verifyEmailTransport();
+    const result = await sendEmailVerificationCode(to, code, "Test User");
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          recipient: to,
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected,
+        },
+        "Test email sent successfully",
+      ),
+    );
+  } catch (error) {
+    console.error("[AUTH] Test email failed:", {
+      email: to,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode,
+    });
+    throw new ApiError(500, "Failed to send test email");
+  }
 });

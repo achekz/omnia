@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, ChevronRight, FileText, History, Mic, Paperclip, Send, ShoppingCart, Sparkles, TrendingUp, Users } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
+import apiClient from "@/lib/api-client";
 
 const QUICK_CHIPS = [
   { label: "Ventes", icon: <TrendingUp className="w-3.5 h-3.5" /> },
@@ -40,19 +41,11 @@ export default function AIHome() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("omni_ai_token");
-      const response = await fetch("/api/ml/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ query: message, context: activeModule }),
+      const response = await apiClient.post("/ai/chat", {
+        message: `${message}\n\nContexte du module: ${activeModule}`,
       });
-      const data = await response.json();
       const reply =
-        data?.recommendations?.join("\n\n") ||
-        data?.message ||
+        response.data?.reply ||
         "Je suis en train d'analyser votre demande. Voici ce que je recommande : vérifiez vos indicateurs clés et optimisez vos processus en fonction de vos données récentes.";
 
       setMessages((prev) => [...prev, { role: "ai", text: reply }]);

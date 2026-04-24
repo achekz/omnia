@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import type { AxiosError } from "axios";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import apiClient from "@/lib/api-client";
 
 const RESET_EMAIL_STORAGE_KEY = "omni_ai_reset_email";
@@ -13,7 +13,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function VerifyResetCodePage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");

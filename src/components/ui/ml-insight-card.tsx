@@ -28,7 +28,7 @@ export function MLInsightCard({ prediction, confidence, factors = [], type = "pr
       </div>
 
       <div className="relative z-10">
-        <p className="text-lg font-medium text-primary-foreground mb-4">{prediction}</p>
+        <p className="text-lg font-medium text-foreground mb-4">{prediction}</p>
         
         <div className="space-y-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key Factors</p>
