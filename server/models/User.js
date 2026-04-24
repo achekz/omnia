@@ -104,6 +104,19 @@ const userSchema = new Schema(
       type: String,
       select: false,
     },
+    resetCode: {
+      type: String,
+      select: false,
+    },
+    resetCodeExpire: {
+      type: Date,
+      select: false,
+    },
+    resetCodeVerified: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
   },
   {
     timestamps: true,

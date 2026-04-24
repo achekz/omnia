@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import EmailVerificationCode from "../models/EmailVerificationCode.js";
-import { sendEmailVerificationCode } from "../services/emailService.js";
+import bcrypt from "bcryptjs";
+import { sendEmailVerificationCode, sendPasswordResetCode } from "../services/emailService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -198,6 +199,103 @@ export const login = asyncHandler(async (req, res) => {
         refreshToken,
       },
       "Login successful",
+    ),
+  );
+});
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
+  if (!user) {
+    throw new ApiError(404, "No account found with this email");
+  }
+
+  const code = generateVerificationCode();
+  const codeHash = await bcrypt.hash(code, 10);
+
+  user.resetCode = codeHash;
+  user.resetCodeExpire = new Date(Date.now() + VERIFICATION_WINDOW_MS);
+  user.resetCodeVerified = false;
+  await user.save();
+
+  await sendPasswordResetCode(user.email, code, user.firstName);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        email: user.email,
+      },
+      "Reset code sent",
+    ),
+  );
+});
+
+export const verifyResetCode = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+
+  const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
+  if (!user || !user.resetCode || !user.resetCodeExpire) {
+    throw new ApiError(400, "Invalid or expired code");
+  }
+
+  if (user.resetCodeExpire.getTime() < Date.now()) {
+    user.resetCode = undefined;
+    user.resetCodeExpire = undefined;
+    user.resetCodeVerified = false;
+    await user.save();
+    throw new ApiError(400, "Invalid or expired code");
+  }
+
+  const isMatch = await bcrypt.compare(code, user.resetCode);
+  if (!isMatch) {
+    throw new ApiError(400, "Invalid or expired code");
+  }
+
+  user.resetCodeVerified = true;
+  user.resetCodeExpire = new Date(Date.now() + VERIFICATION_WINDOW_MS);
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        email: user.email,
+        verified: true,
+      },
+      "Reset code verified",
+    ),
+  );
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email }).select("+password +resetCode +resetCodeExpire +resetCodeVerified");
+  if (!user || !user.resetCode || !user.resetCodeExpire || !user.resetCodeVerified) {
+    throw new ApiError(400, "Password reset not authorized");
+  }
+
+  if (user.resetCodeExpire.getTime() < Date.now()) {
+    user.resetCode = undefined;
+    user.resetCodeExpire = undefined;
+    user.resetCodeVerified = false;
+    await user.save();
+    throw new ApiError(400, "Password reset session expired");
+  }
+
+  user.password = password;
+  user.resetCode = undefined;
+  user.resetCodeExpire = undefined;
+  user.resetCodeVerified = false;
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {},
+      "Password reset successful",
     ),
   );
 });

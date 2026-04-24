@@ -74,6 +74,37 @@ export const validateLogin = [
     .withMessage("Password is required"),
 ];
 
+export const validateForgotPassword = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Valid email is required"),
+];
+
+export const validateVerifyResetCode = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Valid email is required"),
+  body("code")
+    .isLength({ min: 6, max: 6 })
+    .matches(/^\d{6}$/)
+    .withMessage("Reset code must be 6 digits"),
+];
+
+export const validateResetPassword = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Valid email is required"),
+  body("password")
+    .matches(passwordPattern)
+    .withMessage("Password must be 8+ chars with uppercase, number, and special char"),
+  body("confirmPassword")
+    .custom((value, { req }) => value === req.body.password)
+    .withMessage("Passwords do not match"),
+];
+
 export const validateUpdateProfile = [
   body("name")
     .optional()
