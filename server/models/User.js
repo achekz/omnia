@@ -4,12 +4,12 @@ import jwt from "jsonwebtoken";
 
 const { Schema } = mongoose;
 
-const allowedRoles = ["student", "employee", "accountant"];
+const allowedRoles = ["admin", "employee", "accountant", "intern", "student"];
 const allowedGenders = ["male", "female"];
 
 function normalizeProfileValue(value) {
   const normalized = String(value || "").toLowerCase();
-  if (normalized === "rh" || normalized === "hr") {
+  if (normalized === "rh" || normalized === "hr" || normalized === "intern") {
     return "employee";
   }
   return normalized;
@@ -38,6 +38,15 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
     name: {
       type: String,
       trim: true,
@@ -57,10 +66,15 @@ const userSchema = new Schema(
       enum: allowedRoles,
       required: true,
     },
+    verificationMethod: {
+      type: String,
+      enum: ["email", "sms", "whatsapp"],
+      default: "email",
+    },
     gender: {
       type: String,
       enum: allowedGenders,
-      required: true,
+      default: "male",
     },
     isVerified: {
       type: Boolean,

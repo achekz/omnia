@@ -23,7 +23,7 @@ function normalizeUser(user: User): User {
   const normalizedRoleValue = (user.role || user.profileType || "employee").toLowerCase();
   const mappedRole = normalizedRoleValue === "rh" || normalizedRoleValue === "hr" ? "employee" : normalizedRoleValue;
   const normalizedProfileValue = (user.profileType || user.role || "employee").toLowerCase();
-  const mappedProfile = normalizedProfileValue === "rh" || normalizedProfileValue === "hr" ? "employee" : normalizedProfileValue;
+  const mappedProfile = ["rh", "hr", "intern"].includes(normalizedProfileValue) ? "employee" : normalizedProfileValue;
   const role = mappedRole as User["role"];
   const profileType = mappedProfile as User["profileType"];
 
@@ -48,6 +48,8 @@ function getRedirectPath(user: User) {
       return "/dashboard/employee";
     case "accountant":
       return "/dashboard/accountant";
+    case "admin":
+      return "/admin";
     default:
       return "/dashboard/employee";
   }

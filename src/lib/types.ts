@@ -1,5 +1,6 @@
-export type UserRole = "student" | "employee" | "accountant";
+export type UserRole = "student" | "employee" | "accountant" | "intern" | "admin";
 export type UserGender = "male" | "female";
+export type VerificationMethod = "email" | "sms" | "whatsapp";
 
 export interface User {
   _id?: string;
@@ -8,8 +9,11 @@ export interface User {
   lastName: string;
   name: string;
   email: string;
+  phoneNumber?: string;
+  city?: string;
   role: UserRole;
   profileType: UserRole;
+  verificationMethod?: VerificationMethod;
   gender: UserGender;
   tenantId?: string;
   avatar?: string;
@@ -52,12 +56,16 @@ export interface SendCodeRequest {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber: string;
+  city: string;
+  verificationMethod: VerificationMethod;
   role: UserRole;
   gender: UserGender;
 }
 
 export interface VerifyCodeRequest {
   email: string;
+  phoneNumber?: string;
   code: string;
 }
 

@@ -4,7 +4,7 @@ import type { AxiosError } from "axios";
 import { CheckCircle2, ChevronRight, Loader2, Mail, ShieldCheck, UserRound } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { useAuth } from "@/hooks/useAuth";
-import type { RegisterRequest, SendCodeRequest, UserGender, UserRole } from "@/lib/types";
+import type { RegisterRequest, SendCodeRequest, UserGender, UserRole, VerificationMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type RegisterStep = "details" | "verification" | "password";
@@ -13,6 +13,9 @@ interface StepOneState {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber: string;
+  city: string;
+  verificationMethod: VerificationMethod;
   role: UserRole | "";
   gender: UserGender | "";
 }
@@ -26,11 +29,23 @@ const roleOptions: Array<{ value: UserRole; label: string; description: string }
   { value: "student", label: "Student", description: "Study planning, budget, and learning AI tools" },
   { value: "employee", label: "Employee", description: "Tasks, productivity, and workplace insights" },
   { value: "accountant", label: "Accountant", description: "Financial operations and accounting workflows" },
+  { value: "intern", label: "Intern", description: "Training tasks, supervision, and onboarding support" },
 ];
 
 const genderOptions: Array<{ value: UserGender; label: string }> = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
+];
+
+const cityOptions = [
+  { value: "Tunisia", label: "Tunisia", hint: "+21612345678" },
+  { value: "France", label: "France", hint: "+33123456789" },
+];
+
+const verificationMethodOptions: Array<{ value: VerificationMethod; label: string; description: string }> = [
+  { value: "email", label: "Email", description: "Receive OTP in your inbox" },
+  { value: "sms", label: "SMS", description: "Receive OTP by text message" },
+  { value: "whatsapp", label: "WhatsApp", description: "Receive OTP in WhatsApp" },
 ];
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,6 +74,9 @@ export default function Register() {
     firstName: "",
     lastName: "",
     email: "",
+    phoneNumber: "",
+    city: "Tunisia",
+    verificationMethod: "email",
     role: "",
     gender: "",
   });
@@ -85,7 +103,7 @@ export default function Register() {
   );
 
   const validateStepOne = () => {
-    if (!details.firstName.trim() || !details.lastName.trim() || !details.email.trim() || !details.role || !details.gender) {
+    if (!details.firstName.trim() || !details.lastName.trim() || !details.email.trim() || !details.phoneNumber.trim() || !details.city || !details.verificationMethod || !details.role || !details.gender) {
       return "All fields are required.";
     }
 
@@ -126,13 +144,16 @@ export default function Register() {
         firstName: details.firstName.trim(),
         lastName: details.lastName.trim(),
         email: details.email.trim().toLowerCase(),
+        phoneNumber: details.phoneNumber.trim(),
+        city: details.city,
+        verificationMethod: details.verificationMethod,
         role: details.role as UserRole,
         gender: details.gender as UserGender,
       };
 
       await apiClient.post("/auth/send-code", payload);
       setStep("verification");
-      setSuccessMessage("Verification code sent. Check your inbox.");
+      setSuccessMessage(`Verification code sent by ${details.verificationMethod}.`);
     } catch (error: unknown) {
       setError(getApiErrorMessage(error, "Failed to send verification code."));
     } finally {
@@ -155,6 +176,7 @@ export default function Register() {
     try {
       await apiClient.post("/auth/verify-code", {
         email: details.email.trim().toLowerCase(),
+        phoneNumber: details.phoneNumber.trim(),
         code: verificationCode,
       });
       setStep("password");
@@ -184,6 +206,9 @@ export default function Register() {
         firstName: details.firstName.trim(),
         lastName: details.lastName.trim(),
         email: details.email.trim().toLowerCase(),
+        phoneNumber: details.phoneNumber.trim(),
+        city: details.city,
+        verificationMethod: details.verificationMethod,
         role: details.role as UserRole,
         gender: details.gender as UserGender,
         password: passwords.password,
@@ -292,6 +317,52 @@ export default function Register() {
                 </div>
               </Field>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Phone Number">
+                  <input
+                    value={details.phoneNumber}
+                    onChange={(event) => setDetails((current) => ({ ...current, phoneNumber: event.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                    placeholder={details.city === "France" ? "+33123456789" : "+21612345678"}
+                  />
+                </Field>
+
+                <Field label="City">
+                  <select
+                    value={details.city}
+                    onChange={(event) => setDetails((current) => ({ ...current, city: event.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                  >
+                    {cityOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} ({option.hint})
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Verification Method">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {verificationMethodOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setDetails((current) => ({ ...current, verificationMethod: option.value }))}
+                      className={cn(
+                        "rounded-2xl border p-4 text-left transition-all",
+                        details.verificationMethod === option.value
+                          ? "border-violet-500 bg-violet-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-violet-300",
+                      )}
+                    >
+                      <p className="font-semibold text-slate-900">{option.label}</p>
+                      <p className="mt-2 text-xs text-slate-500 leading-5">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
               <Field label="Role">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {roleOptions.map((option) => (
@@ -348,7 +419,11 @@ export default function Register() {
             <form onSubmit={handleVerifyCode} className="space-y-6">
               <div className="rounded-3xl bg-slate-50 border border-slate-200 p-5">
                 <p className="text-sm text-slate-600">
-                  We sent a 6-digit code to <span className="font-semibold text-slate-900">{details.email}</span>.
+                  We sent a 6-digit code by <span className="font-semibold text-slate-900">{details.verificationMethod}</span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-slate-900">
+                    {details.verificationMethod === "email" ? details.email : details.phoneNumber}
+                  </span>.
                 </p>
               </div>
 

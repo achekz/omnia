@@ -1,9 +1,10 @@
 import { body, param, query, validationResult } from "express-validator";
 import { ApiError } from "./ApiResponse.js";
 
-const allowedRoles = ["student", "employee", "accountant"];
+const allowedRoles = ["admin", "employee", "accountant", "intern", "student"];
 const allowedGenders = ["male", "female"];
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const allowedVerificationMethods = ["email", "sms", "whatsapp"];
 
 export const validateSendCode = [
   body("firstName")
@@ -20,8 +21,20 @@ export const validateSendCode = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be student, employee, or accountant"),
+    .withMessage("Role must be admin, employee, accountant, intern, or student"),
+  body("phoneNumber")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required"),
+  body("city")
+    .trim()
+    .notEmpty()
+    .withMessage("City is required"),
+  body("verificationMethod")
+    .isIn(allowedVerificationMethods)
+    .withMessage("Verification method must be email, sms, or whatsapp"),
   body("gender")
+    .optional()
     .isIn(allowedGenders)
     .withMessage("Gender must be male or female"),
 ];
@@ -31,6 +44,11 @@ export const validateVerifyCode = [
     .isEmail()
     .normalizeEmail()
     .withMessage("Valid email is required"),
+  body("phoneNumber")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required when using sms or whatsapp"),
   body("code")
     .isLength({ min: 6, max: 6 })
     .matches(/^\d{6}$/)
@@ -52,8 +70,20 @@ export const validateRegister = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be student, employee, or accountant"),
+    .withMessage("Role must be admin, employee, accountant, intern, or student"),
+  body("phoneNumber")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required"),
+  body("city")
+    .trim()
+    .notEmpty()
+    .withMessage("City is required"),
+  body("verificationMethod")
+    .isIn(allowedVerificationMethods)
+    .withMessage("Verification method must be email, sms, or whatsapp"),
   body("gender")
+    .optional()
     .isIn(allowedGenders)
     .withMessage("Gender must be male or female"),
   body("password")

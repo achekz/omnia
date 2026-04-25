@@ -11,12 +11,12 @@ export const getTasks = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (req.tenantId) filter.tenantId = req.tenantId;
-  if (['employee', 'student'].includes(req.user.role)) {
+  if (['employee', 'student', 'intern'].includes(req.user.role)) {
     filter.assignedTo = req.user._id;
   }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
-  if (assignedTo && !['employee','student'].includes(req.user.role)) {
+  if (assignedTo && !['employee','student', 'intern'].includes(req.user.role)) {
     filter.assignedTo = assignedTo;
   }
 
@@ -50,7 +50,7 @@ export const createTask = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
   };
 
-  if (['student', 'employee'].includes(req.user.role)) {
+  if (['student', 'employee', 'intern'].includes(req.user.role)) {
     taskData.assignedTo = req.user._id;
   } else {
     taskData.assignedTo = assignedTo || req.user._id;
@@ -136,7 +136,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 export const getTaskStats = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.tenantId) filter.tenantId = req.tenantId;
-  if (['employee', 'student'].includes(req.user.role)) filter.assignedTo = req.user._id;
+  if (['employee', 'student', 'intern'].includes(req.user.role)) filter.assignedTo = req.user._id;
 
   const statusCounts = await Task.aggregate([
     { $match: filter },

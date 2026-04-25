@@ -1,16 +1,15 @@
 import User from "../models/User.js";
-import EmailVerificationCode from "../models/EmailVerificationCode.js";
+import VerificationCode from "../models/VerificationCode.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import {
-  sendEmailVerificationCode,
   sendPasswordResetCode,
   verifyEmailTransport,
 } from "../services/emailService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-
-const VERIFICATION_WINDOW_MS = 5 * 60 * 1000;
+import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
+import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -18,7 +17,7 @@ function generateVerificationCode() {
 
 function sanitizeUser(user) {
   const normalizedRole = ["rh", "hr"].includes(String(user.role || "").toLowerCase()) ? "employee" : user.role;
-  const normalizedProfileType = ["rh", "hr"].includes(String(user.profileType || "").toLowerCase()) ? "employee" : user.profileType;
+  const normalizedProfileType = ["rh", "hr", "intern"].includes(String(user.profileType || "").toLowerCase()) ? "employee" : user.profileType;
 
   return {
     _id: user._id,
@@ -26,6 +25,9 @@ function sanitizeUser(user) {
     lastName: user.lastName,
     name: user.name,
     email: user.email,
+    phoneNumber: user.phoneNumber,
+    city: user.city,
+    verificationMethod: user.verificationMethod,
     role: normalizedRole,
     profileType: normalizedProfileType,
     gender: user.gender,
@@ -38,7 +40,7 @@ function sanitizeUser(user) {
 }
 
 export const sendCode = asyncHandler(async (req, res) => {
-  const { firstName, lastName, role, gender } = req.body;
+  const { firstName, lastName, role, gender, phoneNumber, city, verificationMethod } = req.body;
   const email = req.body.email?.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email });
@@ -46,85 +48,83 @@ export const sendCode = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Email already registered");
   }
 
-  const code = generateVerificationCode();
-  const expiresAt = new Date(Date.now() + VERIFICATION_WINDOW_MS);
+  const phoneValidation = validatePhoneNumberByCity(city, phoneNumber);
+  if (!phoneValidation.valid) {
+    throw new ApiError(400, phoneValidation.message);
+  }
 
-  await EmailVerificationCode.deleteMany({ email });
-
-  const verification = new EmailVerificationCode({
-    firstName,
-    lastName,
-    email,
-    role,
-    gender,
-    expiresAt,
-  });
-
-  await verification.setCode(code);
-  await verification.save();
+  if (verificationMethod !== "email") {
+    const phoneUser = await User.findOne({ phoneNumber: phoneValidation.phoneNumber });
+    if (phoneUser) {
+      throw new ApiError(409, "Phone number already registered");
+    }
+  }
 
   try {
-    await sendEmailVerificationCode(email, code, firstName);
+    const { expiresAt, delivery } = await createAndSendVerificationCode({
+      purpose: "register",
+      firstName,
+      lastName,
+      email,
+      phoneNumber: phoneValidation.phoneNumber,
+      city: phoneValidation.normalizedCity,
+      role,
+      gender,
+      verificationMethod,
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          email,
+          phoneNumber: phoneValidation.phoneNumber,
+          city: phoneValidation.normalizedCity,
+          verificationMethod,
+          expiresAt,
+          delivery,
+        },
+        "Verification code sent",
+      ),
+    );
   } catch (error) {
     console.error("[AUTH] Failed to send verification code email:", {
       email,
+      phoneNumber,
+      city,
+      verificationMethod,
       message: error.message,
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
       attemptedModes: error.attemptedModes,
     });
-    const sslMessage = String(error.message || "").toLowerCase();
-    await EmailVerificationCode.deleteOne({ _id: verification._id });
-    if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
-      throw new ApiError(
-        500,
-        "Gmail SMTP handshake failed. Verify EMAIL_USER, use a Gmail App Password, and retry from a network that allows smtp.gmail.com.",
-      );
-    }
-    throw new ApiError(500, "Failed to send verification code");
+    throw new ApiError(500, error.message || "Failed to send verification code");
   }
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        email,
-        expiresAt,
-      },
-      "Verification code sent",
-    ),
-  );
 });
 
 export const verifyCode = asyncHandler(async (req, res) => {
   const code = req.body.code;
   const email = req.body.email?.trim().toLowerCase();
+  const phoneNumber = req.body.phoneNumber?.trim();
 
-  const verification = await EmailVerificationCode.findOne({ email }).select("+codeHash");
+  const result = await verifyOtpCode({
+    purpose: "register",
+    email,
+    phoneNumber,
+    code,
+  });
 
-  if (!verification) {
-    throw new ApiError(404, "Verification request not found");
+  if (!result.verified) {
+    throw new ApiError(result.reason === "Verification request not found" ? 404 : 400, result.reason);
   }
-
-  if (verification.expiresAt.getTime() < Date.now()) {
-    await EmailVerificationCode.deleteOne({ _id: verification._id });
-    throw new ApiError(400, "Verification code expired");
-  }
-
-  const isMatch = await verification.compareCode(code);
-  if (!isMatch) {
-    throw new ApiError(400, "Invalid verification code");
-  }
-
-  verification.verifiedAt = new Date();
-  await verification.save();
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
         email,
+        phoneNumber,
         verified: true,
       },
       "Email verified successfully",
@@ -133,7 +133,7 @@ export const verifyCode = asyncHandler(async (req, res) => {
 });
 
 export const register = asyncHandler(async (req, res) => {
-  const { firstName, lastName, role, gender, password } = req.body;
+  const { firstName, lastName, role, gender, password, phoneNumber, city, verificationMethod } = req.body;
   const email = req.body.email?.trim().toLowerCase();
 
   if (mongoose.connection.readyState !== 1) {
@@ -148,13 +148,13 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Email already registered");
   }
 
-  const verification = await EmailVerificationCode.findOne({ email });
+  const verification = await VerificationCode.findOne({ purpose: "register", email });
   if (!verification || !verification.verifiedAt) {
     throw new ApiError(400, "Email must be verified before registration");
   }
 
   if (verification.expiresAt.getTime() < Date.now()) {
-    await EmailVerificationCode.deleteOne({ _id: verification._id });
+    await VerificationCode.deleteOne({ _id: verification._id });
     throw new ApiError(400, "Verification session expired");
   }
 
@@ -162,7 +162,10 @@ export const register = asyncHandler(async (req, res) => {
     verification.firstName === firstName &&
     verification.lastName === lastName &&
     verification.role === role &&
-    verification.gender === gender;
+    verification.gender === gender &&
+    verification.phoneNumber === phoneNumber &&
+    verification.city === validatePhoneNumberByCity(city, phoneNumber).normalizedCity &&
+    verification.verificationMethod === verificationMethod;
 
   if (!payloadMatches) {
     throw new ApiError(400, "Registration details do not match the verified identity");
@@ -172,10 +175,13 @@ export const register = asyncHandler(async (req, res) => {
     firstName,
     lastName,
     email,
+    phoneNumber,
+    city: verification.city,
     password,
     role,
-    profileType: role,
+    profileType: role === "intern" ? "employee" : role,
     gender,
+    verificationMethod,
     isVerified: true,
     isActive: true,
   });
@@ -205,7 +211,7 @@ export const register = asyncHandler(async (req, res) => {
     database: mongoose.connection.name,
   });
 
-  await EmailVerificationCode.deleteMany({ email });
+  await VerificationCode.deleteMany({ purpose: "register", email });
 
   return res.status(201).json(
     new ApiResponse(
