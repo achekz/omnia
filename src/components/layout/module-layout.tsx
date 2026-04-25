@@ -103,24 +103,24 @@ const MODULES: NavModule[] = [
     items: [{ id: "cat-dash", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
   {
-    id: "rh",
-    label: "RH",
+    id: "employee-workspace",
+    label: "Employee",
     icon: <Users className="w-4 h-4" />,
-    bg: "bg-orange-500",
-    textColor: "text-orange-600",
-    activeSidebarStyle: "bg-orange-50 text-orange-600 font-semibold",
+    bg: "bg-sky-600",
+    textColor: "text-sky-600",
+    activeSidebarStyle: "bg-sky-50 text-sky-700 font-semibold",
     allowedProfiles: ["company", "employee"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
-      { id: "organisation", label: "Organisation", icon: <Building2 className="w-4 h-4" /> },
-      { id: "analytics-eng", label: "Analytics Engagement", icon: <BarChart3 className="w-4 h-4" /> },
-      { id: "analytics-rh", label: "Analytics RH", icon: <TrendingUp className="w-4 h-4" /> },
-      { id: "vision", label: "Vision & Stratégie", icon: <Target className="w-4 h-4" /> },
-      { id: "recrutement", label: "Recrutement", icon: <UserPlus className="w-4 h-4" /> },
-      { id: "employes", label: "Employés", icon: <Users className="w-4 h-4" />, path: "/rh/employes" },
-      { id: "projets", label: "Projets", icon: <Briefcase className="w-4 h-4" /> },
+      { id: "organisation", label: "Organization", icon: <Building2 className="w-4 h-4" />, path: "/employee/organization" },
+      { id: "analytics-eng", label: "Analytics Engagement", icon: <BarChart3 className="w-4 h-4" />, path: "/employee/analytics-engagement" },
+      { id: "analytics-rh", label: "Employee Analytics", icon: <TrendingUp className="w-4 h-4" />, path: "/employee/analytics" },
+      { id: "vision", label: "Vision & Strategy", icon: <Target className="w-4 h-4" />, path: "/employee/strategy" },
+      { id: "recruitment", label: "Recruitment", icon: <UserPlus className="w-4 h-4" />, path: "/employee/recruitment" },
+      { id: "employes", label: "Employees", icon: <Users className="w-4 h-4" />, path: "/employee/employees" },
+      { id: "projets", label: "Projects", icon: <Briefcase className="w-4 h-4" />, path: "/employee/projects" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
-      { id: "performances", label: "Performances", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
+      { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
@@ -258,8 +258,12 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const allowedModules = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(currentProfile));
   const activeModule = allowedModules.find((moduleItem) => moduleItem.id === activeModuleId) ?? allowedModules[0];
-  const visibleModules = allowedModules.slice(0, 7);
-  const moreModules = allowedModules.slice(7);
+  const visibleModules = currentProfile === "employee"
+    ? allowedModules.filter((moduleItem) => moduleItem.id !== "employee-workspace").slice(0, 7)
+    : allowedModules.slice(0, 7);
+  const moreModules = currentProfile === "employee"
+    ? allowedModules.filter((moduleItem) => moduleItem.id !== "employee-workspace").slice(7)
+    : allowedModules.slice(7);
 
   const handleModuleClick = (moduleId: string) => {
     const moduleItem = allowedModules.find((entry) => entry.id === moduleId);

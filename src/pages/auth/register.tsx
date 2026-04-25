@@ -37,8 +37,19 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 function getApiErrorMessage(error: unknown, fallback: string) {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return axiosError.response?.data?.message || fallback;
+  const axiosError = error as AxiosError<{ message?: string; details?: string; code?: string }>;
+  const status = axiosError.response?.status;
+  const data = axiosError.response?.data;
+
+  if (status === 503 && data?.code === "ATLAS_IP_NOT_WHITELISTED") {
+    return "MongoDB Atlas blocked this IP. Add your current IP in Atlas Network Access, then restart the backend.";
+  }
+
+  if (status === 503 && data?.details) {
+    return data.details;
+  }
+
+  return data?.message || fallback;
 }
 
 export default function Register() {

@@ -15,13 +15,17 @@ function getXaiApiKey() {
 }
 
 function getRoleInstruction(role) {
-  switch (role) {
+  const normalizedRole = String(role || "").toLowerCase();
+
+  switch (normalizedRole) {
+    case "rh":
+    case "hr":
+    case "employee":
+      return "User role is employee. Answer like a productivity assistant. Focus on execution, organization, and efficiency.";
     case "student":
       return "User role is student. Answer like a study assistant. Be clear, structured, and educational.";
     case "accountant":
       return "User role is accountant. Answer like a finance assistant. Be precise, practical, and business-focused.";
-    case "employee":
-      return "User role is employee. Answer like a productivity assistant. Focus on execution, organization, and efficiency.";
     default:
       return "Answer like a professional AI assistant. Be concise, helpful, and actionable.";
   }

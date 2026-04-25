@@ -2,15 +2,22 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import errorHandler from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimiter.js';
+import requireDatabase from './middleware/requireDatabase.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import dashboardRoutes from './routes/dashboard.js';
+import financeRoutes from './routes/finance.js';
+import mlRoutes from './routes/ml.js';
+import notificationRoutes from './routes/notifications.js';
+import teamRoutes from './routes/team.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.routes.js';
 import searchRoutes from './routes/search.routes.js';
@@ -19,6 +26,13 @@ import searchRoutes from './routes/search.routes.js';
 dotenv.config();
 
 const app = express();
+
+function setMongoStatus(status) {
+  app.locals.mongoStatus = {
+    ...app.locals.mongoStatus,
+    ...status,
+  };
+}
 
 // Middleware - Production Security Stack
 app.use(helmet({
@@ -48,17 +62,74 @@ app.use((req, res, next) => {
   next();
 });
 
+setMongoStatus({
+  connected: false,
+  code: 'MONGO_NOT_INITIALIZED',
+  message: 'MongoDB connection not initialized',
+});
+
+mongoose.connection.on('connected', () => {
+  setMongoStatus({
+    connected: true,
+    code: 'MONGO_CONNECTED',
+    message: 'Connected to MongoDB',
+  });
+});
+
+mongoose.connection.on('disconnected', () => {
+  setMongoStatus({
+    connected: false,
+    code: 'MONGO_CONNECTION_LOST',
+    message: 'MongoDB connection was lost. Restart the backend and verify Atlas Network Access.',
+  });
+});
+
+mongoose.connection.on('reconnected', () => {
+  setMongoStatus({
+    connected: true,
+    code: 'MONGO_CONNECTED',
+    message: 'Connected to MongoDB',
+  });
+});
+
+mongoose.connection.on('error', (error) => {
+  setMongoStatus({
+    connected: false,
+    code: 'MONGO_CONNECTION_ERROR',
+    message: error.message || 'MongoDB connection error',
+  });
+});
+
 // Health check
-app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
+app.get('/health', (req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1;
+
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? 'OK' : 'DEGRADED',
+    timestamp: new Date(),
+    database: {
+      connected: dbConnected,
+      name: mongoose.connection.name || null,
+      readyState: mongoose.connection.readyState,
+      code: app.locals.mongoStatus.code,
+      message: app.locals.mongoStatus.message,
+    },
+  });
+});
 
 // Production Routes with RBAC & Multi-Tenant
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);  // ADMIN only - authorize('ADMIN')
+app.use('/api/auth', requireDatabase, authRoutes);
+app.use('/api/users', requireDatabase, userRoutes);
+app.use('/api/admin', requireDatabase, adminRoutes);  // ADMIN only - authorize('ADMIN')
 app.use('/api/ai', aiRoutes);
-app.use('/api/tasks', taskRoutes);
+app.use('/api/dashboard', requireDatabase, dashboardRoutes);
+app.use('/api/finance', requireDatabase, financeRoutes);
+app.use('/api/ml', requireDatabase, mlRoutes);
+app.use('/api/notifications', requireDatabase, notificationRoutes);
+app.use('/api/tasks', requireDatabase, taskRoutes);
+app.use('/api/team', requireDatabase, teamRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api/search', requireDatabase, searchRoutes);
 
 // Global error handler
 app.use(errorHandler);
@@ -66,12 +137,29 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
-  await connectDB();
+  const dbResult = await connectDB();
+  const allowStartWithoutDb = process.env.ALLOW_START_WITHOUT_DB !== 'false';
+
+  setMongoStatus({
+    connected: dbResult.connected,
+    code: dbResult.connected ? 'MONGO_CONNECTED' : (dbResult.errorCode || 'MONGO_CONNECTION_FAILED'),
+    message: dbResult.connected
+      ? `Connected to MongoDB${dbResult.isFallback ? ' via fallback URI' : ''}`
+      : (dbResult.userMessage || dbResult.error?.message || 'MongoDB connection failed'),
+  });
+
+  if (!dbResult.connected && !allowStartWithoutDb) {
+    throw dbResult.error || new Error('MongoDB connection failed');
+  }
 
   app.listen(PORT, () => {
     console.log(`🚀 OmniAI SaaS Server running on port ${PORT}`);
-    console.log(`📍 MongoDB: ${process.env.MONGO_URI?.slice(0, 50)}...`);
-    console.log('✅ All systems nominal');
+    console.log(`📍 MongoDB: ${(dbResult.uriUsed || process.env.MONGO_URI || 'not configured').slice(0, 50)}...`);
+    if (dbResult.connected) {
+      console.log('✅ All systems nominal');
+    } else {
+      console.warn('⚠️ Server started without MongoDB. Database routes will return 503 until the connection is available.');
+    }
   });
 }
 

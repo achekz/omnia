@@ -29,7 +29,6 @@ export default function EmployeeDashboard() {
         <div className="mb-8 flex justify-between items-end gap-4">
           <div>
             <h2 className="text-3xl font-display font-bold text-foreground">My Workspace</h2>
-            <p className="text-muted-foreground mt-1">Manage your tasks and view productivity insights.</p>
           </div>
           <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
             <Plus className="w-5 h-5" />

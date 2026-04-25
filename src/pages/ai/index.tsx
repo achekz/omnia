@@ -37,7 +37,7 @@ export default function AIDashboard() {
 
   const domains = [
     { label: "Ventes", icon: <BarChart3 className="w-4 h-4 text-emerald-500" /> },
-    { label: "RH", icon: <Users className="w-4 h-4 text-orange-500" /> },
+    { label: "Employee", icon: <Users className="w-4 h-4 text-sky-500" /> },
     { label: "CRM", icon: <Target className="w-4 h-4 text-blue-500" /> },
     { label: "Analyses", icon: <Activity className="w-4 h-4 text-purple-500" /> },
   ];

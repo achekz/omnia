@@ -17,14 +17,17 @@ function generateVerificationCode() {
 }
 
 function sanitizeUser(user) {
+  const normalizedRole = ["rh", "hr"].includes(String(user.role || "").toLowerCase()) ? "employee" : user.role;
+  const normalizedProfileType = ["rh", "hr"].includes(String(user.profileType || "").toLowerCase()) ? "employee" : user.profileType;
+
   return {
     _id: user._id,
     firstName: user.firstName,
     lastName: user.lastName,
     name: user.name,
     email: user.email,
-    role: user.role,
-    profileType: user.profileType,
+    role: normalizedRole,
+    profileType: normalizedProfileType,
     gender: user.gender,
     isVerified: user.isVerified,
     avatar: user.avatar,
@@ -69,8 +72,16 @@ export const sendCode = asyncHandler(async (req, res) => {
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
+      attemptedModes: error.attemptedModes,
     });
+    const sslMessage = String(error.message || "").toLowerCase();
     await EmailVerificationCode.deleteOne({ _id: verification._id });
+    if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
+      throw new ApiError(
+        500,
+        "Gmail SMTP handshake failed. Verify EMAIL_USER, use a Gmail App Password, and retry from a network that allows smtp.gmail.com.",
+      );
+    }
     throw new ApiError(500, "Failed to send verification code");
   }
 
@@ -277,7 +288,15 @@ export const forgotPassword = asyncHandler(async (req, res) => {
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
+      attemptedModes: error.attemptedModes,
     });
+    const sslMessage = String(error.message || "").toLowerCase();
+    if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
+      throw new ApiError(
+        500,
+        "Gmail SMTP handshake failed. Verify EMAIL_USER, use a Gmail App Password, and retry from a network that allows smtp.gmail.com.",
+      );
+    }
     throw new ApiError(500, "Failed to send reset code");
   }
 
@@ -449,7 +468,15 @@ export const testEmail = asyncHandler(async (req, res) => {
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
+      attemptedModes: error.attemptedModes,
     });
+    const sslMessage = String(error.message || "").toLowerCase();
+    if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
+      throw new ApiError(
+        500,
+        "Gmail SMTP handshake failed. Verify EMAIL_USER, use a Gmail App Password, and retry from a network that allows smtp.gmail.com.",
+      );
+    }
     throw new ApiError(500, "Failed to send test email");
   }
 });

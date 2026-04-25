@@ -6,7 +6,7 @@ import apiClient from "@/lib/api-client";
 
 const QUICK_CHIPS = [
   { label: "Ventes", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-  { label: "RH", icon: <Users className="w-3.5 h-3.5" /> },
+  { label: "Employee", icon: <Users className="w-3.5 h-3.5" /> },
   { label: "CRM", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
   { label: "Analyses", icon: <BarChart3 className="w-3.5 h-3.5" /> },
 ];

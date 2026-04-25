@@ -20,8 +20,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 function normalizeUser(user: User): User {
   const firstName = user.firstName || user.name?.split(" ")[0] || "User";
   const lastName = user.lastName || user.name?.split(" ").slice(1).join(" ") || "";
-  const role = user.role || user.profileType || "employee";
-  const profileType = user.profileType || user.role || "employee";
+  const normalizedRoleValue = (user.role || user.profileType || "employee").toLowerCase();
+  const mappedRole = normalizedRoleValue === "rh" || normalizedRoleValue === "hr" ? "employee" : normalizedRoleValue;
+  const normalizedProfileValue = (user.profileType || user.role || "employee").toLowerCase();
+  const mappedProfile = normalizedProfileValue === "rh" || normalizedProfileValue === "hr" ? "employee" : normalizedProfileValue;
+  const role = mappedRole as User["role"];
+  const profileType = mappedProfile as User["profileType"];
 
   return {
     ...user,
@@ -50,8 +54,19 @@ function getRedirectPath(user: User) {
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return axiosError.response?.data?.message || fallback;
+  const axiosError = error as AxiosError<{ message?: string; details?: string; code?: string }>;
+  const status = axiosError.response?.status;
+  const data = axiosError.response?.data;
+
+  if (status === 503 && data?.code === "ATLAS_IP_NOT_WHITELISTED") {
+    return "MongoDB Atlas blocked this IP. Add your current IP in Atlas Network Access, then restart the backend.";
+  }
+
+  if (status === 503 && data?.details) {
+    return data.details;
+  }
+
+  return data?.message || fallback;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

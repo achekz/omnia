@@ -22,6 +22,7 @@ import MyPerformancePage from "./pages/performance/my-performance";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
 import HelpCenterPage from "./pages/help/center";
+import EmployeeSectionPage from "./pages/employee/section";
 
 interface AppRoute {
   path: string;
@@ -104,6 +105,13 @@ const routes: AppRoute[] = [
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/performance", component: MyPerformancePage, protected: true },
   { path: "/rh/employes", component: RHEmployeesPage, protected: true },
+  { path: "/employee/organization", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/analytics-engagement", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/analytics", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/strategy", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/recruitment", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/employees", component: EmployeeSectionPage, protected: true },
+  { path: "/employee/projects", component: EmployeeSectionPage, protected: true },
   { path: "/paie/dashboard", component: PaieDashboardPage, protected: true },
   { path: "/help", component: HelpCenterPage, protected: true },
 ];

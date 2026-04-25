@@ -7,6 +7,14 @@ const { Schema } = mongoose;
 const allowedRoles = ["student", "employee", "accountant"];
 const allowedGenders = ["male", "female"];
 
+function normalizeProfileValue(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "rh" || normalized === "hr") {
+    return "employee";
+  }
+  return normalized;
+}
+
 const userSchema = new Schema(
   {
     firstName: {
@@ -146,12 +154,15 @@ userSchema.methods.comparePassword = async function comparePassword(candidatePas
 };
 
 userSchema.methods.generateAccessToken = function generateAccessToken() {
+  const normalizedRole = normalizeProfileValue(this.role);
+  const normalizedProfileType = normalizeProfileValue(this.profileType);
+
   return jwt.sign(
     {
       id: this._id,
-      role: this.role,
-      profileType: this.profileType,
-      aiProfile: this.role,
+      role: normalizedRole,
+      profileType: normalizedProfileType,
+      aiProfile: normalizedRole,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || "15m" },
