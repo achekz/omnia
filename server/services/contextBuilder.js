@@ -56,7 +56,8 @@ export async function getContext(user) {
 
     // Default for other roles
     return {
-    userType: user.role || "USER",\n      userRole: user.role,
+      userType: user.role || "USER",
+      userRole: user.role,
       timestamp: new Date(),
     };
 

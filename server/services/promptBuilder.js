@@ -9,7 +9,10 @@ export function buildPrompt(user, message, context) {
   }
 
   const roleDescriptions = {
-    EMPLOYEE: "You are a productivity assistant for an employee",\n    COMPANY_ADMIN: "You are a strategic consultant for company management",\n    CABINET_ADMIN: "You are a financial advisor for accounting",\n    STUDENT: "You are an academic assistant for students"
+    EMPLOYEE: "You are a productivity assistant for an employee",
+    COMPANY_ADMIN: "You are a strategic consultant for company management",
+    CABINET_ADMIN: "You are a financial advisor for accounting",
+    STUDENT: "You are an academic assistant for students",
   };
 
   const roleDesc = roleDescriptions[user?.role] || "You are a general assistant";

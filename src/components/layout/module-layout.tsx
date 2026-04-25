@@ -43,7 +43,7 @@ interface ModuleLayoutProps {
   onItemChange?: (moduleId: string, itemId: string) => void;
 }
 
-type ProfileType = "company" | "cabinet" | "employee" | "student";
+type ProfileType = "company" | "cabinet" | "employee" | "student" | "accountant";
 
 interface NavItem {
   id: string;
@@ -122,6 +122,21 @@ const MODULES: NavModule[] = [
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
+    ],
+  },
+  {
+    id: "accounting-workspace",
+    label: "Accounting",
+    icon: <Calculator className="w-4 h-4" />,
+    bg: "bg-emerald-600",
+    textColor: "text-emerald-600",
+    activeSidebarStyle: "bg-emerald-50 text-emerald-700 font-semibold",
+    allowedProfiles: ["accountant"],
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/accountant" },
+      { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
+      { id: "payroll", label: "Payroll", icon: <FileText className="w-4 h-4" />, path: "/paie/dashboard" },
+      { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
   {
@@ -258,12 +273,16 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const allowedModules = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(currentProfile));
   const activeModule = allowedModules.find((moduleItem) => moduleItem.id === activeModuleId) ?? allowedModules[0];
-  const visibleModules = currentProfile === "employee"
-    ? allowedModules.filter((moduleItem) => moduleItem.id !== "employee-workspace").slice(0, 7)
-    : allowedModules.slice(0, 7);
-  const moreModules = currentProfile === "employee"
-    ? allowedModules.filter((moduleItem) => moduleItem.id !== "employee-workspace").slice(7)
-    : allowedModules.slice(7);
+  const hiddenPrimaryModuleId = currentProfile === "employee"
+    ? "employee-workspace"
+    : currentProfile === "accountant"
+      ? "accounting-workspace"
+      : null;
+  const filteredModules = hiddenPrimaryModuleId
+    ? allowedModules.filter((moduleItem) => moduleItem.id !== hiddenPrimaryModuleId)
+    : allowedModules;
+  const visibleModules = filteredModules.slice(0, 7);
+  const moreModules = filteredModules.slice(7);
 
   const handleModuleClick = (moduleId: string) => {
     const moduleItem = allowedModules.find((entry) => entry.id === moduleId);

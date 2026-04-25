@@ -32,7 +32,9 @@ const createDemoAccounts = async () => {
       name: 'Company Admin',
       email: 'company@demo.com',
       password: 'demo123', // Will be hashed by pre-save hook
-      role: 'COMPANY_ADMIN',\n      profileType: 'company',\n      tenantId: techCorp._id,
+      role: 'COMPANY_ADMIN',
+      profileType: 'company',
+      tenantId: techCorp._id,
       isActive: true,
     });
     console.log('✅ Created company@demo.com (password: demo123)');
@@ -46,7 +48,9 @@ const createDemoAccounts = async () => {
       name: 'Tech Manager',
       email: 'manager@techcorp.com',
       password: 'demo123',
-      role: 'MANAGER',\n      profileType: 'employee',\n      tenantId: techCorp._id,
+      role: 'MANAGER',
+      profileType: 'employee',
+      tenantId: techCorp._id,
       isActive: true,
     });
     console.log('✅ Created manager@techcorp.com (password: demo123)');
@@ -56,7 +60,9 @@ const createDemoAccounts = async () => {
       name: 'Alice Employee',
       email: 'employee@demo.com',
       password: 'demo123',
-      role: 'USER',\n      profileType: 'employee',\n      tenantId: techCorp._id,
+      role: 'USER',
+      profileType: 'employee',
+      tenantId: techCorp._id,
       isActive: true,
     });
     console.log('✅ Created employee@demo.com (password: demo123)');
@@ -76,7 +82,9 @@ const createDemoAccounts = async () => {
       name: 'Cabinet Admin',
       email: 'cabinet@demo.com',
       password: 'demo123',
-      role: 'CABINET_ADMIN',\n      profileType: 'cabinet',\n      tenantId: cabinetOrg._id,
+      role: 'CABINET_ADMIN',
+      profileType: 'cabinet',
+      tenantId: cabinetOrg._id,
       isActive: true,
     });
     console.log('✅ Created cabinet@demo.com (password: demo123)');
@@ -90,7 +98,9 @@ const createDemoAccounts = async () => {
       name: 'Solo Employee',
       email: 'emp.solo@gmail.com',
       password: 'demo123',
-      role: 'USER',\n      profileType: 'employee',\n      isActive: true,
+      role: 'USER',
+      profileType: 'employee',
+      isActive: true,
     });
     console.log('✅ Created emp.solo@gmail.com (password: demo123)');
 
@@ -98,7 +108,9 @@ const createDemoAccounts = async () => {
       name: 'Demo Student',
       email: 'student@demo.com',
       password: 'demo123',
-      role: 'USER',\n      profileType: 'student',\n      isActive: true,
+      role: 'USER',
+      profileType: 'student',
+      isActive: true,
     });
     console.log('✅ Created student@demo.com (password: demo123)');
 
