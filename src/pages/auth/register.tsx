@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "wouter";
 import type { AxiosError } from "axios";
-import { CheckCircle2, ChevronRight, Loader2, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight, Loader2, Mail, ShieldCheck, UserRound } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { useAuth } from "@/hooks/useAuth";
 import type { RegisterRequest, SendCodeRequest, UserGender, UserRole, VerificationMethod } from "@/lib/types";
@@ -221,6 +221,13 @@ export default function Register() {
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <section className="rounded-[32px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 lg:p-10">
           <div className="mb-8">
+            <Link
+              href="/"
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-purple-300 hover:text-purple-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour à l'accueil
+            </Link>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">Create Account</p>
             <h1 className="mt-3 text-3xl sm:text-4xl font-display font-bold text-slate-900 dark:text-white">
               Registration built for real users

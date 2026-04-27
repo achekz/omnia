@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import apiClient from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Lock, Mail, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { User } from "@/lib/types";
@@ -83,6 +83,14 @@ export default function Login() {
       <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-24 relative z-10 bg-white dark:bg-gray-950">
         <div className="max-w-md w-full mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <Link
+              href="/"
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-purple-300 hover:text-purple-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour à l'accueil
+            </Link>
+
             <button
               type="button"
               onClick={() => {
