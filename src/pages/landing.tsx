@@ -4,39 +4,15 @@ import {
   BarChart3,
   BookOpen,
   Building2,
-  Factory,
   Globe,
-  Handshake,
-  HardHat,
-  Landmark,
-  Megaphone,
-  Package,
-  Calculator,
   ShieldCheck,
-  ShoppingCart,
   Sparkles,
   Star,
   Users,
-  Wrench,
   Zap,
 } from "lucide-react";
 
 export default function LandingPage() {
-  const modules = [
-    { name: "Ressources Humaines", icon: <Users className="w-4 h-4" /> },
-    { name: "Trésorerie", icon: <Landmark className="w-4 h-4" /> },
-    { name: "Ventes et Achats", icon: <ShoppingCart className="w-4 h-4" /> },
-    { name: "Comptabilité", icon: <Calculator className="w-4 h-4" /> },
-    { name: "CRM", icon: <Handshake className="w-4 h-4" /> },
-    { name: "Inventaire", icon: <Package className="w-4 h-4" /> },
-    { name: "Immobilier", icon: <Building2 className="w-4 h-4" /> },
-    { name: "Catalogue", icon: <BookOpen className="w-4 h-4" /> },
-    { name: "Mécanique", icon: <Wrench className="w-4 h-4" /> },
-    { name: "BTP", icon: <HardHat className="w-4 h-4" /> },
-    { name: "Manufacturing", icon: <Factory className="w-4 h-4" /> },
-    { name: "Marketing", icon: <Megaphone className="w-4 h-4" /> },
-  ];
-
   const features = [
     {
       title: "Machine Learning Prédictif",
@@ -105,15 +81,8 @@ export default function LandingPage() {
               <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
             </div>
 
-            <div className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Accueil</a>
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Produits</a>
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Tarifs</a>
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Contact</a>
-            </div>
-
             <div className="flex items-center gap-6">
-              <a href="#" className="hidden md:block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Documentation</a>
+              <a href="/register" className="hidden md:block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium transition-colors">Créer un compte</a>
               <a href="/login" className="gradient-bg rounded-full px-6 py-2.5 text-white font-medium hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5">
                 Se connecter
               </a>
@@ -133,40 +102,13 @@ export default function LandingPage() {
             <div className="gradient-bg text-white rounded-full px-8 py-3 inline-block text-3xl md:text-4xl font-bold mb-8 shadow-xl shadow-purple-500/20 transform -rotate-2">
               Une seule plateforme.
             </div>
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Gérez votre entreprise de A à Z : ML prédictif, gestion des tâches, comptabilité, analyses IA et bien plus.
-            </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a href="/login" className="gradient-bg rounded-full px-8 py-4 text-white text-lg font-bold hover:shadow-xl hover:shadow-purple-500/30 transition-all hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
+              <a href="/register" className="gradient-bg rounded-full px-8 py-4 text-white text-lg font-bold hover:shadow-xl hover:shadow-purple-500/30 transition-all hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
                 Commencer gratuitement
                 <ArrowRight className="w-5 h-5" />
               </a>
-              <button className="px-8 py-4 rounded-full border-2 border-gray-200 text-gray-700 font-bold text-lg hover:border-gray-300 hover:bg-gray-50 transition-all w-full sm:w-auto">
-                Voir la démo
-              </button>
             </div>
           </motion.div>
-        </div>
-      </section>
-
-      <section className="py-12 bg-white border-y border-gray-100 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm font-bold text-gray-400 uppercase tracking-widest mb-8">Plus de 12 modules intégrés</p>
-          <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-            {modules.map((moduleEntry, index) => (
-              <motion.div
-                key={moduleEntry.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="rounded-full border border-gray-200 bg-white px-5 py-2.5 flex items-center gap-2.5 text-sm font-medium text-gray-600 hover:border-purple-400 hover:text-purple-600 hover:shadow-md hover:shadow-purple-500/10 transition-all cursor-default"
-              >
-                <div className="text-purple-500">{moduleEntry.icon}</div>
-                {moduleEntry.name}
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -232,7 +174,7 @@ export default function LandingPage() {
           <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">Prêt à transformer votre gestion ?</h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">Rejoignez des milliers d&apos;entreprises qui font confiance à Omni AI pour piloter leur croissance.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="/login" className="bg-white text-purple-600 rounded-full px-8 py-4 text-lg font-bold hover:shadow-xl transition-all hover:-translate-y-1 text-center">
+            <a href="/register" className="bg-white text-purple-600 rounded-full px-8 py-4 text-lg font-bold hover:shadow-xl transition-all hover:-translate-y-1 text-center">
               Créer un compte gratuit
             </a>
             <button className="bg-purple-900/30 text-white border border-white/20 rounded-full px-8 py-4 text-lg font-bold hover:bg-purple-900/50 transition-all text-center">
