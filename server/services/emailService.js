@@ -93,13 +93,14 @@ function shouldRetryWithAlternateMode(error) {
   ].some((pattern) => message.includes(pattern) || String(error?.code || "").toLowerCase().includes(pattern));
 }
 
-async function sendWithMode({ mode, to, subject, html, from }) {
+async function sendWithMode({ mode, to, subject, html, text, from }) {
   const smtpTransporter = getTransporter(mode);
   const info = await smtpTransporter.sendMail({
     from,
     to,
     subject,
     html,
+    text,
   });
 
   console.log(
@@ -128,7 +129,7 @@ function getTransportModesForError(error) {
   return [];
 }
 
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, text }) {
   const { user } = getEmailCredentials();
   const from = `"Omni AI" <${user}>`;
 
@@ -147,6 +148,7 @@ async function sendEmail({ to, subject, html }) {
       to,
       subject,
       html,
+      text,
       from,
     });
   } catch (error) {
@@ -173,6 +175,7 @@ async function sendEmail({ to, subject, html }) {
           to,
           subject,
           html,
+          text,
           from,
         });
       } catch (retryError) {
@@ -261,6 +264,7 @@ export const sendEmailVerificationCode = async (email, code, firstName = "there"
 };
 
 export const sendPasswordResetCode = async (email, code, firstName = "there") => {
+  const textContent = `Your verification code is: ${code}`;
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px;">
       <h2 style="margin: 0 0 16px; color: #111827;">Reset your password</h2>
@@ -274,7 +278,8 @@ export const sendPasswordResetCode = async (email, code, firstName = "there") =>
 
   return sendEmail({
     to: email,
-    subject: "Your Omni AI password reset code",
+    subject: "Password Reset Code",
+    text: textContent,
     html: htmlContent,
   });
 };

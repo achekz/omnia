@@ -61,7 +61,7 @@ const userSchema = new Schema(
     },
     verificationMethod: {
       type: String,
-      enum: ["email", "sms", "whatsapp"],
+      enum: ["email"],
       default: "email",
     },
     gender: {

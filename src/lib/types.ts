@@ -1,6 +1,6 @@
 export type UserRole = "student" | "employee" | "comptable" | "stagiaire" | "admin";
 export type UserGender = "male" | "female";
-export type VerificationMethod = "email" | "sms" | "whatsapp";
+export type VerificationMethod = "email";
 
 export interface User {
   _id?: string;

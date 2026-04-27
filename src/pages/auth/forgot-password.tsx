@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import type { AxiosError } from "axios";
-import { ArrowRight, Loader2, Mail } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Phone } from "lucide-react";
 import apiClient from "@/lib/api-client";
 
 const RESET_EMAIL_STORAGE_KEY = "omni_ai_reset_email";
@@ -15,6 +15,7 @@ function getErrorMessage(error: unknown) {
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function ForgotPasswordPage() {
       sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, email.trim().toLowerCase());
       sessionStorage.removeItem(RESET_VERIFIED_STORAGE_KEY);
       setSuccess("Reset code sent. Check your inbox.");
-      setLocation("/verify-reset-code");
+      setLocation("/verify-code");
     } catch (error: unknown) {
       setError(getErrorMessage(error));
     } finally {
@@ -44,7 +45,7 @@ export default function ForgotPasswordPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">Forgot Password</p>
         <h1 className="mt-3 text-3xl font-display font-bold text-slate-900 dark:text-white">Recover your account</h1>
         <p className="mt-3 text-slate-500 dark:text-gray-400">
-          Enter the email address linked to your account and we&apos;ll send a 6-digit reset code.
+          Enter the email address linked to your account and we&apos;ll send a 6-digit reset code by email only.
         </p>
 
         {error && (
@@ -73,6 +74,21 @@ export default function ForgotPasswordPage() {
                 required
               />
             </div>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-800 dark:text-gray-200">Phone number (optional)</span>
+            <div className="relative">
+              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(event) => setPhoneNumber(event.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                placeholder="+216 ..."
+              />
+            </div>
+            <span className="mt-2 block text-xs text-slate-500">This field is not used for verification. The reset code is sent by email.</span>
           </label>
 
           <button

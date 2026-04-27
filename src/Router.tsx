@@ -6,6 +6,9 @@ import NotFound from "./pages/not-found";
 import LandingPage from "./pages/landing";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
+import ForgotPasswordPage from "./pages/auth/forgot-password";
+import VerifyResetCodePage from "./pages/auth/verify-reset-code";
+import ResetPasswordPage from "./pages/auth/reset-password";
 import AdminDashboard from "./pages/AdminDashboard";
 import AccountantDashboard from "./pages/AccountantDashboard";
 import DashboardHub from "./pages/dashboard";
@@ -144,6 +147,18 @@ function Router() {
         </Route>
         <Route path="/register">
           <PublicAuthRoute component={Register} />
+        </Route>
+        <Route path="/forgot-password">
+          <PublicAuthRoute component={ForgotPasswordPage} />
+        </Route>
+        <Route path="/verify-code">
+          <PublicAuthRoute component={VerifyResetCodePage} />
+        </Route>
+        <Route path="/verify-reset-code">
+          <PublicAuthRoute component={VerifyResetCodePage} />
+        </Route>
+        <Route path="/reset-password">
+          <PublicAuthRoute component={ResetPasswordPage} />
         </Route>
         {routes.map(({ path, component: Component, protected: isProtected, roles }) => (
           <Route key={path} path={path}>

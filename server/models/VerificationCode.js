@@ -12,6 +12,11 @@ const verificationCodeSchema = new Schema(
       required: true,
       index: true,
     },
+    type: {
+      type: String,
+      enum: ["registration", "presence", "password_reset"],
+      index: true,
+    },
     email: {
       type: String,
       lowercase: true,
@@ -29,7 +34,8 @@ const verificationCodeSchema = new Schema(
     },
     verificationMethod: {
       type: String,
-      enum: ["email", "sms", "whatsapp"],
+      enum: ["email"],
+      default: "email",
       required: true,
     },
     firstName: {
@@ -61,6 +67,12 @@ const verificationCodeSchema = new Schema(
     verifiedAt: {
       type: Date,
       default: null,
+    },
+    attempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
     },
     consumedAt: {
       type: Date,

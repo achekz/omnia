@@ -5,7 +5,7 @@ import { getAllowedRoles } from "./roleNormalization.js";
 const allowedRoles = getAllowedRoles();
 const allowedGenders = ["male", "female"];
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-const allowedVerificationMethods = ["email", "sms", "whatsapp"];
+const allowedVerificationMethods = ["email"];
 
 export const validateSendCode = [
   body("firstName")
@@ -33,7 +33,7 @@ export const validateSendCode = [
     .withMessage("City is required"),
   body("verificationMethod")
     .isIn(allowedVerificationMethods)
-    .withMessage("Verification method must be email, sms, or whatsapp"),
+    .withMessage("Verification method must be email"),
   body("gender")
     .optional()
     .isIn(allowedGenders)
@@ -49,7 +49,7 @@ export const validateVerifyCode = [
     .optional()
     .trim()
     .notEmpty()
-    .withMessage("Phone number is required when using sms or whatsapp"),
+    .withMessage("Phone number must not be empty when provided"),
   body("code")
     .isLength({ min: 6, max: 6 })
     .matches(/^\d{6}$/)
@@ -82,7 +82,7 @@ export const validateRegister = [
     .withMessage("City is required"),
   body("verificationMethod")
     .isIn(allowedVerificationMethods)
-    .withMessage("Verification method must be email, sms, or whatsapp"),
+    .withMessage("Verification method must be email"),
   body("gender")
     .optional()
     .isIn(allowedGenders)

@@ -41,12 +41,6 @@ const cityOptions = [
   { value: "France", label: "France", hint: "+33123456789" },
 ];
 
-const verificationMethodOptions: Array<{ value: VerificationMethod; label: string; description: string }> = [
-  { value: "email", label: "Email", description: "Receive OTP in your inbox" },
-  { value: "sms", label: "SMS", description: "Receive OTP by text message" },
-  { value: "whatsapp", label: "WhatsApp", description: "Receive OTP in WhatsApp" },
-];
-
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -145,14 +139,14 @@ export default function Register() {
         email: details.email.trim().toLowerCase(),
         phoneNumber: details.phoneNumber.trim(),
         city: details.city,
-        verificationMethod: details.verificationMethod,
+        verificationMethod: "email",
         role: details.role as UserRole,
         gender: details.gender as UserGender,
       };
 
       await apiClient.post("/auth/send-code", payload);
       setStep("verification");
-      setSuccessMessage(`Verification code sent by ${details.verificationMethod}.`);
+      setSuccessMessage("Verification code sent by email.");
     } catch (error: unknown) {
       setError(getApiErrorMessage(error, "Failed to send verification code."));
     } finally {
@@ -207,7 +201,7 @@ export default function Register() {
         email: details.email.trim().toLowerCase(),
         phoneNumber: details.phoneNumber.trim(),
         city: details.city,
-        verificationMethod: details.verificationMethod,
+        verificationMethod: "email",
         role: details.role as UserRole,
         gender: details.gender as UserGender,
         password: passwords.password,
@@ -342,23 +336,9 @@ export default function Register() {
               </div>
 
               <Field label="Verification Method">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {verificationMethodOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setDetails((current) => ({ ...current, verificationMethod: option.value }))}
-                      className={cn(
-                        "rounded-2xl border p-4 text-left transition-all",
-                        details.verificationMethod === option.value
-                          ? "border-violet-500 bg-violet-50 shadow-sm"
-                          : "border-gray-200 bg-white hover:border-violet-300",
-                      )}
-                    >
-                      <p className="font-semibold text-slate-900">{option.label}</p>
-                      <p className="mt-2 text-xs text-slate-500 leading-5">{option.description}</p>
-                    </button>
-                  ))}
+                <div className="rounded-2xl border border-violet-500 bg-violet-50 p-4 text-left shadow-sm">
+                  <p className="font-semibold text-slate-900">Email</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Receive OTP in your inbox</p>
                 </div>
               </Field>
 
@@ -418,11 +398,8 @@ export default function Register() {
             <form onSubmit={handleVerifyCode} className="space-y-6">
               <div className="rounded-3xl bg-slate-50 border border-slate-200 p-5">
                 <p className="text-sm text-slate-600">
-                  We sent a 6-digit code by <span className="font-semibold text-slate-900">{details.verificationMethod}</span>{" "}
-                  to{" "}
-                  <span className="font-semibold text-slate-900">
-                    {details.verificationMethod === "email" ? details.email : details.phoneNumber}
-                  </span>.
+                  We sent a 6-digit code by <span className="font-semibold text-slate-900">email</span> to{" "}
+                  <span className="font-semibold text-slate-900">{details.email}</span>.
                 </p>
               </div>
 

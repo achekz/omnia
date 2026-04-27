@@ -1,8 +1,8 @@
 import User from "../models/User.js";
 import VerificationCode from "../models/VerificationCode.js";
-import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import {
+  sendEmailVerificationCode,
   sendPasswordResetCode,
   verifyEmailTransport,
 } from "../services/emailService.js";
@@ -11,6 +11,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
 import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
+
+const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
+const MAX_RESET_CODE_ATTEMPTS = 5;
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -56,10 +59,12 @@ export const sendCode = asyncHandler(async (req, res) => {
   }
 
   if (verificationMethod !== "email") {
-    const phoneUser = await User.findOne({ phoneNumber: phoneValidation.phoneNumber });
-    if (phoneUser) {
-      throw new ApiError(409, "Phone number already registered");
-    }
+    throw new ApiError(400, "Verification method must be email");
+  }
+
+  const phoneUser = await User.findOne({ phoneNumber: phoneValidation.phoneNumber });
+  if (phoneUser) {
+    throw new ApiError(409, "Phone number already registered");
   }
 
   try {
@@ -324,22 +329,42 @@ export const adminLogin = asyncHandler(async (req, res) => {
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = req.body.email?.trim().toLowerCase();
 
-  const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
+  const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiError(404, "No account found with this email");
+    return res.status(404).json({
+      success: false,
+      message: "Email not found",
+    });
   }
 
   const code = generateVerificationCode();
-  const codeHash = await bcrypt.hash(code, 10);
+  const expiresAt = new Date(Date.now() + RESET_CODE_WINDOW_MS);
 
-  user.resetCode = codeHash;
-  user.resetCodeExpire = new Date(Date.now() + VERIFICATION_WINDOW_MS);
-  user.resetCodeVerified = false;
-  await user.save();
+  await VerificationCode.deleteMany({
+    email: user.email,
+    $or: [{ purpose: "reset-password" }, { type: "password_reset" }],
+  });
+
+  const verification = new VerificationCode({
+    purpose: "reset-password",
+    type: "password_reset",
+    email: user.email,
+    verificationMethod: "email",
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    gender: user.gender,
+    expiresAt,
+    attempts: 0,
+  });
+
+  await verification.setCode(code);
+  await verification.save();
 
   try {
     await sendPasswordResetCode(user.email, code, user.firstName);
   } catch (error) {
+    await VerificationCode.deleteOne({ _id: verification._id });
     console.error("[AUTH] Failed to send password reset email:", {
       email: user.email,
       message: error.message,
@@ -363,6 +388,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
       200,
       {
         email: user.email,
+        expiresAt,
       },
       "Reset code sent",
     ),
@@ -373,33 +399,49 @@ export const verifyResetCode = asyncHandler(async (req, res) => {
   const code = req.body.code;
   const email = req.body.email?.trim().toLowerCase();
 
-  const user = await User.findOne({ email }).select("+resetCode +resetCodeExpire +resetCodeVerified");
-  if (!user || !user.resetCode || !user.resetCodeExpire) {
+  const verification = await VerificationCode.findOne({
+    email,
+    purpose: "reset-password",
+    type: "password_reset",
+    consumedAt: null,
+  }).select("+codeHash");
+
+  if (!verification) {
     throw new ApiError(400, "Invalid or expired code");
   }
 
-  if (user.resetCodeExpire.getTime() < Date.now()) {
-    user.resetCode = undefined;
-    user.resetCodeExpire = undefined;
-    user.resetCodeVerified = false;
-    await user.save();
+  if (verification.expiresAt.getTime() < Date.now()) {
+    await VerificationCode.deleteOne({ _id: verification._id });
     throw new ApiError(400, "Invalid or expired code");
   }
 
-  const isMatch = await bcrypt.compare(code, user.resetCode);
+  if (verification.attempts >= MAX_RESET_CODE_ATTEMPTS) {
+    await VerificationCode.deleteOne({ _id: verification._id });
+    throw new ApiError(429, "Too many invalid attempts. Request a new code.");
+  }
+
+  const isMatch = await verification.compareCode(code);
   if (!isMatch) {
+    verification.attempts += 1;
+    await verification.save();
+
+    if (verification.attempts >= MAX_RESET_CODE_ATTEMPTS) {
+      await VerificationCode.deleteOne({ _id: verification._id });
+      throw new ApiError(429, "Too many invalid attempts. Request a new code.");
+    }
+
     throw new ApiError(400, "Invalid or expired code");
   }
 
-  user.resetCodeVerified = true;
-  user.resetCodeExpire = new Date(Date.now() + VERIFICATION_WINDOW_MS);
-  await user.save();
+  verification.verifiedAt = new Date();
+  verification.expiresAt = new Date(Date.now() + RESET_CODE_WINDOW_MS);
+  await verification.save();
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        email: user.email,
+        email: verification.email,
         verified: true,
       },
       "Reset code verified",
@@ -411,24 +453,33 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
   const email = req.body.email?.trim().toLowerCase();
 
-  const user = await User.findOne({ email }).select("+password +resetCode +resetCodeExpire +resetCodeVerified");
-  if (!user || !user.resetCode || !user.resetCodeExpire || !user.resetCodeVerified) {
+  const verification = await VerificationCode.findOne({
+    email,
+    purpose: "reset-password",
+    type: "password_reset",
+    consumedAt: null,
+  });
+
+  if (!verification || !verification.verifiedAt) {
     throw new ApiError(400, "Password reset not authorized");
   }
 
-  if (user.resetCodeExpire.getTime() < Date.now()) {
-    user.resetCode = undefined;
-    user.resetCodeExpire = undefined;
-    user.resetCodeVerified = false;
-    await user.save();
+  if (verification.expiresAt.getTime() < Date.now()) {
+    await VerificationCode.deleteOne({ _id: verification._id });
     throw new ApiError(400, "Password reset session expired");
   }
 
+  const user = await User.findOne({ email }).select("+password +refreshToken");
+  if (!user) {
+    await VerificationCode.deleteOne({ _id: verification._id });
+    throw new ApiError(404, "Email not found");
+  }
+
   user.password = password;
-  user.resetCode = undefined;
-  user.resetCodeExpire = undefined;
-  user.resetCodeVerified = false;
+  user.refreshToken = null;
   await user.save();
+
+  await VerificationCode.deleteOne({ _id: verification._id });
 
   return res.status(200).json(
     new ApiResponse(

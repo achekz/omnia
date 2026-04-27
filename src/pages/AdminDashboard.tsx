@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { Loader2, RefreshCw, ShieldCheck, Users, ClipboardList, Sparkles, TimerReset } from "lucide-react";
+import { Loader2, LogOut, RefreshCw, ShieldCheck, Users, ClipboardList, Sparkles, TimerReset } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/context/SocketContext";
@@ -132,7 +132,7 @@ const taskPriorities = [
 ] as const;
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const { socket } = useSocket();
   const [dashboard, setDashboard] = useState<AdminDashboardPayload>(emptyDashboard);
@@ -319,14 +319,24 @@ export default function AdminDashboard() {
             <h1 className="mt-2 text-4xl font-display font-bold">Control center</h1>
             <p className="mt-2 text-slate-500">Connected as {user?.email}. Manage users, tasks, presence, performance, and weekly recommendations.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => void loadDashboard(false)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void loadDashboard(false)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 font-semibold text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

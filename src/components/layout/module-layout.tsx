@@ -20,6 +20,7 @@ import {
   Pickaxe,
   Plus,
   Receipt,
+  ShieldCheck,
   ShoppingCart,
   Sparkles,
   Target,
@@ -95,7 +96,7 @@ const MODULES: NavModule[] = [
   {
     id: "admin-workspace",
     label: "Admin",
-    icon: <ShieldIcon className="w-4 h-4" />,
+    icon: <ShieldCheck className="w-4 h-4" />,
     bg: "bg-violet-700",
     textColor: "text-violet-700",
     activeSidebarStyle: "bg-violet-50 text-violet-700 font-semibold",

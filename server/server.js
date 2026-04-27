@@ -59,6 +59,21 @@ app.use('/api/auth/login', rateLimiter({
   max: 5,
   message: 'Too many login attempts, try again later'
 }));
+app.use('/api/auth/forgot-password', rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many password reset requests, try again later'
+}));
+app.use('/api/auth/verify-reset-code', rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many reset code attempts, try again later'
+}));
+app.use('/api/auth/reset-password', rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many password reset attempts, try again later'
+}));
 
 // Request logging
 app.use((req, res, next) => {
