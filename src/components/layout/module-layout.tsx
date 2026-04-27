@@ -43,7 +43,7 @@ interface ModuleLayoutProps {
   onItemChange?: (moduleId: string, itemId: string) => void;
 }
 
-type ProfileType = "company" | "cabinet" | "employee" | "student" | "comptable" | "stagiaire";
+type ProfileType = "company" | "cabinet" | "employee" | "student" | "comptable" | "stagiaire" | "admin";
 
 interface NavItem {
   id: string;
@@ -89,8 +89,22 @@ const MODULES: NavModule[] = [
     bg: "bg-violet-500",
     textColor: "text-violet-600",
     activeSidebarStyle: "bg-violet-50 text-violet-600 font-semibold",
-    allowedProfiles: ["company", "cabinet", "employee", "student"],
+    allowedProfiles: ["company", "cabinet", "employee", "student", "admin"],
     items: [{ id: "ai-home", label: "Assistant IA", icon: <Bot className="w-4 h-4" />, path: "/ai" }],
+  },
+  {
+    id: "admin-workspace",
+    label: "Admin",
+    icon: <ShieldIcon className="w-4 h-4" />,
+    bg: "bg-violet-700",
+    textColor: "text-violet-700",
+    activeSidebarStyle: "bg-violet-50 text-violet-700 font-semibold",
+    allowedProfiles: ["admin"],
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/admin/dashboard" },
+      { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
+      { id: "settings", label: "Settings", icon: <FileText className="w-4 h-4" />, path: "/settings" },
+    ],
   },
   {
     id: "catalogue",
@@ -278,6 +292,8 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
     ? "employee-workspace"
     : currentProfile === "comptable"
       ? "accounting-workspace"
+      : currentProfile === "admin"
+        ? "admin-workspace"
       : null;
   const filteredModules = hiddenPrimaryModuleId
     ? allowedModules.filter((moduleItem) => moduleItem.id !== hiddenPrimaryModuleId)
