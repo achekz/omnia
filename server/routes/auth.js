@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  adminLogin,
   forgotPassword,
   getMe,
   login,
@@ -30,6 +31,7 @@ router.post("/send-code", validateSendCode, handleValidationErrors, sendCode);
 router.post("/verify-code", validateVerifyCode, handleValidationErrors, verifyCode);
 router.post("/register", validateRegister, handleValidationErrors, register);
 router.post("/login", validateLogin, handleValidationErrors, login);
+router.post("/admin-login", validateLogin, handleValidationErrors, adminLogin);
 router.post("/forgot-password", validateForgotPassword, handleValidationErrors, forgotPassword);
 router.post("/verify-reset-code", validateVerifyResetCode, handleValidationErrors, verifyResetCode);
 router.post("/reset-password", validateResetPassword, handleValidationErrors, resetPassword);

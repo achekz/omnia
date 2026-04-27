@@ -177,13 +177,18 @@ export default function AdminDashboard() {
     [dashboard.users],
   );
 
+  const visibleUsers = useMemo(
+    () => dashboard.users.filter((entry) => entry._id !== user?._id),
+    [dashboard.users, user?._id],
+  );
+
   const filteredUsers = useMemo(() => {
     if (roleFilter === "all") {
-      return dashboard.users;
+      return visibleUsers;
     }
 
-    return dashboard.users.filter((entry) => entry.role === roleFilter);
-  }, [dashboard.users, roleFilter]);
+    return visibleUsers.filter((entry) => entry.role === roleFilter);
+  }, [visibleUsers, roleFilter]);
 
   async function loadDashboard(showLoader = true) {
     try {

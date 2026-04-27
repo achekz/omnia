@@ -1,9 +1,12 @@
 import { useState, type FormEvent, type SVGProps } from "react";
 import { Link } from "wouter";
+import apiClient from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowRight, Loader2, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { User } from "@/lib/types";
 
 function getLoginErrorMessage(error: unknown) {
   const axiosError = error as AxiosError<{ message?: string; details?: string; code?: string }>;
@@ -27,6 +30,11 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,11 +50,51 @@ export default function Login() {
     }
   };
 
+  const handleAdminLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAdminError("");
+    setIsAdminLoading(true);
+
+    try {
+      const response = await apiClient.post("/auth/admin-login", {
+        email: adminEmail,
+        password: adminPassword,
+      });
+
+      const payload = response.data?.data as {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      };
+
+      localStorage.setItem("omni_ai_token", payload.accessToken);
+      localStorage.setItem("omni_ai_refreshToken", payload.refreshToken);
+      localStorage.setItem("omni_ai_user", JSON.stringify(payload.user));
+      window.location.href = "/admin/dashboard";
+    } catch (error: unknown) {
+      setAdminError(getLoginErrorMessage(error));
+    } finally {
+      setIsAdminLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex">
       <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-24 relative z-10 bg-white dark:bg-gray-950">
         <div className="max-w-md w-full mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setAdminError("");
+                setIsAdminModalOpen(true);
+              }}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm transition hover:bg-amber-100"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Login as Admin
+            </button>
+
             <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center mb-8 shadow-lg shadow-purple-500/20">
               <SparklesIcon className="w-7 h-7 text-white" />
             </div>
@@ -148,6 +196,74 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
+              Admin Quick Login
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            {adminError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {adminError}
+              </div>
+            )}
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Admin Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(event) => setAdminEmail(event.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-gray-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  placeholder="admin@gmail.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  required
+                  value={adminPassword}
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-gray-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  placeholder="Enter admin password"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAdminModalOpen(false)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isAdminLoading}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+              >
+                {isAdminLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                Enter Admin
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -272,6 +272,55 @@ export const login = asyncHandler(async (req, res) => {
   );
 });
 
+export const adminLogin = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
+
+  const user = await User.findOne({ email }).select("+password +refreshToken");
+  if (!user) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  const passwordMatches = await user.comparePassword(password);
+  if (!passwordMatches) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  if (normalizeRole(user.role, "employee") !== "admin") {
+    throw new ApiError(403, "Only admin can login here");
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, "Account deactivated");
+  }
+
+  if (!user.isVerified) {
+    throw new ApiError(403, "Email verification required");
+  }
+
+  user.lastLogin = new Date();
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        token: accessToken,
+        role: "admin",
+        user: sanitizeUser(user),
+        accessToken,
+        refreshToken,
+      },
+      "Admin login successful",
+    ),
+  );
+});
+
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = req.body.email?.trim().toLowerCase();
 
