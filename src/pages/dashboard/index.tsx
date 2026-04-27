@@ -16,9 +16,9 @@ export default function DashboardHub() {
         setLocation(
           profile === "admin"
             ? "/admin/dashboard"
-            : profile === "accountant"
+            : profile === "comptable"
               ? "/comptable/dashboard"
-              : profile === "student"
+            : profile === "student"
                 ? "/student/dashboard"
                 : "/employee/dashboard",
         );

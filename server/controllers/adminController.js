@@ -7,27 +7,15 @@ import PerformanceLog from '../models/PerformanceLog.js';
 import Recommendation from '../models/Recommendation.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { normalizeRole } from '../utils/roleNormalization.js';
 
 function buildScopeFilter(req) {
   return req.user?.tenantId ? { tenantId: req.user.tenantId } : {};
 }
 
 function normalizeRoleFilter(role) {
-  const normalized = String(role || '').trim().toLowerCase();
-
-  if (!normalized) {
-    return null;
-  }
-
-  if (normalized === 'comptable') {
-    return 'accountant';
-  }
-
-  if (normalized === 'stagiaire') {
-    return 'intern';
-  }
-
-  return normalized;
+  const normalized = String(role || '').trim();
+  return normalized ? normalizeRole(normalized, "") : null;
 }
 
 export const getAdminDashboard = asyncHandler(async (req, res) => {
@@ -58,6 +46,7 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
     performanceLogs.length > 0
       ? Math.round(performanceLogs.reduce((sum, entry) => sum + (entry.score || 0), 0) / performanceLogs.length)
       : 0;
+  const latestRecommendation = recommendations[0] || null;
 
   const stats = {
     totalUsers: users.length,
@@ -89,6 +78,7 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
         presenceRecords,
         performanceLogs,
         recommendations,
+        aiSummary: latestRecommendation?.meta || null,
         tenants: organizations,
         recentActivity,
       },

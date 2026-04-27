@@ -27,8 +27,8 @@ interface PasswordState {
 
 const roleOptions: Array<{ value: UserRole; label: string; description: string }> = [
   { value: "employee", label: "Employee", description: "Tasks, productivity, and workplace insights" },
-  { value: "accountant", label: "Accountant", description: "Financial operations and accounting workflows" },
-  { value: "intern", label: "Intern", description: "Training tasks, supervision, and onboarding support" },
+  { value: "comptable", label: "Comptable", description: "Financial operations and accounting workflows" },
+  { value: "stagiaire", label: "Stagiaire", description: "Training tasks, supervision, and onboarding support" },
 ];
 
 const genderOptions: Array<{ value: UserGender; label: string }> = [
@@ -536,7 +536,7 @@ export default function Register() {
               <FeatureCard
                 icon={<UserRound className="h-5 w-5" />}
                 title="Role-first setup"
-                description="Employees, accountants, and interns get tailored onboarding and later role-specific AI."
+                description="Employees, comptables, and stagiaires get tailored onboarding and later role-specific AI."
               />
               <FeatureCard
                 icon={<Mail className="h-5 w-5" />}

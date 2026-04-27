@@ -1,7 +1,8 @@
 import { body, param, query, validationResult } from "express-validator";
 import { ApiError } from "./ApiResponse.js";
+import { getAllowedRoles } from "./roleNormalization.js";
 
-const allowedRoles = ["admin", "employee", "accountant", "intern", "student"];
+const allowedRoles = getAllowedRoles();
 const allowedGenders = ["male", "female"];
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const allowedVerificationMethods = ["email", "sms", "whatsapp"];
@@ -21,7 +22,7 @@ export const validateSendCode = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be admin, employee, accountant, intern, or student"),
+    .withMessage("Role must be admin, employee, comptable, stagiaire, or student"),
   body("phoneNumber")
     .trim()
     .notEmpty()
@@ -70,7 +71,7 @@ export const validateRegister = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be admin, employee, accountant, intern, or student"),
+    .withMessage("Role must be admin, employee, comptable, stagiaire, or student"),
   body("phoneNumber")
     .trim()
     .notEmpty()

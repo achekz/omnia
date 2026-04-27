@@ -48,9 +48,9 @@ export function SharedLayout({ children }: SharedLayoutProps) {
 
   const getNavLinks = (): NavLink[] => {
     switch (user.profileType) {
-      case "accountant":
+      case "comptable":
         return [
-          { name: "Dashboard", path: "/dashboard/accountant", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "Dashboard", path: "/comptable/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
           { name: "Payroll", path: "/paie/dashboard", icon: <FileText className="w-5 h-5" /> },
           { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];

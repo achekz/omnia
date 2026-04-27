@@ -17,11 +17,23 @@ export const initSocket = (httpServer) => {
       console.log(`[Socket] Client connected: ${socket.id}`);
     }
 
-    socket.on('authenticate', (userId) => {
+    socket.on('authenticate', (payload) => {
+      const userId = typeof payload === 'string' ? payload : payload?.userId;
+      const role = typeof payload === 'object' ? payload?.role : null;
+      const tenantId = typeof payload === 'object' ? payload?.tenantId : null;
+
       if (userId) {
-        userSocketMap.set(userId.toString(), socket.id);
+        const normalizedUserId = userId.toString();
+        userSocketMap.set(normalizedUserId, socket.id);
+        socket.join(`user:${normalizedUserId}`);
+        if (role) {
+          socket.join(`role:${String(role).toLowerCase()}`);
+        }
+        if (tenantId) {
+          socket.join(`tenant:${tenantId}`);
+        }
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[Socket] User ${userId} authenticated → socket ${socket.id}`);
+          console.log(`[Socket] User ${normalizedUserId} authenticated → socket ${socket.id}`);
         }
       }
     });
@@ -46,10 +58,17 @@ export const getIO = () => {
 
 export const emitToUser = (userId, event, data) => {
   if (!io) return;
-  const socketId = userSocketMap.get(userId.toString());
-  if (socketId) {
-    io.to(socketId).emit(event, data);
-  }
+  io.to(`user:${userId.toString()}`).emit(event, data);
+};
+
+export const emitToRole = (role, event, data) => {
+  if (!io || !role) return;
+  io.to(`role:${String(role).toLowerCase()}`).emit(event, data);
+};
+
+export const emitToTenant = (tenantId, event, data) => {
+  if (!io || !tenantId) return;
+  io.to(`tenant:${tenantId}`).emit(event, data);
 };
 
 export { io, userSocketMap };

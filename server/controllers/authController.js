@@ -10,14 +10,15 @@ import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
 import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
+import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function sanitizeUser(user) {
-  const normalizedRole = ["rh", "hr"].includes(String(user.role || "").toLowerCase()) ? "employee" : user.role;
-  const normalizedProfileType = ["rh", "hr", "intern"].includes(String(user.profileType || "").toLowerCase()) ? "employee" : user.profileType;
+  const normalizedRole = normalizeRole(user.role, "employee");
+  const normalizedProfileType = normalizeProfileType(user.profileType || user.role, "employee");
 
   return {
     _id: user._id,
@@ -40,7 +41,8 @@ function sanitizeUser(user) {
 }
 
 export const sendCode = asyncHandler(async (req, res) => {
-  const { firstName, lastName, role, gender, phoneNumber, city, verificationMethod } = req.body;
+  const { firstName, lastName, gender, phoneNumber, city, verificationMethod } = req.body;
+  const role = normalizeRole(req.body.role, "employee");
   const email = req.body.email?.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email });
@@ -133,7 +135,8 @@ export const verifyCode = asyncHandler(async (req, res) => {
 });
 
 export const register = asyncHandler(async (req, res) => {
-  const { firstName, lastName, role, gender, password, phoneNumber, city, verificationMethod } = req.body;
+  const { firstName, lastName, gender, password, phoneNumber, city, verificationMethod } = req.body;
+  const role = normalizeRole(req.body.role, "employee");
   const email = req.body.email?.trim().toLowerCase();
 
   if (mongoose.connection.readyState !== 1) {
@@ -179,7 +182,7 @@ export const register = asyncHandler(async (req, res) => {
     city: verification.city,
     password,
     role,
-    profileType: role === "intern" ? "employee" : role,
+    profileType: normalizeProfileType(role, "employee"),
     gender,
     verificationMethod,
     isVerified: true,

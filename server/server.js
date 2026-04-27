@@ -9,6 +9,7 @@ import { initSocket } from './config/socket.js';
 import errorHandler from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimiter.js';
 import requireDatabase from './middleware/requireDatabase.js';
+import { startRecommendationScheduler } from './services/schedulerService.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -168,6 +169,7 @@ async function startServer() {
   });
 
   initSocket(httpServer);
+  void startRecommendationScheduler();
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 OmniAI SaaS Server running on port ${PORT}`);

@@ -26,7 +26,11 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
       socketInstance.on('connect', () => {
         setIsConnected(true);
-        socketInstance.emit('authenticate', user._id || user.id);
+        socketInstance.emit('authenticate', {
+          userId: user._id || user.id,
+          role: user.profileType || user.role,
+          tenantId: user.tenantId,
+        });
       });
 
       socketInstance.on('disconnect', () => {
@@ -48,8 +52,16 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
+      socketInstance.on('taskCreated', () => {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      });
 
       socketInstance.on('task_updated', () => {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      });
+      socketInstance.on('taskUpdated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });

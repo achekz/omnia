@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { getAllowedRoles } from "../utils/roleNormalization.js";
 
 const { Schema } = mongoose;
 
@@ -24,7 +25,7 @@ const emailVerificationCodeSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["student", "employee", "accountant"],
+      enum: getAllowedRoles(),
       required: true,
     },
     gender: {

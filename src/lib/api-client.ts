@@ -152,7 +152,7 @@ const fallbackTeamMembers: TeamMemberSummary[] = [
       member: {
         id: "member-2",
         name: "Youssef Hamdi",
-        role: "accountant",
+        role: "comptable",
         email: "youssef@demo.com",
         isActive: true,
       },

@@ -1,19 +1,12 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { getAllowedRoles, normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
 
 const { Schema } = mongoose;
 
-const allowedRoles = ["admin", "employee", "accountant", "intern", "student"];
+const allowedRoles = getAllowedRoles();
 const allowedGenders = ["male", "female"];
-
-function normalizeProfileValue(value) {
-  const normalized = String(value || "").toLowerCase();
-  if (normalized === "rh" || normalized === "hr" || normalized === "intern") {
-    return "employee";
-  }
-  return normalized;
-}
 
 const userSchema = new Schema(
   {
@@ -153,6 +146,8 @@ userSchema.virtual("fullName").get(function getFullName() {
 
 userSchema.pre("save", async function hashPassword(next) {
   this.name = `${this.firstName} ${this.lastName}`.trim();
+  this.role = normalizeRole(this.role, "employee");
+  this.profileType = normalizeProfileType(this.profileType || this.role, "employee");
 
   if (!this.isModified("password")) {
     return next();
@@ -168,8 +163,8 @@ userSchema.methods.comparePassword = async function comparePassword(candidatePas
 };
 
 userSchema.methods.generateAccessToken = function generateAccessToken() {
-  const normalizedRole = normalizeProfileValue(this.role);
-  const normalizedProfileType = normalizeProfileValue(this.profileType);
+  const normalizedRole = normalizeRole(this.role, "employee");
+  const normalizedProfileType = normalizeProfileType(this.profileType, "employee");
 
   return jwt.sign(
     {

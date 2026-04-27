@@ -3,8 +3,10 @@ import ActivityLog from '../models/ActivityLog.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { calculateScore } from '../services/scoreService.js';
-import { emitToUser } from '../config/socket.js';
+import { emitToRole, emitToUser } from '../config/socket.js';
 import * as notifService from '../services/notifService.js';
+import { isEmployeeLikeRole, normalizeRole } from '../utils/roleNormalization.js';
+import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 
 // GET /api/tasks
 export const getTasks = asyncHandler(async (req, res) => {
@@ -12,12 +14,12 @@ export const getTasks = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (req.tenantId) filter.tenantId = req.tenantId;
-  if (['employee', 'student', 'intern'].includes(req.user.role)) {
+  if (isEmployeeLikeRole(req.user.role)) {
     filter.assignedTo = req.user._id;
   }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
-  if (assignedTo && !['employee','student', 'intern'].includes(req.user.role)) {
+  if (assignedTo && !isEmployeeLikeRole(req.user.role)) {
     filter.assignedTo = assignedTo;
   }
 
@@ -51,7 +53,7 @@ export const createTask = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
   };
 
-  if (['student', 'employee', 'intern'].includes(req.user.role)) {
+  if (isEmployeeLikeRole(req.user.role)) {
     taskData.assignedTo = req.user._id;
   } else {
     taskData.assignedTo = assignedTo || req.user._id;
@@ -71,6 +73,7 @@ export const createTask = asyncHandler(async (req, res) => {
   // Notify assigned user via socket if different from creator
   if (task.assignedTo && task.assignedTo._id.toString() !== req.user._id.toString()) {
     emitToUser(task.assignedTo._id.toString(), 'task_created', { task });
+    emitToUser(task.assignedTo._id.toString(), 'taskCreated', { task });
     await notifService.create(task.assignedTo._id, req.tenantId, {
       type: 'info',
       title: 'New task assigned',
@@ -80,6 +83,9 @@ export const createTask = asyncHandler(async (req, res) => {
       metadata: { taskId: task._id.toString() },
     });
   }
+
+  emitToRole('admin', 'task_created', { task });
+  emitToRole('admin', 'taskCreated', { task });
 
   return res.status(201).json(new ApiResponse(201, { task }, 'Task created'));
 });
@@ -91,7 +97,7 @@ export const updateTask = asyncHandler(async (req, res) => {
 
   const canEdit =
     task.createdBy.toString() === req.user._id.toString() ||
-    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(req.user.role);
+    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(normalizeRole(req.user.role, req.user.role));
   if (!canEdit) throw new ApiError(403, 'Not authorized to edit this task');
 
   const allowed = ['title', 'description', 'priority', 'dueDate', 'assignedTo', 'tags', 'estimatedMinutes', 'actualMinutes'];
@@ -101,7 +107,10 @@ export const updateTask = asyncHandler(async (req, res) => {
 
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
+    emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
   }
+  emitToRole('admin', 'task_updated', { task });
+  emitToRole('admin', 'taskUpdated', { task });
 
   return res.json(new ApiResponse(200, { task }, 'Task updated'));
 });
@@ -113,7 +122,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 
   const canDelete =
     task.createdBy.toString() === req.user._id.toString() ||
-    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(req.user.role);
+    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(normalizeRole(req.user.role, req.user.role));
   if (!canDelete) throw new ApiError(403, 'Not authorized');
 
   await task.deleteOne();
@@ -144,10 +153,19 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 
   if (task.assignedTo) {
     emitToUser(task.assignedTo.toString(), 'task_updated', { task });
+    emitToUser(task.assignedTo.toString(), 'taskUpdated', { task });
   }
   if (task.createdBy) {
     emitToUser(task.createdBy.toString(), 'task_updated', { task });
+    emitToUser(task.createdBy.toString(), 'taskUpdated', { task });
   }
+  emitToRole('admin', 'task_updated', { task });
+  emitToRole('admin', 'taskUpdated', { task });
+  void refreshRecommendationsForScope({
+    tenantId: req.tenantId || undefined,
+    userIds: [task.assignedTo?.toString?.(), task.createdBy?.toString?.()].filter(Boolean),
+    trigger: 'task-status-updated',
+  });
 
   return res.json(new ApiResponse(200, { task }, 'Status updated'));
 });
@@ -156,7 +174,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 export const getTaskStats = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.tenantId) filter.tenantId = req.tenantId;
-  if (['employee', 'student', 'intern'].includes(req.user.role)) filter.assignedTo = req.user._id;
+  if (isEmployeeLikeRole(req.user.role)) filter.assignedTo = req.user._id;
 
   const statusCounts = await Task.aggregate([
     { $match: filter },

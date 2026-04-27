@@ -1,9 +1,11 @@
 import ActivityLog from '../models/ActivityLog.js';
 import MLPrediction from '../models/MLPrediction.js';
-import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { predictPerformance } from '../services/aiService.js';
+import { refreshRecommendationsForScope } from '../services/recommendationService.js';
+import Recommendation from '../models/Recommendation.js';
 
 // POST /api/ml/predict
 export const predict = asyncHandler(async (req, res) => {
@@ -18,24 +20,28 @@ export const predict = asyncHandler(async (req, res) => {
     overdue_count: logs.reduce((a, l) => a + l.overdueCount, 0),
   };
 
-  const result = await mlService.predict(features);
+  const result = await predictPerformance({
+    users: [{ user: req.user, tasks: [], performanceLogs: logs }],
+    features,
+  });
+  const prediction = result.predictions?.[0] || result;
 
   const saved = await MLPrediction.create({
     userId: req.user._id,
     tenantId: req.tenantId,
     modelType: 'prediction',
     input: features,
-    output: result,
-    riskLevel: result.risk_level,
-    riskScore: result.risk_score,
-    confidence: result.confidence,
+    output: prediction,
+    riskLevel: prediction.risk_level,
+    riskScore: prediction.risk_score || prediction.performanceScore,
+    confidence: prediction.confidence,
   });
 
-  if (result.risk_level === 'high') {
+  if (prediction.risk_level === 'high') {
     await notifService.create(req.user._id, req.tenantId, {
       type: 'warning',
       title: '🤖 High Risk Detected',
-      message: `ML model detected high risk (score: ${result.risk_score}). Check your activity.`,
+      message: `ML model detected high risk (score: ${prediction.risk_score}). Check your activity.`,
       source: 'ml',
     });
   }
@@ -62,18 +68,13 @@ export const recommend = asyncHandler(async (req, res) => {
     day_of_week: new Date().getDay(),
   };
 
-  const result = await mlService.recommend(context);
-
-  const saved = await MLPrediction.create({
-    userId: req.user._id,
+  const savedRecommendation = await refreshRecommendationsForScope({
     tenantId: req.tenantId,
-    modelType: 'recommendation',
-    input: context,
-    output: result,
-    recommendations: result.recommendations || [],
+    userIds: [req.user._id],
+    trigger: 'manual-ml-route',
   });
 
-  return res.json(new ApiResponse(200, { recommendations: saved.recommendations, raw: saved }));
+  return res.json(new ApiResponse(200, { recommendations: savedRecommendation?.recommendations || [], raw: savedRecommendation, context }));
 });
 
 // POST /api/ml/anomaly
@@ -123,4 +124,10 @@ export const insights = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 }).limit(5),
   ]);
   return res.json(new ApiResponse(200, { latestPrediction, latestRecommendation, anomalies }));
+});
+
+export const recommendations = asyncHandler(async (req, res) => {
+  const scopeFilter = req.tenantId ? { tenantId: req.tenantId } : {};
+  const records = await Recommendation.find(scopeFilter).sort({ createdAt: -1 }).limit(10);
+  return res.json(new ApiResponse(200, { records }));
 });

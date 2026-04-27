@@ -21,9 +21,21 @@ function normalizeUser(user: User): User {
   const firstName = user.firstName || user.name?.split(" ")[0] || "User";
   const lastName = user.lastName || user.name?.split(" ").slice(1).join(" ") || "";
   const normalizedRoleValue = (user.role || user.profileType || "employee").toLowerCase();
-  const mappedRole = normalizedRoleValue === "rh" || normalizedRoleValue === "hr" ? "employee" : normalizedRoleValue;
+  const mappedRole =
+    normalizedRoleValue === "accountant"
+      ? "comptable"
+      : normalizedRoleValue === "intern"
+        ? "stagiaire"
+        : normalizedRoleValue === "rh" || normalizedRoleValue === "hr"
+          ? "employee"
+          : normalizedRoleValue;
   const normalizedProfileValue = (user.profileType || user.role || "employee").toLowerCase();
-  const mappedProfile = ["rh", "hr", "intern"].includes(normalizedProfileValue) ? "employee" : normalizedProfileValue;
+  const mappedProfile =
+    normalizedProfileValue === "accountant"
+      ? "comptable"
+      : ["rh", "hr", "intern", "stagiaire"].includes(normalizedProfileValue)
+        ? "employee"
+        : normalizedProfileValue;
   const role = mappedRole as User["role"];
   const profileType = mappedProfile as User["profileType"];
 
@@ -46,8 +58,10 @@ function getRedirectPath(user: User) {
       return "/student/dashboard";
     case "employee":
       return "/employee/dashboard";
-    case "accountant":
+    case "comptable":
       return "/comptable/dashboard";
+    case "stagiaire":
+      return "/employee/dashboard";
     case "admin":
       return "/admin/dashboard";
     default:

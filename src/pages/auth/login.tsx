@@ -129,7 +129,7 @@ export default function Login() {
           <div className="max-w-md w-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-md rounded-3xl p-10 border border-white/60 dark:border-gray-700/60 shadow-2xl">
             <h2 className="text-5xl font-display font-bold gradient-text mb-4">Omni AI</h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-              Role-aware workspace for students, employees, and accountants with secure authentication and adaptive AI experiences.
+              Role-aware workspace for students, employees, and comptables with secure authentication and adaptive AI experiences.
             </p>
             <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
               <div className="flex items-start gap-3">

@@ -46,8 +46,8 @@ export default function AccountantDashboard() {
       <div className="p-6 md:p-8">
         <div className="mb-8 flex justify-between items-end gap-4">
           <div>
-            <h2 className="text-3xl font-display font-bold text-foreground">Accounting Workspace</h2>
-            <p className="mt-2 text-muted-foreground">Track finance activity and manage your accounting tasks.</p>
+            <h2 className="text-3xl font-display font-bold text-foreground">Comptable Workspace</h2>
+            <p className="mt-2 text-muted-foreground">Track finance activity and manage your comptable tasks.</p>
           </div>
           <button className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20">
             <Plus className="w-5 h-5" />

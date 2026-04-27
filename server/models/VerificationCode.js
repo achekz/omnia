@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { getAllowedRoles, normalizeRole } from "../utils/roleNormalization.js";
 
 const { Schema } = mongoose;
 
@@ -41,7 +42,7 @@ const verificationCodeSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "employee", "accountant", "intern", "student"],
+      enum: getAllowedRoles(),
     },
     gender: {
       type: String,
@@ -73,6 +74,7 @@ const verificationCodeSchema = new Schema(
 );
 
 verificationCodeSchema.methods.setCode = async function setCode(code) {
+  this.role = normalizeRole(this.role, "employee");
   const salt = await bcrypt.genSalt(10);
   this.codeHash = await bcrypt.hash(code, salt);
 };

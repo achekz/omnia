@@ -25,7 +25,11 @@ function getRoleInstruction(role) {
     case "student":
       return "User role is student. Answer like a study assistant. Be clear, structured, and educational.";
     case "accountant":
-      return "User role is accountant. Answer like a finance assistant. Be precise, practical, and business-focused.";
+    case "comptable":
+      return "User role is comptable. Answer like a finance assistant. Be precise, practical, and business-focused.";
+    case "intern":
+    case "stagiaire":
+      return "User role is stagiaire. Answer like a productivity assistant for guided execution, learning, and follow-through.";
     default:
       return "Answer like a professional AI assistant. Be concise, helpful, and actionable.";
   }

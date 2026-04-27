@@ -17,7 +17,7 @@ import {
 export default function PaieTunisieDashboard() {
   const { user } = useAuth();
 
-  if (!user || user.profileType !== "accountant") {
+  if (!user || user.profileType !== "comptable") {
     return (
       <ModuleLayout activeItem="dashboard">
         <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>
@@ -45,7 +45,7 @@ export default function PaieTunisieDashboard() {
       <div className="p-8 max-w-[1600px] mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-gray-100">Tunisia Payroll</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Payroll command center for accountants</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Payroll command center for comptables</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 mb-8 flex flex-wrap items-center gap-6 shadow-sm">

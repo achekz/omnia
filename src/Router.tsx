@@ -109,7 +109,7 @@ const routes: AppRoute[] = [
   { path: "/dashboard/student", component: StudentDashboard, protected: true },
   { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["student"] },
   { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
-  { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["accountant"] },
+  { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/ai", component: AIDashboard, protected: true },

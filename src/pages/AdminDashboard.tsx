@@ -84,6 +84,11 @@ interface AdminDashboardPayload {
   presenceRecords: PresenceRecord[];
   performanceLogs: PerformanceRecord[];
   recommendations: RecommendationRecord[];
+  aiSummary?: {
+    bestEmployee?: { name?: string; performanceScore?: number };
+    mostDisciplined?: { name?: string; disciplineScore?: number };
+    delayedUsers?: Array<{ name?: string; delayedTasks?: number }>;
+  } | null;
 }
 
 const emptyStats: AdminStats = {
@@ -109,6 +114,7 @@ const emptyDashboard: AdminDashboardPayload = {
   presenceRecords: [],
   performanceLogs: [],
   recommendations: [],
+  aiSummary: null,
 };
 
 const taskStatuses = [
@@ -176,8 +182,7 @@ export default function AdminDashboard() {
       return dashboard.users;
     }
 
-    const normalizedRole = roleFilter === "comptable" ? "accountant" : roleFilter === "stagiaire" ? "intern" : roleFilter;
-    return dashboard.users.filter((entry) => entry.role === normalizedRole);
+    return dashboard.users.filter((entry) => entry.role === roleFilter);
   }, [dashboard.users, roleFilter]);
 
   async function loadDashboard(showLoader = true) {
@@ -199,6 +204,7 @@ export default function AdminDashboard() {
         presenceRecords: payload.presenceRecords || [],
         performanceLogs: payload.performanceLogs || [],
         recommendations: payload.recommendations || [],
+        aiSummary: payload.aiSummary || null,
       });
     } catch (error) {
       toast({
@@ -478,8 +484,29 @@ export default function AdminDashboard() {
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold">Weekly AI recommendations</h2>
+              <h2 className="text-2xl font-bold">AI Recommendations (last 6 days)</h2>
               <p className="mt-1 text-sm text-slate-500">Latest saved recommendations from your recommendation history.</p>
+              <div className="mt-4 grid gap-3">
+                <AiSummaryCard
+                  title="Best employee"
+                  value={dashboard.aiSummary?.bestEmployee?.name || "Not available yet"}
+                  detail={dashboard.aiSummary?.bestEmployee?.performanceScore ? `Score ${dashboard.aiSummary.bestEmployee.performanceScore}` : "Waiting for AI data"}
+                />
+                <AiSummaryCard
+                  title="Most disciplined"
+                  value={dashboard.aiSummary?.mostDisciplined?.name || "Not available yet"}
+                  detail={dashboard.aiSummary?.mostDisciplined?.disciplineScore ? `Discipline ${dashboard.aiSummary.mostDisciplined.disciplineScore}` : "Waiting for AI data"}
+                />
+                <AiSummaryCard
+                  title="Delayed users"
+                  value={
+                    dashboard.aiSummary?.delayedUsers?.length
+                      ? dashboard.aiSummary.delayedUsers.map((entry) => `${entry.name} (${entry.delayedTasks})`).join(", ")
+                      : "No delayed users in the last 6 days"
+                  }
+                  detail="Based on tasks and performance logs"
+                />
+              </div>
               <div className="mt-4 space-y-3">
                 {dashboard.recommendations.length === 0 ? (
                   <EmptyState text="No recommendations saved yet." />
@@ -575,6 +602,16 @@ function StatsCard({ icon, label, value, sublabel }: { icon: ReactNode; label: s
 
 function EmptyState({ text }: { text: string }) {
   return <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500">{text}</div>;
+}
+
+function AiSummaryCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{detail}</p>
+    </div>
+  );
 }
 
 function TaskBadge({ value, tone }: { value: string; tone: "priority" | "status" }) {

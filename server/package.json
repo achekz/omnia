@@ -8,6 +8,7 @@
     "start": "node server.js",
     "typecheck": "powershell -ExecutionPolicy Bypass -File scripts/typecheck.ps1",
     "create-admin": "node seed/createAdminAccount.js",
+    "migrate-roles": "node seed/migrateRoles.js",
     "seed": "node seed/createDemoAccounts.js",
     "test": "jest"
   },
@@ -23,6 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.23.0",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.5",
     "redis": "^4.7.1",
     "socket.io": "^4.7.4",

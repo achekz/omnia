@@ -43,7 +43,7 @@ interface ModuleLayoutProps {
   onItemChange?: (moduleId: string, itemId: string) => void;
 }
 
-type ProfileType = "company" | "cabinet" | "employee" | "student" | "accountant";
+type ProfileType = "company" | "cabinet" | "employee" | "student" | "comptable" | "stagiaire";
 
 interface NavItem {
   id: string;
@@ -131,9 +131,9 @@ const MODULES: NavModule[] = [
     bg: "bg-emerald-600",
     textColor: "text-emerald-600",
     activeSidebarStyle: "bg-emerald-50 text-emerald-700 font-semibold",
-    allowedProfiles: ["accountant"],
+    allowedProfiles: ["comptable"],
     items: [
-      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/accountant" },
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "payroll", label: "Payroll", icon: <FileText className="w-4 h-4" />, path: "/paie/dashboard" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
@@ -235,7 +235,8 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const [activeSidebarItem, setActiveSidebarItem] = useState(activeItem);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [showMoreModules, setShowMoreModules] = useState(false);
-  const currentProfile = (user?.profileType || user?.role || "employee") as ProfileType;
+  const rawProfile = String(user?.profileType || user?.role || "employee").toLowerCase();
+  const currentProfile = (rawProfile === "accountant" ? "comptable" : rawProfile === "intern" ? "stagiaire" : rawProfile) as ProfileType;
 
   const { data: notifications = [] } = useGetNotifications({
     query: { enabled: !!user, refetchInterval: 30000 },
@@ -275,7 +276,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const activeModule = allowedModules.find((moduleItem) => moduleItem.id === activeModuleId) ?? allowedModules[0];
   const hiddenPrimaryModuleId = currentProfile === "employee"
     ? "employee-workspace"
-    : currentProfile === "accountant"
+    : currentProfile === "comptable"
       ? "accounting-workspace"
       : null;
   const filteredModules = hiddenPrimaryModuleId
