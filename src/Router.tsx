@@ -28,6 +28,7 @@ interface AppRoute {
   path: string;
   component: ComponentType;
   protected?: boolean;
+  roles?: string[];
 }
 
 function LoadingScreen() {
@@ -38,8 +39,8 @@ function LoadingScreen() {
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
+function ProtectedRoute({ component: Component, roles }: { component: ComponentType; roles?: string[] }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -47,6 +48,15 @@ function ProtectedRoute({ component: Component }: { component: ComponentType }) 
 
   if (!isAuthenticated) {
     return <Redirect to="/login" />;
+  }
+
+  if (roles?.length) {
+    const currentRole = String(user?.profileType || user?.role || "").toLowerCase();
+    const normalizedRoles = roles.map((role) => role.toLowerCase());
+
+    if (!normalizedRoles.includes(currentRole)) {
+      return <Redirect to="/dashboard" />;
+    }
   }
 
   return <Component />;
@@ -95,9 +105,13 @@ const routes: AppRoute[] = [
   { path: "/dashboard/company", component: CompanyDashboard, protected: true },
   { path: "/dashboard/cabinet", component: CabinetDashboard, protected: true },
   { path: "/dashboard/employee", component: EmployeeDashboard, protected: true },
+  { path: "/employee/dashboard", component: EmployeeDashboard, protected: true, roles: ["employee"] },
   { path: "/dashboard/student", component: StudentDashboard, protected: true },
+  { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["student"] },
   { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
-  { path: "/admin", component: AdminDashboard, protected: true },
+  { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["accountant"] },
+  { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
+  { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/ai", component: AIDashboard, protected: true },
   { path: "/budget", component: BudgetPage, protected: true },
   { path: "/planner", component: PlannerPage, protected: true },
@@ -131,9 +145,9 @@ function Router() {
         <Route path="/register">
           <PublicAuthRoute component={Register} />
         </Route>
-        {routes.map(({ path, component: Component, protected: isProtected }) => (
+        {routes.map(({ path, component: Component, protected: isProtected, roles }) => (
           <Route key={path} path={path}>
-            {isProtected ? <ProtectedRoute component={Component} /> : <Component />}
+            {isProtected ? <ProtectedRoute component={Component} roles={roles} /> : <Component />}
           </Route>
         ))}
         <Route>

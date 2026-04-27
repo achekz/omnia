@@ -43,15 +43,15 @@ function getRedirectPath(user: User) {
 
   switch (profile) {
     case "student":
-      return "/dashboard/student";
+      return "/student/dashboard";
     case "employee":
-      return "/dashboard/employee";
+      return "/employee/dashboard";
     case "accountant":
-      return "/dashboard/accountant";
+      return "/comptable/dashboard";
     case "admin":
-      return "/admin";
+      return "/admin/dashboard";
     default:
-      return "/dashboard/employee";
+      return "/employee/dashboard";
   }
 }
 

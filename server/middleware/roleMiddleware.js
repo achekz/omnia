@@ -4,9 +4,12 @@ export const authorize = (...roles) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    console.log("[RBAC] Required roles:", roles);
+    const normalizedRequiredRoles = roles.map((role) => String(role).toLowerCase());
+    const normalizedUserRole = String(req.user.role || "").toLowerCase();
 
-    if (!roles.includes(req.user.role)) {
+    console.log("[RBAC] Required roles:", normalizedRequiredRoles);
+
+    if (!normalizedRequiredRoles.includes(normalizedUserRole)) {
       console.log("[RBAC] Access denied for role:", req.user.role);
       return res.status(403).json({ message: "Access denied" });
     }

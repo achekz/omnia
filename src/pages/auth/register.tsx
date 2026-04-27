@@ -26,7 +26,6 @@ interface PasswordState {
 }
 
 const roleOptions: Array<{ value: UserRole; label: string; description: string }> = [
-  { value: "student", label: "Student", description: "Study planning, budget, and learning AI tools" },
   { value: "employee", label: "Employee", description: "Tasks, productivity, and workplace insights" },
   { value: "accountant", label: "Accountant", description: "Financial operations and accounting workflows" },
   { value: "intern", label: "Intern", description: "Training tasks, supervision, and onboarding support" },
@@ -537,7 +536,7 @@ export default function Register() {
               <FeatureCard
                 icon={<UserRound className="h-5 w-5" />}
                 title="Role-first setup"
-                description="Students, employees, and accountants get tailored onboarding and later role-specific AI."
+                description="Employees, accountants, and interns get tailored onboarding and later role-specific AI."
               />
               <FeatureCard
                 icon={<Mail className="h-5 w-5" />}

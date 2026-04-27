@@ -4,6 +4,7 @@ import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { calculateScore } from '../services/scoreService.js';
 import { emitToUser } from '../config/socket.js';
+import * as notifService from '../services/notifService.js';
 
 // GET /api/tasks
 export const getTasks = asyncHandler(async (req, res) => {
@@ -70,6 +71,14 @@ export const createTask = asyncHandler(async (req, res) => {
   // Notify assigned user via socket if different from creator
   if (task.assignedTo && task.assignedTo._id.toString() !== req.user._id.toString()) {
     emitToUser(task.assignedTo._id.toString(), 'task_created', { task });
+    await notifService.create(task.assignedTo._id, req.tenantId, {
+      type: 'info',
+      title: 'New task assigned',
+      message: `A new task "${task.title}" was assigned to you.`,
+      source: 'user',
+      actionUrl: '/tasks',
+      metadata: { taskId: task._id.toString() },
+    });
   }
 
   return res.status(201).json(new ApiResponse(201, { task }, 'Task created'));
@@ -82,13 +91,17 @@ export const updateTask = asyncHandler(async (req, res) => {
 
   const canEdit =
     task.createdBy.toString() === req.user._id.toString() ||
-    ['company_admin', 'cabinet_admin', 'manager'].includes(req.user.role);
+    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(req.user.role);
   if (!canEdit) throw new ApiError(403, 'Not authorized to edit this task');
 
   const allowed = ['title', 'description', 'priority', 'dueDate', 'assignedTo', 'tags', 'estimatedMinutes', 'actualMinutes'];
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
   await task.populate('assignedTo', 'name email avatar');
+
+  if (task.assignedTo?._id) {
+    emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
+  }
 
   return res.json(new ApiResponse(200, { task }, 'Task updated'));
 });
@@ -100,7 +113,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 
   const canDelete =
     task.createdBy.toString() === req.user._id.toString() ||
-    ['company_admin', 'cabinet_admin', 'manager'].includes(req.user.role);
+    ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(req.user.role);
   if (!canDelete) throw new ApiError(403, 'Not authorized');
 
   await task.deleteOne();
@@ -128,6 +141,13 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     await calculateScore(req.user._id);
   }
   await task.save();
+
+  if (task.assignedTo) {
+    emitToUser(task.assignedTo.toString(), 'task_updated', { task });
+  }
+  if (task.createdBy) {
+    emitToUser(task.createdBy.toString(), 'task_updated', { task });
+  }
 
   return res.json(new ApiResponse(200, { task }, 'Status updated'));
 });

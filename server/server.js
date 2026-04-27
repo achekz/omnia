@@ -1,9 +1,11 @@
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import connectDB from './config/db.js';
+import connectDB, { startMongoReconnectLoop } from './config/db.js';
+import { initSocket } from './config/socket.js';
 import errorHandler from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimiter.js';
 import requireDatabase from './middleware/requireDatabase.js';
@@ -26,6 +28,7 @@ import searchRoutes from './routes/search.routes.js';
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
 
 function setMongoStatus(status) {
   app.locals.mongoStatus = {
@@ -152,7 +155,21 @@ async function startServer() {
     throw dbResult.error || new Error('MongoDB connection failed');
   }
 
-  app.listen(PORT, () => {
+  startMongoReconnectLoop({
+    intervalMs: 15000,
+    onReconnect: () => {
+      console.log('♻️ MongoDB reconnection successful. Protected routes are fully available again.');
+      setMongoStatus({
+        connected: true,
+        code: 'MONGO_CONNECTED',
+        message: 'Connected to MongoDB',
+      });
+    },
+  });
+
+  initSocket(httpServer);
+
+  httpServer.listen(PORT, () => {
     console.log(`🚀 OmniAI SaaS Server running on port ${PORT}`);
     console.log(`📍 MongoDB: ${(dbResult.uriUsed || process.env.MONGO_URI || 'not configured').slice(0, 50)}...`);
     if (dbResult.connected) {

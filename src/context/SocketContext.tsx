@@ -49,6 +49,11 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
 
+      socketInstance.on('task_updated', () => {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      });
+
       setSocket(socketInstance);
 
       return () => {

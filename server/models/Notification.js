@@ -13,7 +13,7 @@ const notificationSchema = new Schema(
     tenantId: {
       type: Schema.Types.ObjectId,
       ref: 'Tenant',
-      required: true,
+      required: false,
     },
 
     type: {

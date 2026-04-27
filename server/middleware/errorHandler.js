@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiResponse.js';
+import { parseMongoConnectionError } from '../config/db.js';
 
 const errorHandler = (err, req, res, next) => {
   const isDev = process.env.NODE_ENV === 'development';
@@ -53,6 +54,20 @@ const errorHandler = (err, req, res, next) => {
     return res.status(409).json({
       success: false,
       message: `A record with this ${field} already exists`,
+    });
+  }
+
+  // ========================
+  // MONGODB CONNECTION ERROR
+  // ========================
+  if (err.name === 'MongooseServerSelectionError' || err.name === 'MongoServerSelectionError') {
+    const metadata = parseMongoConnectionError(err);
+
+    return res.status(503).json({
+      success: false,
+      message: 'Database temporarily unavailable',
+      code: metadata.errorCode,
+      details: metadata.userMessage,
     });
   }
 

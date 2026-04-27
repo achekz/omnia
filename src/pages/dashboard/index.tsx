@@ -14,9 +14,13 @@ export default function DashboardHub() {
       } else {
         const profile = user.profileType || user.role || "employee";
         setLocation(
-          profile === "accountant"
-            ? "/dashboard/accountant"
-            : `/dashboard/${profile}`,
+          profile === "admin"
+            ? "/admin/dashboard"
+            : profile === "accountant"
+              ? "/comptable/dashboard"
+              : profile === "student"
+                ? "/student/dashboard"
+                : "/employee/dashboard",
         );
       }
     }
