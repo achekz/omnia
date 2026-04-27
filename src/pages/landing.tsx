@@ -103,7 +103,7 @@ export default function LandingPage() {
               Une seule plateforme.
             </div>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a href="/register" className="gradient-bg rounded-full px-8 py-4 text-white text-lg font-bold hover:shadow-xl hover:shadow-purple-500/30 transition-all hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
+              <a href="/register" className="cta-breathe gradient-bg rounded-full px-8 py-4 text-white text-lg font-bold transition-all w-full sm:w-auto flex items-center justify-center gap-2">
                 Commencer gratuitement
                 <ArrowRight className="w-5 h-5" />
               </a>
@@ -177,9 +177,6 @@ export default function LandingPage() {
             <a href="/register" className="bg-white text-purple-600 rounded-full px-8 py-4 text-lg font-bold hover:shadow-xl transition-all hover:-translate-y-1 text-center">
               Créer un compte gratuit
             </a>
-            <button className="bg-purple-900/30 text-white border border-white/20 rounded-full px-8 py-4 text-lg font-bold hover:bg-purple-900/50 transition-all text-center">
-              Contacter les ventes
-            </button>
           </div>
         </div>
       </section>
