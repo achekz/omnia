@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/auth.js';
 import { authorize } from '../middleware/roleMiddleware.js';
+import { requireTenant } from '../middleware/tenantMiddleware.js';
 import adminController from '../controllers/adminController.js';
 
 const router = express.Router();
