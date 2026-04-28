@@ -5,7 +5,6 @@ import {
   Bell,
   Bot,
   Box,
-  Briefcase,
   Calculator,
   Calendar,
   CheckCircle2,
@@ -18,18 +17,15 @@ import {
   LogOut,
   Package,
   Pickaxe,
-  Plus,
   Receipt,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
   Target,
   TrendingUp,
-  UserPlus,
   Users,
   Wallet,
   X,
-  type LucideProps,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
@@ -127,13 +123,6 @@ const MODULES: NavModule[] = [
     allowedProfiles: ["company", "employee"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
-      { id: "organisation", label: "Organization", icon: <Building2 className="w-4 h-4" />, path: "/employee/organization" },
-      { id: "analytics-eng", label: "Analytics Engagement", icon: <BarChart3 className="w-4 h-4" />, path: "/employee/analytics-engagement" },
-      { id: "analytics-rh", label: "Employee Analytics", icon: <TrendingUp className="w-4 h-4" />, path: "/employee/analytics" },
-      { id: "vision", label: "Vision & Strategy", icon: <Target className="w-4 h-4" />, path: "/employee/strategy" },
-      { id: "recruitment", label: "Recruitment", icon: <UserPlus className="w-4 h-4" />, path: "/employee/recruitment" },
-      { id: "employes", label: "Employees", icon: <Users className="w-4 h-4" />, path: "/employee/employees" },
-      { id: "projets", label: "Projects", icon: <Briefcase className="w-4 h-4" />, path: "/employee/projects" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
@@ -218,38 +207,12 @@ const MODULES: NavModule[] = [
   },
 ];
 
-function Building2(props: LucideProps) {
-  return <BanknoteIcon {...props} />;
-}
-
-function BanknoteIcon(props: LucideProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <rect width="20" height="12" x="2" y="6" rx="2" />
-      <circle cx="12" cy="12" r="2" />
-      <path d="M6 12h.01M18 12h.01" />
-    </svg>
-  );
-}
-
 export function ModuleLayout({ children, activeItem = "dashboard", onItemChange }: ModuleLayoutProps) {
   const { user, logout } = useAuth();
   const [pathname, setLocation] = useLocation();
   const [activeModuleId, setActiveModuleId] = useState("");
   const [activeSidebarItem, setActiveSidebarItem] = useState(activeItem);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [showMoreModules, setShowMoreModules] = useState(false);
   const rawProfile = String(user?.profileType || user?.role || "employee").toLowerCase();
   const currentProfile = (rawProfile === "accountant" ? "comptable" : rawProfile === "intern" ? "stagiaire" : rawProfile) as ProfileType;
 
@@ -289,37 +252,6 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const allowedModules = MODULES.filter((moduleItem) => moduleItem.allowedProfiles.includes(currentProfile));
   const activeModule = allowedModules.find((moduleItem) => moduleItem.id === activeModuleId) ?? allowedModules[0];
-  const hiddenPrimaryModuleId = currentProfile === "employee"
-    ? "employee-workspace"
-    : currentProfile === "comptable"
-      ? "accounting-workspace"
-      : currentProfile === "admin"
-        ? "admin-workspace"
-      : null;
-  const filteredModules = hiddenPrimaryModuleId
-    ? allowedModules.filter((moduleItem) => moduleItem.id !== hiddenPrimaryModuleId)
-    : allowedModules;
-  const visibleModules = filteredModules.slice(0, 7);
-  const moreModules = filteredModules.slice(7);
-
-  const handleModuleClick = (moduleId: string) => {
-    const moduleItem = allowedModules.find((entry) => entry.id === moduleId);
-    if (!moduleItem) {
-      return;
-    }
-
-    setActiveModuleId(moduleId);
-    setShowMoreModules(false);
-
-    const firstItem = moduleItem.items[0];
-    if (firstItem) {
-      setActiveSidebarItem(firstItem.id);
-      if (firstItem.path) {
-        setLocation(firstItem.path);
-      }
-    }
-  };
-
   const handleSidebarItemClick = (item: NavItem) => {
     setActiveSidebarItem(item.id);
     if (item.path) {
@@ -340,66 +272,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
           </Link>
         </div>
 
-        <nav className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-hide py-2">
-          {visibleModules.map((moduleItem) => {
-            const isActive = activeModuleId === moduleItem.id;
-
-            return (
-              <button
-                key={moduleItem.id}
-                onClick={() => handleModuleClick(moduleItem.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 border border-transparent",
-                  isActive
-                    ? `${moduleItem.bg} text-white shadow-sm`
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700",
-                )}
-              >
-                <span className={isActive ? "text-white" : moduleItem.textColor}>{moduleItem.icon}</span>
-                {moduleItem.label}
-              </button>
-            );
-          })}
-
-          {moreModules.length > 0 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowMoreModules((current) => !current)}
-                className={cn(
-                  "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                  showMoreModules
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-                )}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Plus
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-              {showMoreModules && (
-                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-2 z-50 min-w-[200px]">
-                  {moreModules.map((moduleItem) => (
-                    <button
-                      key={moduleItem.id}
-                      onClick={() => handleModuleClick(moduleItem.id)}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      <span className={moduleItem.textColor}>{moduleItem.icon}</span>
-                      {moduleItem.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="h-4 w-px bg-gray-200 mx-2 hidden sm:block" />
-
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold text-indigo-600 hover:bg-indigo-50 border border-dashed border-indigo-200 whitespace-nowrap transition-all shrink-0">
-            <Plus className="w-3.5 h-3.5" />
-            Module
-          </button>
-        </nav>
+        <div className="flex-1" />
 
         <div className="flex items-center gap-3 shrink-0 ml-4">
           <BackButton />

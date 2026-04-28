@@ -13,12 +13,15 @@ import { refreshRecommendationsForScope } from '../services/recommendationServic
 export const getTasks = asyncHandler(async (req, res) => {
   const { status, priority, assignedTo, page = 1, limit = 20 } = req.query;
   const filter = {};
+  const currentRole = normalizeRole(req.user.role);
 
   if (req.tenantId) filter.tenantId = req.tenantId;
   if (isEmployeeLikeRole(req.user.role)) {
     filter.assignedTo = req.user._id;
-    const adminUsers = await User.find({ role: 'admin' }).select('_id').lean();
-    filter.createdBy = { $in: adminUsers.map((user) => user._id) };
+    if (currentRole === 'employee') {
+      const adminUsers = await User.find({ role: 'admin' }).select('_id').lean();
+      filter.createdBy = { $in: adminUsers.map((user) => user._id) };
+    }
   }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;

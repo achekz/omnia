@@ -4,7 +4,7 @@ import { ModuleLayout } from "@/components/layout/module-layout";
 import { MLInsightCard } from "@/components/ui/ml-insight-card";
 import { StatCard } from "@/components/ui/stat-card";
 import { useGetDashboardStats, useGetTasks, useMlInsights } from "@/lib/api-client";
-import type { Task, TaskStatus } from "@/lib/types";
+import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function EmployeeDashboard() {
@@ -17,11 +17,7 @@ export default function EmployeeDashboard() {
     setTasks(serverTasks);
   }, [serverTasks]);
 
-  const columns: { id: TaskStatus; title: string }[] = [
-    { id: "todo", title: "To Do" },
-    { id: "in_progress", title: "In Progress" },
-    { id: "done", title: "Done" },
-  ];
+  const todoTasks = tasks.filter((task) => task.status === "todo");
 
   return (
     <ModuleLayout activeItem="dashboard">
@@ -53,63 +49,57 @@ export default function EmployeeDashboard() {
           <div className="lg:col-span-2">
             <h3 className="text-lg font-semibold text-foreground mb-4">Task Board</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {columns.map((column) => {
-                const columnTasks = tasks.filter((task) => task.status === column.id);
+            <div className="grid grid-cols-1">
+              <div className="glass-panel rounded-xl border border-border flex flex-col min-h-[360px]">
+                <div className="p-4 border-b border-border flex justify-between items-center bg-muted/40">
+                  <h4 className="font-semibold text-foreground">To Do</h4>
+                  <span className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full">{todoTasks.length}</span>
+                </div>
 
-                return (
-                  <div key={column.id} className="glass-panel rounded-xl border border-border flex flex-col min-h-[360px]">
-                    <div className="p-4 border-b border-border flex justify-between items-center bg-muted/40">
-                      <h4 className="font-semibold text-foreground">{column.title}</h4>
-                      <span className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full">{columnTasks.length}</span>
+                <div className="flex-1 p-3 overflow-y-auto space-y-3">
+                  {todoTasks.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border bg-background/70 px-4 py-6 text-center text-sm text-muted-foreground">
+                      No admin tasks yet.
                     </div>
+                  )}
 
-                    <div className="flex-1 p-3 overflow-y-auto space-y-3">
-                      {columnTasks.length === 0 && (
-                        <div className="rounded-xl border border-dashed border-border bg-background/70 px-4 py-6 text-center text-sm text-muted-foreground">
-                          No tasks in this column yet.
-                        </div>
-                      )}
+                  {todoTasks.map((task, index) => {
+                    const taskId = task._id || task.id || `todo-${index}`;
 
-                      {columnTasks.map((task, index) => {
-                        const taskId = task._id || task.id || `${column.id}-${index}`;
-
-                        return (
-                          <div
-                            key={taskId}
-                            className="bg-card border border-border hover:border-primary/30 p-4 rounded-xl shadow-sm transition-all"
+                    return (
+                      <div
+                        key={taskId}
+                        className="bg-card border border-border hover:border-primary/30 p-4 rounded-xl shadow-sm transition-all"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded",
+                              task.priority === "high" || task.priority === "critical"
+                                ? "bg-rose-500/20 text-rose-400"
+                                : task.priority === "medium"
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : "bg-blue-500/20 text-blue-400",
+                            )}
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <span
-                                className={cn(
-                                  "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded",
-                                  task.priority === "high" || task.priority === "critical"
-                                    ? "bg-rose-500/20 text-rose-400"
-                                    : task.priority === "medium"
-                                      ? "bg-amber-500/20 text-amber-400"
-                                      : "bg-blue-500/20 text-blue-400",
-                                )}
-                              >
-                                {task.priority || "low"}
-                              </span>
-                            </div>
-                            <h5 className="font-medium text-sm text-foreground mb-2 leading-tight">{task.title}</h5>
-                            {task.description && (
-                              <p className="text-xs text-muted-foreground mb-2 line-clamp-3">{task.description}</p>
-                            )}
-                            {task.dueDate && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" />
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                            {task.priority || "low"}
+                          </span>
+                        </div>
+                        <h5 className="font-medium text-sm text-foreground mb-2 leading-tight">{task.title}</h5>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-3">{task.description}</p>
+                        )}
+                        {task.dueDate && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

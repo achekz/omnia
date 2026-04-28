@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Bell, Briefcase, Building, Camera, Check, Globe, Key, Lock, Mail, Shield, User } from "lucide-react";
+import { Bell, Briefcase, Building, Camera, Check, Key, Mail, Shield, User } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -37,7 +37,6 @@ export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
-  const [isPublic, setIsPublic] = useState(user?.isPublic ?? false);
   const [fullName, setFullName] = useState(user?.name || "");
   const [showChangeEmail, setShowChangeEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
@@ -75,7 +74,7 @@ export default function SettingsPage() {
       const response = await fetch("/api/users/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName, isPublic }),
+        body: JSON.stringify({ name: fullName }),
       });
 
       if (response.ok) {
@@ -202,9 +201,6 @@ export default function SettingsPage() {
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col md:flex-row">
           <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-4">
-            <div className="px-4 py-3 mb-4 bg-gray-900 dark:bg-gray-950 rounded-xl border border-gray-700 dark:border-gray-800">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Settings</p>
-            </div>
             <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("profile")}
@@ -377,52 +373,6 @@ export default function SettingsPage() {
                       </div>
                       <input type="text" value={user.profileType} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
                     </div>
-                  </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {isPublic ? <Globe className="w-5 h-5 text-blue-600" /> : <Lock className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                    Account Visibility
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Control who can view your profile and information</p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    <button
-                      onClick={() => setIsPublic(false)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left ${
-                        !isPublic
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-600"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Lock className={`w-5 h-5 ${!isPublic ? "text-purple-600" : "text-gray-400 dark:text-gray-600"}`} />
-                        <div>
-                          <p className={`font-semibold text-sm ${!isPublic ? "text-purple-900" : "text-gray-900"}`}>Private</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Only you can see your profile</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setIsPublic(true)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left ${
-                        isPublic
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-600"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Globe className={`w-5 h-5 ${isPublic ? "text-purple-600" : "text-gray-400 dark:text-gray-600"}`} />
-                        <div>
-                          <p className={`font-semibold text-sm ${isPublic ? "text-purple-900" : "text-gray-900"}`}>Public</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Your profile is visible to everyone</p>
-                        </div>
-                      </div>
-                    </button>
                   </div>
                 </div>
 
