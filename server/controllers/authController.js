@@ -143,6 +143,7 @@ export const register = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, password, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
   const email = req.body.email?.trim().toLowerCase();
+  const phoneValidation = validatePhoneNumberByCity(city, phoneNumber);
 
   if (mongoose.connection.readyState !== 1) {
     console.error("[AUTH] Registration blocked because MongoDB is not connected.", {
@@ -166,13 +167,17 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Verification session expired");
   }
 
+  if (!phoneValidation.valid) {
+    throw new ApiError(400, phoneValidation.message);
+  }
+
   const payloadMatches =
     verification.firstName === firstName &&
     verification.lastName === lastName &&
     verification.role === role &&
     verification.gender === gender &&
-    verification.phoneNumber === phoneNumber &&
-    verification.city === validatePhoneNumberByCity(city, phoneNumber).normalizedCity &&
+    verification.phoneNumber === phoneValidation.phoneNumber &&
+    verification.city === phoneValidation.normalizedCity &&
     verification.verificationMethod === verificationMethod;
 
   if (!payloadMatches) {
@@ -183,7 +188,7 @@ export const register = asyncHandler(async (req, res) => {
     firstName,
     lastName,
     email,
-    phoneNumber,
+    phoneNumber: phoneValidation.phoneNumber,
     city: verification.city,
     password,
     role,

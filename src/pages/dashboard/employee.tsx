@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckSquare, Flame, Plus } from "lucide-react";
+import { AlertCircle, CheckSquare, Flame } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { MLInsightCard } from "@/components/ui/ml-insight-card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -30,10 +30,6 @@ export default function EmployeeDashboard() {
           <div>
             <h2 className="text-3xl font-display font-bold text-foreground">My Workspace</h2>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-            <Plus className="w-5 h-5" />
-            New Task
-          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

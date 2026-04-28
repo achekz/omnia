@@ -14,6 +14,11 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
   if (['employee', 'student'].includes(req.user.role)) {
     taskFilter.assignedTo = req.user._id;
+
+    if (req.user.role === 'employee') {
+      const adminUsers = await User.find({ role: 'admin' }).select('_id').lean();
+      taskFilter.createdBy = { $in: adminUsers.map((user) => user._id) };
+    }
   }
 
   const [tasks, recentLogs, teamSize, financeRecords] = await Promise.all([

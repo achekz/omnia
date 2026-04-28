@@ -37,8 +37,30 @@ const genderOptions: Array<{ value: UserGender; label: string }> = [
 ];
 
 const cityOptions = [
-  { value: "Tunisia", label: "Tunisia", hint: "+21612345678" },
-  { value: "France", label: "France", hint: "+33123456789" },
+  { value: "Tunisia", label: "Tunisia", dialCode: "+216", code: "tn" },
+  { value: "France", label: "France", dialCode: "+33", code: "fr" },
+  { value: "United States", label: "United States", dialCode: "+1", code: "us" },
+  { value: "Canada", label: "Canada", dialCode: "+1", code: "ca" },
+  { value: "United Kingdom", label: "United Kingdom", dialCode: "+44", code: "gb" },
+  { value: "Germany", label: "Germany", dialCode: "+49", code: "de" },
+  { value: "Italy", label: "Italy", dialCode: "+39", code: "it" },
+  { value: "Spain", label: "Spain", dialCode: "+34", code: "es" },
+  { value: "Morocco", label: "Morocco", dialCode: "+212", code: "ma" },
+  { value: "Algeria", label: "Algeria", dialCode: "+213", code: "dz" },
+  { value: "Egypt", label: "Egypt", dialCode: "+20", code: "eg" },
+  { value: "Saudi Arabia", label: "Saudi Arabia", dialCode: "+966", code: "sa" },
+  { value: "United Arab Emirates", label: "United Arab Emirates", dialCode: "+971", code: "ae" },
+  { value: "Qatar", label: "Qatar", dialCode: "+974", code: "qa" },
+  { value: "Turkey", label: "Turkey", dialCode: "+90", code: "tr" },
+  { value: "India", label: "India", dialCode: "+91", code: "in" },
+  { value: "China", label: "China", dialCode: "+86", code: "cn" },
+  { value: "Japan", label: "Japan", dialCode: "+81", code: "jp" },
+  { value: "South Korea", label: "South Korea", dialCode: "+82", code: "kr" },
+  { value: "Brazil", label: "Brazil", dialCode: "+55", code: "br" },
+  { value: "Mexico", label: "Mexico", dialCode: "+52", code: "mx" },
+  { value: "Argentina", label: "Argentina", dialCode: "+54", code: "ar" },
+  { value: "Australia", label: "Australia", dialCode: "+61", code: "au" },
+  { value: "South Africa", label: "South Africa", dialCode: "+27", code: "za" },
 ];
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -83,6 +105,8 @@ export default function Register() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isCityListOpen, setIsCityListOpen] = useState(false);
+  const selectedCity = cityOptions.find((option) => option.value === details.city) ?? cityOptions[0];
 
   const passwordChecks = useMemo(
     () => ({
@@ -323,22 +347,58 @@ export default function Register() {
                     value={details.phoneNumber}
                     onChange={(event) => setDetails((current) => ({ ...current, phoneNumber: event.target.value }))}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-                    placeholder={details.city === "France" ? "+33123456789" : "+21612345678"}
+                    placeholder="+..."
                   />
                 </Field>
 
                 <Field label="City">
-                  <select
-                    value={details.city}
-                    onChange={(event) => setDetails((current) => ({ ...current, city: event.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-                  >
-                    {cityOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label} ({option.hint})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsCityListOpen((current) => !current)}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                    >
+                      <span className="flex min-w-0 items-center gap-3">
+                        <img
+                          src={`https://flagcdn.com/w40/${selectedCity.code}.png`}
+                          alt={`${selectedCity.label} flag`}
+                          className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                        />
+                        <span className="truncate">
+                          {selectedCity.label} ({selectedCity.dialCode})
+                        </span>
+                      </span>
+                      <span className="text-slate-500">⌄</span>
+                    </button>
+
+                    {isCityListOpen && (
+                      <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 shadow-xl">
+                        {cityOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setDetails((current) => ({ ...current, city: option.value }));
+                              setIsCityListOpen(false);
+                            }}
+                            className={cn(
+                              "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-violet-50",
+                              details.city === option.value ? "bg-violet-50 font-semibold text-violet-700" : "text-slate-800",
+                            )}
+                          >
+                            <img
+                              src={`https://flagcdn.com/w40/${option.code}.png`}
+                              alt={`${option.label} flag`}
+                              className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                            />
+                            <span>
+                              {option.label} ({option.dialCode})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </Field>
               </div>
 

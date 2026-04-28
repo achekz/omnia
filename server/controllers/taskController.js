@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import ActivityLog from '../models/ActivityLog.js';
+import User from '../models/User.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { calculateScore } from '../services/scoreService.js';
@@ -16,6 +17,8 @@ export const getTasks = asyncHandler(async (req, res) => {
   if (req.tenantId) filter.tenantId = req.tenantId;
   if (isEmployeeLikeRole(req.user.role)) {
     filter.assignedTo = req.user._id;
+    const adminUsers = await User.find({ role: 'admin' }).select('_id').lean();
+    filter.createdBy = { $in: adminUsers.map((user) => user._id) };
   }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;

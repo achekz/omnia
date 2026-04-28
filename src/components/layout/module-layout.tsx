@@ -338,9 +338,6 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             </div>
             <span className="font-display font-bold text-xl text-gray-900 tracking-tight">Omni AI</span>
           </Link>
-          <button className="hidden lg:flex w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center transition-colors">
-            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400 rotate-90" />
-          </button>
         </div>
 
         <nav className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-hide py-2">
