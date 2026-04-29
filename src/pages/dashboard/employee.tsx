@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckSquare, Flame } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { MLInsightCard } from "@/components/ui/ml-insight-card";
+import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { StatCard } from "@/components/ui/stat-card";
-import { useGetDashboardStats, useGetTasks, useMlInsights } from "@/lib/api-client";
+import { useGetDashboardStats, useGetTasks } from "@/lib/api-client";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function EmployeeDashboard() {
   const { data: stats } = useGetDashboardStats();
   const { data: serverTasks = [] } = useGetTasks();
-  const { data: insights, isLoading: loadingInsights } = useMlInsights();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -18,6 +18,7 @@ export default function EmployeeDashboard() {
   }, [serverTasks]);
 
   const todoTasks = tasks.filter((task) => task.status === "todo");
+  const delayedTasks = tasks.filter((task) => task.status === "overdue" || (task.delayDays || 0) > 0);
 
   return (
     <ModuleLayout activeItem="dashboard">
@@ -90,9 +91,15 @@ export default function EmployeeDashboard() {
                           <p className="text-xs text-muted-foreground mb-2 line-clamp-3">{task.description}</p>
                         )}
                         {task.dueDate && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <p
+                            className={cn(
+                              "text-xs flex items-center gap-1",
+                              task.status === "overdue" || (task.delayDays || 0) > 0 ? "font-semibold text-rose-500" : "text-muted-foreground",
+                            )}
+                          >
                             <AlertCircle className="w-3 h-3" />
                             {new Date(task.dueDate).toLocaleDateString()}
+                            {(task.delayDays || 0) > 0 && <span>• {task.delayDays}d late</span>}
                           </p>
                         )}
                       </div>
@@ -104,23 +111,34 @@ export default function EmployeeDashboard() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">AI Recommendations</h3>
-            <div className="space-y-4">
-              {insights?.latestRecommendation?.recommendations?.map((recommendation, index) => (
-                <MLInsightCard
-                  key={`${recommendation}-${index}`}
-                  type="recommendation"
-                  prediction={recommendation}
-                  confidence={insights.latestRecommendation?.confidence || 85}
-                />
-              ))}
-              {!loadingInsights && !insights?.latestRecommendation?.recommendations?.length && (
-                <MLInsightCard
-                  type="prediction"
-                  prediction="Keep up the good work! We're analyzing your latest activity."
-                  confidence={94}
-                  className="border-primary/20 bg-primary/5"
-                />
+            <MlOverviewPanel title="Productivity AI" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Weekly productivity</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats?.weeklyActivity || []}>
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="value" stroke="#7c3aed" fill="#ede9fe" strokeWidth={3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-950">Delay alerts</h3>
+            <div className="mt-4 space-y-3">
+              {delayedTasks.length ? delayedTasks.slice(0, 4).map((task) => (
+                <div key={task._id || task.id} className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-700">
+                  <p className="font-bold">{task.title}</p>
+                  <p>{task.delayDays || 1} day(s) late</p>
+                </div>
+              )) : (
+                <div className="rounded-2xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">No delayed tasks.</div>
               )}
             </div>
           </div>

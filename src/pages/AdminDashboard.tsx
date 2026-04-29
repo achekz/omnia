@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import { Link } from "wouter";
 import { Loader2, LogOut, RefreshCw, ShieldCheck, Users, ClipboardList, Sparkles, TimerReset } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import apiClient from "@/lib/api-client";
+import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/context/SocketContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -328,6 +331,13 @@ export default function AdminDashboard() {
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               Refresh
             </button>
+            <Link
+              href="/admin/rules"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-white px-4 py-3 font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Rule Engine
+            </Link>
             <button
               type="button"
               onClick={logout}
@@ -544,6 +554,46 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <div className="mt-8 grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold">Global KPI charts</h2>
+            <p className="mt-1 text-sm text-slate-500">Team status and risk trend from backend activity.</p>
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <div className="h-72 rounded-2xl bg-slate-50 p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: "Todo", value: dashboard.stats.pendingTasks },
+                      { name: "Progress", value: dashboard.stats.inProgressTasks },
+                      { name: "Done", value: dashboard.stats.completedTasks },
+                      { name: "Delayed", value: dashboard.stats.delayedTasks },
+                    ]}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-72 rounded-2xl bg-slate-50 p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashboard.performanceLogs.slice().reverse().map((entry, index) => ({ label: formatShortDate(entry.date) || `#${index + 1}`, score: entry.score || 0 }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={3} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </section>
+
+          <MlOverviewPanel title="Platform AI Risk" />
+        </div>
+
         <div className="mt-8 grid gap-8 xl:grid-cols-2">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold">Presence records</h2>
@@ -673,4 +723,11 @@ function formatDate(value?: string) {
   }
 
   return date.toLocaleString();
+}
+
+function formatShortDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

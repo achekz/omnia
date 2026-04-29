@@ -1,6 +1,7 @@
 import { Line, LineChart, ResponsiveContainer, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 import { Activity, AlertTriangle, Briefcase, CheckCircle2, Minus, Users } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
+import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { StatCard } from "@/components/ui/stat-card";
 import { useGetDashboardStats, useGetTeamMembers } from "@/lib/api-client";
 import type { TeamMemberSummary } from "@/lib/types";
@@ -75,6 +76,10 @@ export default function CompanyDashboard() {
               })}
           </div>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <MlOverviewPanel title="Company AI Risk Overview" />
       </div>
 
       <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">

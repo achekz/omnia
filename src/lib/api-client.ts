@@ -8,6 +8,7 @@ import type {
   MlInsights,
   Notification,
   QueryHookOptions,
+  Rule,
   Task,
   TeamMemberSummary,
   UpdateTaskInput,
@@ -191,6 +192,10 @@ const fallbackFinanceSummary: FinanceSummary = {
 };
 
 const fallbackInsights: MlInsights = {
+  latestPrediction: {
+    riskScore: 0.28,
+    riskLevel: "low",
+  },
   latestRecommendation: {
     confidence: 88,
     recommendations: [
@@ -198,7 +203,30 @@ const fallbackInsights: MlInsights = {
       "Prioritize high-impact items before midday.",
     ],
   },
+  anomalies: [],
 };
+
+const fallbackRules: Rule[] = [
+  {
+    id: "default-delay-rule",
+    name: "Task delay alert",
+    description: "IF task delay > 2 days THEN notify assigned user",
+    trigger: "scheduled",
+    resource: "task",
+    roles: ["employee", "student"],
+    conditions: [{ metric: "task.delayDays", operator: "gt", value: 2 }],
+    action: {
+      type: "notify",
+      target: "assignedUser",
+      severity: "warning",
+      title: "Task delay alert",
+      message: "A task assigned to you is delayed by more than 2 days.",
+      actionUrl: "/tasks",
+    },
+    isActive: true,
+    cooldownMinutes: 720,
+  },
+];
 
 function unwrapData<T>(payload: unknown, fallback: T): T {
   if (payload && typeof payload === "object") {
@@ -372,6 +400,118 @@ export function useMlInsights() {
       }
     },
     initialData: fallbackInsights,
+  });
+}
+
+export function useRunRiskPrediction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.post("/ml/predict-risk");
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGenerateRecommendations() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.post("/ml/recommend");
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+    },
+  });
+}
+
+export function useDetectAnomaly() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (values?: number[]) => {
+      const response = await apiClient.post("/ml/detect-anomaly", values ? { values } : {});
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetRules() {
+  return useQuery<Rule[]>({
+    queryKey: ["rules"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/rules");
+        return unwrapCollection<Rule>(response.data, "rules", fallbackRules);
+      } catch {
+        return fallbackRules;
+      }
+    },
+    initialData: fallbackRules,
+  });
+}
+
+export function useSaveRule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (rule: Partial<Rule>) => {
+      const payload = {
+        ...rule,
+        conditions: rule.conditions?.map((condition) => ({
+          ...condition,
+          value: typeof condition.value === "string" && !Number.isNaN(Number(condition.value)) ? Number(condition.value) : condition.value,
+        })),
+      };
+
+      const id = rule._id || rule.id;
+      const response = id ? await apiClient.put(`/rules/${id}`, payload) : await apiClient.post("/rules", payload);
+      return unwrapEntity<Rule>(response.data, "rule", payload as Rule);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+    },
+  });
+}
+
+export function useDeleteRule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/rules/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+    },
+  });
+}
+
+export function useRunRules() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.post("/rules/run", { trigger: "manual" });
+      return unwrapData<{ rulesEvaluated?: number; triggeredCount?: number }>(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 }
 

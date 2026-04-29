@@ -1,12 +1,20 @@
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { StatCard } from "@/components/ui/stat-card";
-import { MLInsightCard } from "@/components/ui/ml-insight-card";
-import { Clock, Wallet, CheckCircle } from "lucide-react";
-import { useGetDashboardStats } from "@/lib/api-client";
+import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
+import { Clock, Wallet, CheckCircle, CalendarClock } from "lucide-react";
+import { useGetDashboardStats, useGetTasks } from "@/lib/api-client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function StudentDashboard() {
   useGetDashboardStats(); // Used for prefetching, not rendered directly in this view
+  const { data: tasks = [] } = useGetTasks();
+  const examTasks = tasks
+    .filter((task) => task.tags?.some((tag) => ["exam", "examen", "revision"].includes(tag.toLowerCase())) || task.title.toLowerCase().includes("exam"))
+    .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+  const nextExam = examTasks[0];
+  const daysUntilExam = nextExam?.dueDate
+    ? Math.max(0, Math.ceil((new Date(nextExam.dueDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 12;
 
   const budgetData = [
     { name: 'Rent & Utilities', value: 800, color: 'hsl(var(--primary))' },
@@ -27,10 +35,10 @@ export default function StudentDashboard() {
         <div className="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center border border-accent/30 bg-accent/5">
           <p className="text-sm font-medium text-accent">Next Exam In</p>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-5xl font-display font-bold text-white">12</span>
+            <span className="text-5xl font-display font-bold text-white">{daysUntilExam}</span>
             <span className="text-muted-foreground dark:text-gray-300">days</span>
           </div>
-          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">Advanced Calculus</p>
+          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">{nextExam?.title || "Advanced Calculus"}</p>
         </div>
         
         <StatCard
@@ -125,12 +133,23 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <MLInsightCard 
-            type="recommendation"
-            prediction="Shift heavy study sessions to morning. Your retention drops 40% after 4 PM based on quiz scores."
-            confidence={92}
-            factors={["Quiz performance", "Study logs"]}
-          />
+          <MlOverviewPanel title="Study Risk AI" />
+
+          <div className="glass-panel rounded-2xl border border-white/5 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Exam reminders</h3>
+            <div className="space-y-3">
+              {examTasks.slice(0, 3).map((task) => (
+                <div key={task._id || task.id} className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-4">
+                  <div className="flex items-center gap-2 text-purple-200">
+                    <CalendarClock className="h-4 w-4" />
+                    <span className="font-semibold">{task.title}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No date"}</p>
+                </div>
+              ))}
+              {!examTasks.length && <p className="text-sm text-muted-foreground">No exam tasks yet. Add an exam task to activate revision alerts.</p>}
+            </div>
+          </div>
         </div>
       </div>
     </ModuleLayout>

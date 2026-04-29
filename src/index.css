@@ -172,6 +172,10 @@
 }
 
 /* Glassmorphism Utilities */
+.form-input {
+  @apply w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10;
+}
+
 .glass-panel {
   @apply bg-card/80 backdrop-blur-xl border border-border shadow-xl;
 }

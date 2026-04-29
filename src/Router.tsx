@@ -21,6 +21,7 @@ import BudgetPage from "./pages/budget/budget";
 import PlannerPage from "./pages/planner";
 import MyTasksPage from "./pages/tasks/my-tasks";
 import SettingsPage from "./pages/settings";
+import RuleEnginePage from "./pages/rules";
 import MyPerformancePage from "./pages/performance/my-performance";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
@@ -115,6 +116,8 @@ const routes: AppRoute[] = [
   { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
+  { path: "/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
+  { path: "/admin/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
   { path: "/ai", component: AIDashboard, protected: true },
   { path: "/budget", component: BudgetPage, protected: true },
   { path: "/planner", component: PlannerPage, protected: true },

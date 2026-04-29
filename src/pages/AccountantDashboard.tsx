@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, DollarSign, Plus, Receipt, Wallet } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { MLInsightCard } from "@/components/ui/ml-insight-card";
+import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { StatCard } from "@/components/ui/stat-card";
-import { useGetFinanceRecords, useGetFinanceSummary, useGetTasks, useMlInsights } from "@/lib/api-client";
+import { useDetectAnomaly, useGetFinanceRecords, useGetFinanceSummary, useGetTasks } from "@/lib/api-client";
 import type { FinancialRecord, Task, TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ export default function AccountantDashboard() {
   const { data: summary } = useGetFinanceSummary();
   const { data: records = [] } = useGetFinanceRecords();
   const { data: serverTasks = [] } = useGetTasks();
-  const { data: insights, isLoading: loadingInsights } = useMlInsights();
+  const detectAnomaly = useDetectAnomaly();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -150,26 +151,16 @@ export default function AccountantDashboard() {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">AI Recommendations</h3>
-            <div className="space-y-4">
-              {insights?.latestRecommendation?.recommendations?.map((recommendation, index) => (
-                <MLInsightCard
-                  key={`${recommendation}-${index}`}
-                  type="recommendation"
-                  prediction={recommendation}
-                  confidence={insights.latestRecommendation?.confidence || 85}
-                />
-              ))}
-              {!loadingInsights && !insights?.latestRecommendation?.recommendations?.length && (
-                <MLInsightCard
-                  type="prediction"
-                  prediction="Your accounting workspace is ready. Add records and tasks to unlock smarter financial insights."
-                  confidence={92}
-                  className="border-emerald-500/20 bg-emerald-500/5"
-                />
-              )}
-            </div>
+          <div className="space-y-4">
+            <MlOverviewPanel title="Finance AI" />
+            <button
+              type="button"
+              onClick={() => detectAnomaly.mutate(records.map((record) => record.amount))}
+              disabled={detectAnomaly.isPending}
+              className="w-full rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+            >
+              {detectAnomaly.isPending ? "Scanning anomalies..." : "Detect anomalies"}
+            </button>
           </div>
         </div>
 
@@ -211,27 +202,28 @@ export default function AccountantDashboard() {
           </div>
 
           <div className="glass-panel rounded-2xl border border-border p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Monthly Overview</h3>
-            <div className="space-y-3">
-              {(summary?.byMonth || []).slice(-5).map((month) => (
-                <div key={month.month} className="rounded-xl border border-border bg-card px-4 py-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="font-medium text-foreground">{month.month}</p>
-                    <p className="text-xs text-muted-foreground">Income vs Expense</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg bg-emerald-500/10 px-3 py-2 text-emerald-400">
-                      Income: {currencyFormatter.format(month.income || 0)}
-                    </div>
-                    <div className="rounded-lg bg-amber-500/10 px-3 py-2 text-amber-400">
-                      Expense: {currencyFormatter.format(month.expense || 0)}
-                    </div>
-                  </div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Budget vs actual</h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={summary?.byCategory || []}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="category" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip formatter={(value: number) => currencyFormatter.format(value)} />
+                  <Bar dataKey="total" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="budget" fill="#a78bfa" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {(summary?.byCategory || []).filter((item) => item.overBudget).map((item) => (
+                <div key={item.category} className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                  <strong>{item.category}</strong> is over budget: {currencyFormatter.format(item.total)}
                 </div>
               ))}
-              {!summary?.byMonth?.length && (
+              {!summary?.byCategory?.some((item) => item.overBudget) && (
                 <div className="rounded-xl border border-dashed border-border bg-background/70 px-4 py-6 text-center text-sm text-muted-foreground">
-                  Monthly finance history will appear here once records are added.
+                  No over-budget category detected.
                 </div>
               )}
             </div>

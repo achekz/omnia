@@ -90,6 +90,9 @@ export interface Task {
   tags?: string[];
   estimatedMinutes?: number;
   actualMinutes?: number;
+  priorityScore?: number;
+  delayDays?: number;
+  plannedStartAt?: string;
   createdAt?: string;
 }
 
@@ -116,6 +119,7 @@ export interface FinancialRecord {
   date: string;
   isAnomaly?: boolean;
   anomalyScore?: number;
+  budgetLimit?: number;
 }
 
 export interface DashboardChartPoint {
@@ -158,13 +162,76 @@ export interface MlRecommendation {
 }
 
 export interface MlInsights {
+  latestPrediction?: {
+    riskScore?: number;
+    riskLevel?: "low" | "medium" | "high";
+    output?: Record<string, unknown>;
+  };
   latestRecommendation?: MlRecommendation;
+  anomalies?: Array<{
+    _id?: string;
+    isAnomaly?: boolean;
+    riskScore?: number;
+    output?: Record<string, unknown>;
+    createdAt?: string;
+  }>;
 }
 
 export interface FinanceSummary {
+  totalIncome?: number;
+  totalExpense?: number;
   balance?: number;
   anomalyCount?: number;
   byMonth?: DashboardChartPoint[];
+  byCategory?: Array<{
+    category: string;
+    total: number;
+    budget?: number | null;
+    overBudget?: boolean;
+  }>;
+  recentAnomalies?: FinancialRecord[];
+}
+
+export type RuleMetric =
+  | "task.delayDays"
+  | "task.priorityScore"
+  | "task.status"
+  | "finance.expensesThisMonth"
+  | "finance.balanceThisMonth"
+  | "finance.recordAmount"
+  | "student.examDueDays";
+
+export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "in" | "contains";
+
+export interface RuleCondition {
+  metric: RuleMetric;
+  operator: RuleOperator;
+  value: string | number | string[];
+}
+
+export interface RuleAction {
+  type: "notify";
+  target: "currentUser" | "assignedUser" | "creator" | "tenantAdmins";
+  severity: "info" | "warning" | "danger";
+  title: string;
+  message: string;
+  actionUrl?: string;
+}
+
+export interface Rule {
+  _id?: string;
+  id?: string;
+  name: string;
+  description?: string;
+  trigger: "scheduled" | "task" | "finance" | "manual";
+  resource: "task" | "finance" | "student";
+  roles?: string[];
+  conditions: RuleCondition[];
+  action: RuleAction;
+  isActive?: boolean;
+  cooldownMinutes?: number;
+  lastTriggeredAt?: string;
+  createdAt?: string;
 }
 
 export interface QueryHookOptions {

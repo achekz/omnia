@@ -40,6 +40,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       // Global Notification Handler
       socketInstance.on('new_notification', (notif) => {
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['ml-insights'] });
+        queryClient.invalidateQueries({ queryKey: ['finance-summary'] });
         toast({
           title: notif.title,
           description: notif.message,
