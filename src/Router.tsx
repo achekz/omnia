@@ -106,18 +106,29 @@ function ScrollToTop() {
 
 const routes: AppRoute[] = [
   { path: "/dashboard", component: DashboardHub, protected: true },
+
   { path: "/dashboard/company", component: CompanyDashboard, protected: true },
   { path: "/dashboard/cabinet", component: CabinetDashboard, protected: true },
+
+  // ✅ EMPLOYEE
   { path: "/dashboard/employee", component: EmployeeDashboard, protected: true },
   { path: "/employee/dashboard", component: EmployeeDashboard, protected: true, roles: ["employee"] },
+
+  // ✅ STAGIAIRE (FIX)
   { path: "/dashboard/student", component: StudentDashboard, protected: true },
-  { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["student"] },
+  { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["stagiaire"] },
+
+  // ✅ COMPTABLE
   { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
   { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },
+
+  // ✅ ADMIN
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
+
   { path: "/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
   { path: "/admin/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
+
   { path: "/ai", component: AIDashboard, protected: true },
   { path: "/budget", component: BudgetPage, protected: true },
   { path: "/planner", component: PlannerPage, protected: true },
@@ -125,6 +136,7 @@ const routes: AppRoute[] = [
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/performance", component: MyPerformancePage, protected: true },
   { path: "/rh/employes", component: RHEmployeesPage, protected: true },
+
   { path: "/employee/organization", component: EmployeeSectionPage, protected: true },
   { path: "/employee/analytics-engagement", component: EmployeeSectionPage, protected: true },
   { path: "/employee/analytics", component: EmployeeSectionPage, protected: true },
@@ -132,6 +144,7 @@ const routes: AppRoute[] = [
   { path: "/employee/recruitment", component: EmployeeSectionPage, protected: true },
   { path: "/employee/employees", component: EmployeeSectionPage, protected: true },
   { path: "/employee/projects", component: EmployeeSectionPage, protected: true },
+
   { path: "/paie/dashboard", component: PaieDashboardPage, protected: true },
   { path: "/help", component: HelpCenterPage, protected: true },
 ];

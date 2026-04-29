@@ -2,19 +2,21 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import AnalyticsChart from "../components/AnalyticsChart";
 import TaskBoard from "../components/TaskBoard";
+import { useAuth } from "@/hooks/useAuth";
 
-// ✅ API CONFIG
 const API = axios.create({
   baseURL: "http://localhost:5000",
 });
 
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("omni_ai_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
 export default function EmployeeDashboard() {
+  const { clearAllUsers } = useAuth(); // ✅ هنا
+
   const [prediction, setPrediction] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -25,71 +27,22 @@ export default function EmployeeDashboard() {
 
   const chatRef = useRef(null);
 
-  // 🔽 FETCH TASKS
   useEffect(() => {
     const fetchTasks = async () => {
-      try {
-        const res = await API.get("/api/tasks");
-        setTasks(res.data);
-      } catch (err) {
-        console.error("Tasks error", err);
-      }
+      const res = await API.get("/api/tasks");
+      setTasks(res.data);
     };
     fetchTasks();
   }, []);
 
-  // 🔽 FETCH ANALYTICS
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const res = await API.get("/api/analytics/activity");
-        setChartData(res.data);
-      } catch (err) {
-        console.error("Analytics error", err);
-      }
+      const res = await API.get("/api/analytics/activity");
+      setChartData(res.data);
     };
     fetchData();
   }, []);
 
-  // 🔽 AUTO SCROLL
-  useEffect(() => {
-    chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
-  }, [messages]);
-
-  // 🎤 VOICE
-  const startVoice = () => {
-    if (!("webkitSpeechRecognition" in window)) {
-      alert("Voice not supported");
-      return;
-    }
-
-    const recognition = new window.webkitSpeechRecognition();
-    recognition.lang = "fr-FR";
-
-    recognition.onresult = (event) => {
-      setInput(event.results[0][0].transcript);
-    };
-
-    recognition.start();
-  };
-
-  // 🔊 SPEAK
-  const speak = (text) => {
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = "fr-FR";
-    window.speechSynthesis.speak(speech);
-  };
-
-  // 🤖 CREATE TASK
-  const createTask = async (title) => {
-    try {
-      await API.post("/api/ai/create-task-from-ai", { title });
-    } catch (err) {
-      console.error("Create task error", err);
-    }
-  };
-
-  // 🤖 SEND MESSAGE
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -97,30 +50,13 @@ export default function EmployeeDashboard() {
     setIsTyping(true);
 
     try {
-      const res = await API.post("/api/ai/chat", {
-        message: input,
-      });
-
+      const res = await API.post("/api/ai/chat", { message: input });
       const aiText = res.data.reply;
 
-      speak(aiText);
-
-      if (aiText.includes("Actions")) {
-        createTask("Task suggested by AI");
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        { text: aiText, type: "ai" },
-      ]);
-
+      setMessages((prev) => [...prev, { text: aiText, type: "ai" }]);
       setPrediction(res.data.prediction || null);
-
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { text: "Erreur AI", type: "ai" },
-      ]);
+    } catch {
+      setMessages((prev) => [...prev, { text: "Erreur AI", type: "ai" }]);
     }
 
     setIsTyping(false);
@@ -128,71 +64,16 @@ export default function EmployeeDashboard() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        background: darkMode ? "#020617" : "#f1f5f9",
-        color: darkMode ? "#fff" : "#000",
-      }}
-    >
-      {/* SIDEBAR */}
-      <div
-        style={{
-          width: "250px",
-          background: "#0f172a",
-          color: "#fff",
-          padding: "20px",
-        }}
-      >
-        <h2>Omni AI</h2>
-        <button onClick={() => setDarkMode(!darkMode)}>🌙</button>
-      </div>
+    <div style={{ padding: "20px" }}>
+      <h2>Employee Dashboard</h2>
 
-      {/* MAIN */}
-      <div style={{ flex: 1, padding: "20px" }}>
-        <h2>Dashboard</h2>
+      {/* ✅ BUTTON */}
+      <button onClick={clearAllUsers}>
+        🧹 Supprimer les comptes
+      </button>
 
-        {/* AI CHAT */}
-        <div
-          style={{
-            background: darkMode ? "#1e293b" : "#fff",
-            padding: "15px",
-            borderRadius: "10px",
-          }}
-        >
-          <h3>🤖 AI Assistant</h3>
-
-          <div ref={chatRef} style={{ height: "200px", overflowY: "auto" }}>
-            {messages.map((msg, i) => (
-              <div key={i}>
-                <b>{msg.type === "ai" ? "🤖 AI" : "👤 You"}:</b>
-                <p>{msg.text}</p>
-              </div>
-            ))}
-            {isTyping && <p>🤖 AI is typing...</p>}
-          </div>
-
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <button onClick={sendMessage}>Send</button>
-          <button onClick={startVoice}>🎤</button>
-        </div>
-
-        {/* AI PREDICTION */}
-        <div style={{ marginTop: "20px" }}>
-          <h3>🔮 AI Prediction</h3>
-          <p>{prediction || "No prediction yet"}</p>
-        </div>
-
-        {/* CHART */}
-        <AnalyticsChart data={chartData} />
-
-        {/* TASKS */}
-        <TaskBoard tasks={tasks} setTasks={setTasks} />
-      </div>
+      <AnalyticsChart data={chartData} />
+      <TaskBoard tasks={tasks} setTasks={setTasks} />
     </div>
   );
 }

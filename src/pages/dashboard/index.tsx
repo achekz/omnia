@@ -12,16 +12,19 @@ export default function DashboardHub() {
       if (!user) {
         setLocation("/login");
       } else {
-        const profile = user.profileType || user.role || "employee";
-        setLocation(
-          profile === "admin"
-            ? "/admin/dashboard"
-            : profile === "comptable"
-              ? "/comptable/dashboard"
-            : profile === "student"
-                ? "/student/dashboard"
-                : "/employee/dashboard",
-        );
+        const profile = (user.profileType || user.role || "employee").toLowerCase();
+
+        if (profile === "stagiaire") {
+          setLocation("/student/dashboard");
+        } else if (profile === "employee") {
+          setLocation("/employee/dashboard");
+        } else if (profile === "comptable") {
+          setLocation("/comptable/dashboard");
+        } else if (profile === "admin") {
+          setLocation("/admin/dashboard");
+        } else {
+          setLocation("/employee/dashboard");
+        }
       }
     }
   }, [user, isLoading, setLocation]);

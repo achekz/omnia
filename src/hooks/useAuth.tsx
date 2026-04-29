@@ -15,29 +15,23 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface AuthContextType {
+  clearAllUsers: () => void;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function normalizeUser(user: User): User {
   const firstName = user.firstName || user.name?.split(" ")[0] || "User";
   const lastName = user.lastName || user.name?.split(" ").slice(1).join(" ") || "";
-  const normalizedRoleValue = (user.role || user.profileType || "employee").toLowerCase();
-  const mappedRole =
-    normalizedRoleValue === "accountant"
-      ? "comptable"
-      : normalizedRoleValue === "intern"
-        ? "stagiaire"
-        : normalizedRoleValue === "rh" || normalizedRoleValue === "hr"
-          ? "employee"
-          : normalizedRoleValue;
-  const normalizedProfileValue = (user.profileType || user.role || "employee").toLowerCase();
-  const mappedProfile =
-    normalizedProfileValue === "accountant"
-      ? "comptable"
-      : ["rh", "hr", "intern", "stagiaire"].includes(normalizedProfileValue)
-        ? "employee"
-        : normalizedProfileValue;
-  const role = mappedRole as User["role"];
-  const profileType = mappedProfile as User["profileType"];
+
+  const rawRole = (user.role || user.profileType || "employee").toLowerCase();
+
+  let role = rawRole;
+  if (rawRole === "accountant") role = "comptable";
+  if (rawRole === "intern") role = "stagiaire";
+
+  let profileType = role; // ✅ نفس role (no conversion)
 
   return {
     ...user,
@@ -54,14 +48,12 @@ function getRedirectPath(user: User) {
   const profile = user.profileType || user.role;
 
   switch (profile) {
-    case "student":
-      return "/student/dashboard";
+    case "stagiaire":
+      return "/student/dashboard"; // ✅ FIX
     case "employee":
       return "/employee/dashboard";
     case "comptable":
       return "/comptable/dashboard";
-    case "stagiaire":
-      return "/employee/dashboard";
     case "admin":
       return "/admin/dashboard";
     default:
@@ -184,6 +176,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLocation("/login");
   };
 
+  const clearAllUsers = () => {
+    localStorage.removeItem("omni_ai_token");
+    localStorage.removeItem("omni_ai_refreshToken");
+    localStorage.removeItem("omni_ai_user");
+
+    setToken(null);
+    setUser(null);
+
+    setLocation("/login");
+};
+
   return (
     <AuthContext.Provider
       value={{
@@ -194,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        clearAllUsers,
       }}
     >
       {children}

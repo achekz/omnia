@@ -26,6 +26,7 @@ import teamRoutes from './routes/team.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.routes.js';
 import searchRoutes from './routes/search.routes.js';
+import User from './models/User.js'; // ✅ مهم
 
 // Load env
 dotenv.config();
@@ -153,6 +154,16 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/search', requireDatabase, searchRoutes);
 app.use('/api/rules', requireDatabase, ruleRoutes);
 setupSwagger(app);
+
+// 🧹 DELETE ALL USERS (ADMIN ONLY)
+app.get('/delete-all-users', async (req, res) => {
+  try {
+    const result = await User.deleteMany({});
+    res.send(`✅ Deleted ${result.deletedCount} users`);
+  } catch (err) {
+    res.status(500).send("❌ Error deleting users");
+  }
+});
 
 // Global error handler
 app.use(errorHandler);

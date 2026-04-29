@@ -5,7 +5,8 @@ import {
   sendEmailVerificationCode,
   sendPasswordResetCode,
   verifyEmailTransport,
-} from "../services/emailService.js";
+} 
+from "../services/emailService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
@@ -22,7 +23,6 @@ function generateVerificationCode() {
 
 function sanitizeUser(user) {
   const normalizedRole = normalizeRole(user.role, "employee");
-  const normalizedProfileType = normalizeProfileType(user.profileType || user.role, "employee");
 
   return {
     _id: user._id,
@@ -33,8 +33,11 @@ function sanitizeUser(user) {
     phoneNumber: user.phoneNumber,
     city: user.city,
     verificationMethod: user.verificationMethod,
+
+    // ✅ FIX هنا
     role: normalizedRole,
-    profileType: normalizedProfileType,
+    profileType: normalizedRole, // 🔥 نفس role
+
     gender: user.gender,
     isVerified: user.isVerified,
     avatar: user.avatar,
@@ -172,6 +175,8 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, phoneValidation.message);
   }
 
+  console.log("VERIFICATION ROLE:", verification.role);
+  console.log("REQUEST ROLE:", role);
   const payloadMatches =
     verification.firstName === firstName &&
     verification.lastName === lastName &&
@@ -193,7 +198,7 @@ export const register = asyncHandler(async (req, res) => {
     city: verification.city,
     password,
     role,
-    profileType: normalizeProfileType(role, "employee"),
+    profileType: role,
     gender,
     verificationMethod,
     isVerified: true,
