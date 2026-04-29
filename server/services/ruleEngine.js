@@ -193,7 +193,7 @@ class RuleEngine {
         description: 'IF task delay > 2 days THEN notify assigned user',
         trigger: 'scheduled',
         resource: 'task',
-        roles: ['employee', 'student', 'stagiaire'],
+        roles: ['employee', 'stagiaire'],
         conditions: [{ metric: 'task.delayDays', operator: 'gt', value: 2 }],
         action: {
           type: 'notify',
@@ -227,7 +227,7 @@ class RuleEngine {
         description: 'IF tagged exam/revision task is due soon THEN notify student',
         trigger: 'scheduled',
         resource: 'student',
-        roles: ['student'],
+        roles: ['stagiaire'],
         conditions: [{ metric: 'student.examDueDays', operator: 'lte', value: 3 }],
         action: {
           type: 'notify',

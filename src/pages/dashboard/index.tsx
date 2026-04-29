@@ -2,6 +2,25 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import type { UserRole } from "@/lib/types";
+
+const REDIRECTS: Record<UserRole, string> = {
+  admin: "/admin/dashboard",
+  employee: "/employee/dashboard",
+  stagiaire: "/student/dashboard",
+  comptable: "/comptable/dashboard",
+};
+
+function normalizeDashboardRole(value: unknown): UserRole {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (["admin", "company_admin", "cabinet_admin", "manager", "entreprise"].includes(normalized)) return "admin";
+  if (["employee", "employe", "employé", "rh", "hr"].includes(normalized)) return "employee";
+  if (["stagiaire", "intern", "student", "etudiant", "étudiant"].includes(normalized)) return "stagiaire";
+  if (["comptable", "accountant"].includes(normalized)) return "comptable";
+
+  return "employee";
+}
 
 export default function DashboardHub() {
   const { user, isLoading } = useAuth();
@@ -12,19 +31,8 @@ export default function DashboardHub() {
       if (!user) {
         setLocation("/login");
       } else {
-        const profile = (user.profileType || user.role || "employee").toLowerCase();
-
-        if (profile === "stagiaire") {
-          setLocation("/student/dashboard");
-        } else if (profile === "employee") {
-          setLocation("/employee/dashboard");
-        } else if (profile === "comptable") {
-          setLocation("/comptable/dashboard");
-        } else if (profile === "admin") {
-          setLocation("/admin/dashboard");
-        } else {
-          setLocation("/employee/dashboard");
-        }
+        const profile = normalizeDashboardRole(user.profileType || user.role);
+        setLocation(REDIRECTS[profile]);
       }
     }
   }, [user, isLoading, setLocation]);

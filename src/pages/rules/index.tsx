@@ -1,9 +1,10 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, Loader2, Pencil, Play, Plus, Trash2, Zap } from "lucide-react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, Clock3, Loader2, Pencil, Play, Plus, Trash2, Zap } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useDeleteRule, useGetRules, useRunRules, useSaveRule } from "@/lib/api-client";
 import type { Rule, RuleMetric, RuleOperator } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const metricOptions: { value: RuleMetric; label: string }[] = [
@@ -51,6 +52,13 @@ export default function RuleEnginePage() {
   const deleteRule = useDeleteRule();
   const runRules = useRunRules();
   const [form, setForm] = useState<Rule>(emptyForm);
+  const [executionLogs, setExecutionLogs] = useState<Array<{ id: string; timestamp: string; rulesEvaluated: number; triggeredCount: number }>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("omni_rule_engine_logs") || "[]");
+    } catch {
+      return [];
+    }
+  });
 
   const activeCount = useMemo(() => rules.filter((rule) => rule.isActive !== false).length, [rules]);
 
@@ -115,6 +123,15 @@ export default function RuleEnginePage() {
   async function handleRunRules() {
     try {
       const result = await runRules.mutateAsync();
+      const nextLog = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        rulesEvaluated: result.rulesEvaluated || 0,
+        triggeredCount: result.triggeredCount || 0,
+      };
+      const nextLogs = [nextLog, ...executionLogs].slice(0, 8);
+      setExecutionLogs(nextLogs);
+      localStorage.setItem("omni_rule_engine_logs", JSON.stringify(nextLogs));
       toast({
         title: "Rule Engine executed",
         description: `${result.rulesEvaluated || 0} rules checked, ${result.triggeredCount || 0} alerts triggered.`,
@@ -201,8 +218,11 @@ export default function RuleEnginePage() {
                 </Field>
               </div>
 
-              <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-violet-700">IF</p>
+              <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-4">
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-violet-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                  <Zap className="h-3.5 w-3.5" />
+                  IF condition
+                </p>
                 <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_0.8fr]">
                   <select value={condition.metric} onChange={(event) => setForm({ ...form, conditions: [{ ...condition, metric: event.target.value as RuleMetric }] })} className="form-input">
                     {metricOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -212,10 +232,16 @@ export default function RuleEnginePage() {
                   </select>
                   <input value={String(condition.value)} onChange={(event) => setForm({ ...form, conditions: [{ ...condition, value: event.target.value }] })} className="form-input" placeholder="2" />
                 </div>
+                <p className="mt-3 text-sm font-medium text-violet-800">
+                  IF <strong>{labelForMetric(condition.metric)}</strong> is <strong>{labelForOperator(condition.operator)}</strong> <strong>{String(condition.value)}</strong>
+                </p>
               </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-emerald-700">THEN</p>
+              <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  THEN action
+                </p>
                 <div className="grid gap-3 md:grid-cols-3">
                   <select value={form.action.target} onChange={(event) => setForm({ ...form, action: { ...form.action, target: event.target.value as Rule["action"]["target"] } })} className="form-input">
                     <option value="assignedUser">Assigned user</option>
@@ -234,6 +260,9 @@ export default function RuleEnginePage() {
                   <input value={form.action.title} onChange={(event) => setForm({ ...form, action: { ...form.action, title: event.target.value } })} className="form-input" placeholder="Notification title" />
                   <textarea value={form.action.message} onChange={(event) => setForm({ ...form, action: { ...form.action, message: event.target.value } })} className="form-input min-h-[90px]" placeholder="Notification message" />
                 </div>
+                <p className="mt-3 text-sm font-medium text-emerald-800">
+                  THEN send a <strong>{form.action.severity}</strong> notification to <strong>{form.action.target}</strong>.
+                </p>
               </div>
 
               <label className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
@@ -253,7 +282,11 @@ export default function RuleEnginePage() {
 
             <div className="mt-5 space-y-4">
               {isLoading ? (
-                <div className="flex justify-center p-10"><Loader2 className="h-6 w-6 animate-spin text-violet-600" /></div>
+                <div className="space-y-4 p-2">
+                  <Skeleton className="h-28 rounded-2xl bg-gray-100" />
+                  <Skeleton className="h-28 rounded-2xl bg-gray-100" />
+                  <Skeleton className="h-28 rounded-2xl bg-gray-100" />
+                </div>
               ) : rules.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">No rules created yet.</div>
               ) : (
@@ -289,9 +322,44 @@ export default function RuleEnginePage() {
             </div>
           </section>
         </div>
+
+        <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-950">Execution logs</h2>
+              <p className="text-sm text-gray-500">Recent UI-visible runs for demo and operations review.</p>
+            </div>
+            <Clock3 className="h-5 w-5 text-gray-400" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {executionLogs.length ? executionLogs.map((log) => (
+              <div key={log.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{new Date(log.timestamp).toLocaleString()}</p>
+                <p className="mt-3 text-sm text-gray-700">
+                  <strong>{log.rulesEvaluated}</strong> rules evaluated
+                </p>
+                <p className={cn("mt-1 text-sm font-bold", log.triggeredCount > 0 ? "text-rose-600" : "text-emerald-600")}>
+                  {log.triggeredCount} alerts triggered
+                </p>
+              </div>
+            )) : (
+              <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 md:col-span-2 xl:col-span-4">
+                Run the Rule Engine to see execution logs here.
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </ModuleLayout>
   );
+}
+
+function labelForMetric(value: RuleMetric) {
+  return metricOptions.find((option) => option.value === value)?.label || value;
+}
+
+function labelForOperator(value: RuleOperator) {
+  return operatorOptions.find((option) => option.value === value)?.label || value;
 }
 
 function RuleStat({ label, value, suffix }: { label: string; value: number; suffix?: string }) {
@@ -306,7 +374,7 @@ function RuleStat({ label, value, suffix }: { label: string; value: number; suff
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-semibold text-gray-700">{label}</span>

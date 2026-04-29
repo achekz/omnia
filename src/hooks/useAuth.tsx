@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useLocation } from "wouter";
 import type { AxiosError } from "axios";
 import apiClient from "../lib/api-client";
-import type { LoginRequest, RegisterRequest, User } from "../lib/types";
+import type { AuthResponse, LoginRequest, RegisterRequest, User, UserRole } from "../lib/types";
 import { useToast } from "./use-toast";
 
 interface AuthContextType {
@@ -12,53 +12,74 @@ interface AuthContextType {
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
-  logout: () => void;
-}
-
-interface AuthContextType {
+  logout: () => Promise<void>;
   clearAllUsers: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function normalizeUser(user: User): User {
-  const firstName = user.firstName || user.name?.split(" ")[0] || "User";
-  const lastName = user.lastName || user.name?.split(" ").slice(1).join(" ") || "";
+const ROLE_REDIRECTS: Record<UserRole, string> = {
+  admin: "/admin/dashboard",
+  employee: "/employee/dashboard",
+  stagiaire: "/student/dashboard",
+  comptable: "/comptable/dashboard",
+};
 
-  const rawRole = (user.role || user.profileType || "employee").toLowerCase();
+function normalizeRole(value: unknown, fallback: UserRole = "employee"): UserRole {
+  const normalized = String(value || "").trim().toLowerCase();
 
-  let role = rawRole;
-  if (rawRole === "accountant") role = "comptable";
-  if (rawRole === "intern") role = "stagiaire";
+  if (normalized === "admin" || normalized === "company_admin" || normalized === "cabinet_admin" || normalized === "manager" || normalized === "entreprise") {
+    return "admin";
+  }
 
-  let profileType = role; // ✅ نفس role (no conversion)
+  if (normalized === "employee" || normalized === "employe" || normalized === "employé" || normalized === "rh" || normalized === "hr") {
+    return "employee";
+  }
+
+  if (normalized === "stagiaire" || normalized === "intern" || normalized === "student" || normalized === "etudiant" || normalized === "étudiant") {
+    return "stagiaire";
+  }
+
+  if (normalized === "comptable" || normalized === "accountant") {
+    return "comptable";
+  }
+
+  return fallback;
+}
+
+function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
+  const source = rawUser as Partial<User> & Record<string, unknown>;
+  const role = normalizeRole(source.role || source.profileType, "employee");
+  const profileType = normalizeRole(source.profileType || source.role, role);
+  const fullName = String(source.name || "").trim();
+  const firstName = String(source.firstName || fullName.split(" ")[0] || "User").trim();
+  const lastName = String(source.lastName || fullName.split(" ").slice(1).join(" ")).trim();
+  const name = fullName || `${firstName} ${lastName}`.trim();
 
   return {
-    ...user,
+    _id: source._id,
+    id: source.id,
     firstName,
     lastName,
-    name: user.name || `${firstName} ${lastName}`.trim(),
+    name,
+    email: String(source.email || ""),
+    phoneNumber: source.phoneNumber,
+    city: source.city,
     role,
     profileType,
-    isVerified: user.isVerified ?? true,
-  };
+    verificationMethod: source.verificationMethod || "email",
+    gender: source.gender || "male",
+    tenantId: source.tenantId,
+    avatar: source.avatar,
+    isVerified: source.isVerified ?? true,
+    isPublic: source.isPublic,
+    createdAt: source.createdAt,
+    preferences: source.preferences,
+  } as User;
 }
 
 function getRedirectPath(user: User) {
-  const profile = user.profileType || user.role;
-
-  switch (profile) {
-    case "stagiaire":
-      return "/student/dashboard"; // ✅ FIX
-    case "employee":
-      return "/employee/dashboard";
-    case "comptable":
-      return "/comptable/dashboard";
-    case "admin":
-      return "/admin/dashboard";
-    default:
-      return "/employee/dashboard";
-  }
+  return ROLE_REDIRECTS[user.profileType] || ROLE_REDIRECTS[user.role] || "/employee/dashboard";
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -77,6 +98,12 @@ function getErrorMessage(error: unknown, fallback: string) {
   return data?.message || fallback;
 }
 
+function clearStoredAuth() {
+  localStorage.removeItem("omni_ai_token");
+  localStorage.removeItem("omni_ai_refreshToken");
+  localStorage.removeItem("omni_ai_user");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -87,18 +114,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem("omni_ai_token");
-      if (storedToken) {
-        try {
-          const { data } = await apiClient.get("/auth/me");
-          setToken(storedToken);
-          setUser(normalizeUser(data.data.user as User));
-        } catch {
-          localStorage.removeItem("omni_ai_token");
-          localStorage.removeItem("omni_ai_refreshToken");
-          localStorage.removeItem("omni_ai_user");
-        }
+      const storedUser = localStorage.getItem("omni_ai_user");
+
+      if (!storedToken) {
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        setToken(storedToken);
+        if (storedUser) {
+          setUser(normalizeUser(JSON.parse(storedUser)));
+        }
+
+        const response = await apiClient.get("/auth/me");
+        const normalizedUser = normalizeUser(response.data?.data?.user || response.data?.user || {});
+        localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
+        setUser(normalizedUser);
+      } catch {
+        clearStoredAuth();
+        setToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     void initAuth();
@@ -107,18 +146,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (data: LoginRequest) => {
     try {
       const response = await apiClient.post("/auth/login", data);
-      const { user: userData, accessToken, refreshToken } = response.data.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
-      const normalizedUser = normalizeUser(userData);
+      const authData = response.data.data as AuthResponse;
+      const normalizedUser = normalizeUser(authData.user);
 
-      localStorage.setItem("omni_ai_token", accessToken);
-      localStorage.setItem("omni_ai_refreshToken", refreshToken);
+      localStorage.setItem("omni_ai_token", authData.accessToken);
+      localStorage.setItem("omni_ai_refreshToken", authData.refreshToken);
       localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
 
-      setToken(accessToken);
+      setToken(authData.accessToken);
       setUser(normalizedUser);
 
       toast({ title: "Welcome back!", description: "Successfully logged in." });
@@ -136,18 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterRequest) => {
     try {
       const response = await apiClient.post("/auth/register", data);
-      const { user: userData, accessToken, refreshToken } = response.data.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
-      const normalizedUser = normalizeUser(userData);
+      const authData = response.data.data as AuthResponse;
+      const normalizedUser = normalizeUser(authData.user);
 
-      localStorage.setItem("omni_ai_token", accessToken);
-      localStorage.setItem("omni_ai_refreshToken", refreshToken);
+      localStorage.setItem("omni_ai_token", authData.accessToken);
+      localStorage.setItem("omni_ai_refreshToken", authData.refreshToken);
       localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
 
-      setToken(accessToken);
+      setToken(authData.accessToken);
       setUser(normalizedUser);
 
       toast({ title: "Account created!", description: "Your account is ready." });
@@ -162,30 +193,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
-      void apiClient.post("/auth/logout");
+      const currentToken = localStorage.getItem("omni_ai_token");
+      if (currentToken) {
+        await apiClient.post("/auth/logout");
+      }
     } catch {
-      // noop
+      // Local logout still succeeds when the access token is expired or already revoked.
+    } finally {
+      clearStoredAuth();
+      setToken(null);
+      setUser(null);
+      setLocation("/login");
     }
-    localStorage.removeItem("omni_ai_token");
-    localStorage.removeItem("omni_ai_refreshToken");
-    localStorage.removeItem("omni_ai_user");
+  };
+
+  const clearAllUsers = () => {
+    clearStoredAuth();
     setToken(null);
     setUser(null);
     setLocation("/login");
   };
-
-  const clearAllUsers = () => {
-    localStorage.removeItem("omni_ai_token");
-    localStorage.removeItem("omni_ai_refreshToken");
-    localStorage.removeItem("omni_ai_user");
-
-    setToken(null);
-    setUser(null);
-
-    setLocation("/login");
-};
 
   return (
     <AuthContext.Provider

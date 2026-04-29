@@ -25,14 +25,14 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
-import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { SettingsMenu } from "@/components/ui/settings-menu";
+import { NotificationPanel } from "@/components/notifications/notification-panel";
+import { ProfileMenu } from "@/components/layout/profile-menu";
 
 interface ModuleLayoutProps {
   children: ReactNode;
@@ -40,7 +40,7 @@ interface ModuleLayoutProps {
   onItemChange?: (moduleId: string, itemId: string) => void;
 }
 
-type ProfileType = "company" | "cabinet" | "employee" | "student" | "comptable" | "stagiaire" | "admin";
+type ProfileType = "company" | "cabinet" | "employee" | "comptable" | "stagiaire" | "admin";
 
 interface NavItem {
   id: string;
@@ -86,7 +86,7 @@ const MODULES: NavModule[] = [
     bg: "bg-violet-500",
     textColor: "text-violet-600",
     activeSidebarStyle: "bg-violet-50 text-violet-600 font-semibold",
-    allowedProfiles: ["company", "cabinet", "employee", "student", "admin"],
+    allowedProfiles: ["company", "cabinet", "employee", "stagiaire", "admin"],
     items: [{ id: "ai-home", label: "Assistant IA", icon: <Bot className="w-4 h-4" />, path: "/ai" }],
   },
   {
@@ -198,7 +198,7 @@ const MODULES: NavModule[] = [
     bg: "bg-purple-500",
     textColor: "text-purple-600",
     activeSidebarStyle: "bg-purple-50 text-purple-600 font-semibold",
-    allowedProfiles: ["student"],
+    allowedProfiles: ["stagiaire"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/student" },
       { id: "planner", label: "Study Planner", icon: <Calendar className="w-4 h-4" />, path: "/planner" },
@@ -290,15 +290,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             )}
           </button>
 
-          <div className="flex items-center gap-3 pl-3 border-l border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-1.5 rounded-lg transition-colors">
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-600 mt-1 capitalize">
-                {currentProfile} {user.tenantId ? "" : "(Demo)"}
-              </p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-600 hidden sm:block" />
-          </div>
+          <ProfileMenu />
         </div>
       </header>
 
@@ -360,59 +352,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 relative">{children}</main>
       </div>
 
-      {isNotifOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm" onClick={() => setIsNotifOpen(false)} />
-          <div className="w-full max-w-sm bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 h-full relative z-10 flex flex-col shadow-2xl animate-in slide-in-from-right">
-            <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
-              <h3 className="font-display font-bold text-lg text-gray-900">Notifications</h3>
-              <button onClick={() => setIsNotifOpen(false)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {!notifications.length ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-50">
-                  <Bell className="w-12 h-12 text-gray-300" />
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Vous n'avez aucune notification.</p>
-                </div>
-              ) : (
-                notifications.map((notification: Notification) => (
-                  <div
-                    key={notification._id ?? notification.id}
-                    className={cn(
-                      "p-4 rounded-2xl border text-sm transition-all cursor-pointer hover:shadow-md",
-                      notification.isRead
-                        ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-60"
-                        : "bg-purple-50/30 border-purple-100 shadow-sm dark:bg-purple-950/20 dark:border-purple-900",
-                    )}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={cn(
-                          "w-2 h-2 rounded-full",
-                          notification.type === "danger"
-                            ? "bg-rose-500"
-                            : notification.type === "warning"
-                              ? "bg-amber-500"
-                              : notification.type === "success"
-                                ? "bg-emerald-500"
-                                : "bg-blue-500",
-                        )}
-                      />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-gray-900 leading-tight">{notification.title}</h4>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">{notification.message}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
     </div>
   );
 }

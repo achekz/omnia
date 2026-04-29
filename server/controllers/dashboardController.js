@@ -12,7 +12,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     taskFilter.tenantId = req.tenantId;
   }
 
-  if (['employee', 'student'].includes(req.user.role)) {
+  if (['employee', 'stagiaire'].includes(req.user.role)) {
     taskFilter.assignedTo = req.user._id;
 
     if (req.user.role === 'employee') {

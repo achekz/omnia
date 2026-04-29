@@ -1,4 +1,4 @@
-export type UserRole = "student" | "employee" | "comptable" | "stagiaire" | "admin";
+export type UserRole = "admin" | "employee" | "stagiaire" | "comptable";
 export type UserGender = "male" | "female";
 export type VerificationMethod = "email";
 

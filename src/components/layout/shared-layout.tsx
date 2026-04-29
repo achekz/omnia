@@ -8,17 +8,16 @@ import {
   FileText,
   GraduationCap,
   LayoutDashboard,
-  Loader2,
   Menu,
   Wallet,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
-import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { SettingsMenu } from "@/components/ui/settings-menu";
+import { NotificationPanel } from "@/components/notifications/notification-panel";
+import { ProfileMenu } from "@/components/layout/profile-menu";
 
 interface SharedLayoutProps {
   children: ReactNode;
@@ -36,7 +35,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
-  const { data: notifications = [], isLoading: isLoadingNotifs } = useGetNotifications({
+  const { data: notifications = [] } = useGetNotifications({
     query: { enabled: !!user, refetchInterval: 30000 },
   });
 
@@ -60,7 +59,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
           { name: "My Tasks", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
           { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
-      case "student":
+      case "stagiaire":
         return [
           { name: "Dashboard", path: "/dashboard/student", icon: <LayoutDashboard className="w-5 h-5" /> },
           { name: "Study Plan", path: "/planner", icon: <BookOpen className="w-5 h-5" /> },
@@ -149,6 +148,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
               {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />}
             </button>
             <SettingsMenu />
+            <ProfileMenu />
           </div>
         </header>
 
@@ -157,58 +157,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
         </div>
       </main>
 
-      {isNotifOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsNotifOpen(false)} />
-          <div className="w-full max-w-sm bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 h-full relative z-10 flex flex-col shadow-2xl">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
-              <h3 className="font-display font-bold text-lg text-gray-900">Notifications</h3>
-              <button onClick={() => setIsNotifOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {isLoadingNotifs ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
-                </div>
-              ) : notifications.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 p-8">No new notifications</p>
-              ) : (
-                notifications.map((notification: Notification) => (
-                  <div
-                    key={notification._id ?? notification.id}
-                    className={cn(
-                      "p-4 rounded-xl border transition-colors",
-                      notification.isRead ? "bg-gray-50 border-transparent opacity-70" : "bg-purple-50/50 border-purple-100",
-                    )}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span
-                        className={cn(
-                          "text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded",
-                          notification.type === "danger"
-                            ? "bg-rose-100 text-rose-700"
-                            : notification.type === "warning"
-                              ? "bg-amber-100 text-amber-700"
-                              : notification.type === "success"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-blue-100 text-blue-700",
-                        )}
-                      >
-                        {notification.type}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Just now</span>
-                    </div>
-                    <h4 className="font-semibold text-sm text-gray-900 mt-2">{notification.title}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{notification.message}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
     </div>
   );
 }

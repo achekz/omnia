@@ -22,7 +22,7 @@ export const validateSendCode = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be admin, employee, comptable, stagiaire, or student"),
+    .withMessage("Role must be admin, employee, stagiaire, or comptable"),
   body("phoneNumber")
     .trim()
     .notEmpty()
@@ -71,7 +71,7 @@ export const validateRegister = [
     .withMessage("Valid email is required"),
   body("role")
     .isIn(allowedRoles)
-    .withMessage("Role must be admin, employee, comptable, stagiaire, or student"),
+    .withMessage("Role must be admin, employee, stagiaire, or comptable"),
   body("phoneNumber")
     .trim()
     .notEmpty()

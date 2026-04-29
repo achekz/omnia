@@ -43,11 +43,11 @@ export async function getContext(user) {
       };
     }
 
-  if (user.role === "STUDENT") {
+  if (user.role === "STAGIAIRE" || user.role === "student" || user.role === "stagiaire") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
 
       return {
-        userType: "student",
+        userType: "stagiaire",
         userRole: user.role,
         studyTasks: tasks || [],
         timestamp: new Date(),

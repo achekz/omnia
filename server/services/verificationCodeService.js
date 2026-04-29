@@ -1,5 +1,6 @@
 import VerificationCode from "../models/VerificationCode.js";
 import { deliverVerificationCode } from "./otpDeliveryService.js";
+import { normalizeRole } from "../utils/roleNormalization.js";
 
 const VERIFICATION_WINDOW_MS = 5 * 60 * 1000;
 
@@ -10,47 +11,49 @@ function generateOtpCode() {
 export async function createAndSendVerificationCode(payload) {
   const code = generateOtpCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_WINDOW_MS);
+  const normalizedPayload = {
+    ...payload,
+    email: payload.email?.trim().toLowerCase(),
+    role: normalizeRole(payload.role, "employee"),
+    verificationMethod: "email",
+  };
 
   await VerificationCode.deleteMany({
-    purpose: payload.purpose,
+    purpose: normalizedPayload.purpose,
     $or: [
-      payload.email ? { email: payload.email } : null,
-      payload.phoneNumber ? { phoneNumber: payload.phoneNumber } : null,
+      normalizedPayload.email ? { email: normalizedPayload.email } : null,
+      normalizedPayload.phoneNumber ? { phoneNumber: normalizedPayload.phoneNumber } : null,
     ].filter(Boolean),
   });
 
   const verification = new VerificationCode({
-    ...payload,
+    ...normalizedPayload,
     expiresAt,
   });
 
   await verification.setCode(code);
   await verification.save();
 
-  try {
-    const delivery = await deliverVerificationCode({
-      method: payload.verificationMethod,
-      email: payload.email,
-      phoneNumber: payload.phoneNumber,
-      code,
-      firstName: payload.firstName,
-    });
+  const delivery = await deliverVerificationCode({
+    method: normalizedPayload.verificationMethod,
+    email: normalizedPayload.email,
+    phoneNumber: normalizedPayload.phoneNumber,
+    code,
+    firstName: normalizedPayload.firstName,
+  });
 
-    return {
-      verification,
-      delivery,
-      expiresAt,
-    };
-  } catch (error) {
-    await VerificationCode.deleteOne({ _id: verification._id });
-    throw error;
-  }
+  return {
+    verification,
+    delivery,
+    expiresAt,
+  };
 }
 
 export async function verifyOtpCode({ purpose, email, phoneNumber, code }) {
+  const normalizedEmail = email?.trim().toLowerCase();
   const verification = await VerificationCode.findOne({
     purpose,
-    ...(email ? { email } : { phoneNumber }),
+    ...(normalizedEmail ? { email: normalizedEmail } : { phoneNumber }),
   }).select("+codeHash");
 
   if (!verification) {
@@ -63,6 +66,7 @@ export async function verifyOtpCode({ purpose, email, phoneNumber, code }) {
   }
 
   const isMatch = await verification.compareCode(code);
+
   if (!isMatch) {
     return { verified: false, reason: "Invalid verification code" };
   }

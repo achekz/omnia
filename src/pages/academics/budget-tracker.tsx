@@ -5,7 +5,7 @@ import { Calculator, TrendingDown, TrendingUp, DollarSign, Wallet } from "lucide
 export default function BudgetTrackerPage() {
   const { user } = useAuth();
   
-  if (!user || user.profileType !== 'student') {
+  if (!user || user.profileType !== "stagiaire") {
     return (
       <ModuleLayout activeItem="budget">
         <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>

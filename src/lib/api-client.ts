@@ -213,7 +213,7 @@ const fallbackRules: Rule[] = [
     description: "IF task delay > 2 days THEN notify assigned user",
     trigger: "scheduled",
     resource: "task",
-    roles: ["employee", "student"],
+    roles: ["employee", "stagiaire"],
     conditions: [{ metric: "task.delayDays", operator: "gt", value: 2 }],
     action: {
       type: "notify",
@@ -295,6 +295,48 @@ export function useGetNotifications(options?: QueryHookOptions) {
     enabled: options?.query?.enabled ?? true,
     refetchInterval: options?.query?.refetchInterval,
     initialData: fallbackNotifications,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.patch(`/notifications/${id}/read`);
+      return unwrapEntity<Notification>(response.data, "notif", {} as Notification);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.patch("/notifications/read-all");
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useClearReadNotifications() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.delete("/notifications/clear-all");
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 }
 

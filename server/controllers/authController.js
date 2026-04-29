@@ -5,8 +5,7 @@ import {
   sendEmailVerificationCode,
   sendPasswordResetCode,
   verifyEmailTransport,
-} 
-from "../services/emailService.js";
+} from "../services/emailService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
@@ -23,6 +22,7 @@ function generateVerificationCode() {
 
 function sanitizeUser(user) {
   const normalizedRole = normalizeRole(user.role, "employee");
+  const normalizedProfileType = normalizeProfileType(user.profileType || normalizedRole, normalizedRole);
 
   return {
     _id: user._id,
@@ -33,11 +33,8 @@ function sanitizeUser(user) {
     phoneNumber: user.phoneNumber,
     city: user.city,
     verificationMethod: user.verificationMethod,
-
-    // ✅ FIX هنا
     role: normalizedRole,
-    profileType: normalizedRole, // 🔥 نفس role
-
+    profileType: normalizedProfileType,
     gender: user.gender,
     isVerified: user.isVerified,
     avatar: user.avatar,
@@ -50,6 +47,7 @@ function sanitizeUser(user) {
 export const sendCode = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
+  const profileType = normalizeProfileType(req.body.profileType || role, role);
   const email = req.body.email?.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email });
@@ -80,6 +78,7 @@ export const sendCode = asyncHandler(async (req, res) => {
       phoneNumber: phoneValidation.phoneNumber,
       city: phoneValidation.normalizedCity,
       role,
+      profileType,
       gender,
       verificationMethod,
     });
@@ -146,6 +145,7 @@ export const verifyCode = asyncHandler(async (req, res) => {
 export const register = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, password, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
+  const profileType = normalizeProfileType(req.body.profileType || role, role);
   const email = req.body.email?.trim().toLowerCase();
   const phoneValidation = validatePhoneNumberByCity(city, phoneNumber);
 
@@ -175,12 +175,10 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, phoneValidation.message);
   }
 
-  console.log("VERIFICATION ROLE:", verification.role);
-  console.log("REQUEST ROLE:", role);
   const payloadMatches =
     verification.firstName === firstName &&
     verification.lastName === lastName &&
-    verification.role === role &&
+    normalizeRole(verification.role, "employee") === role &&
     verification.gender === gender &&
     verification.phoneNumber === phoneValidation.phoneNumber &&
     verification.city === phoneValidation.normalizedCity &&
@@ -198,7 +196,7 @@ export const register = asyncHandler(async (req, res) => {
     city: verification.city,
     password,
     role,
-    profileType: role,
+    profileType,
     gender,
     verificationMethod,
     isVerified: true,

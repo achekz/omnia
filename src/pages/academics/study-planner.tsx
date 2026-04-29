@@ -5,7 +5,7 @@ import { Calendar, Clock, BookOpen, CheckCircle2, AlertCircle } from "lucide-rea
 export default function StudyPlannerPage() {
   const { user } = useAuth();
   
-  if (!user || user.profileType !== 'student') {
+  if (!user || user.profileType !== "stagiaire") {
     return (
       <ModuleLayout activeItem="planner">
         <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>

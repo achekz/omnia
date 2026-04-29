@@ -1,6 +1,7 @@
 import { useEffect, type ComponentType } from "react";
 import { Redirect, Route, Switch, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import type { UserRole } from "@/lib/types";
 
 import NotFound from "./pages/not-found";
 import LandingPage from "./pages/landing";
@@ -32,7 +33,7 @@ interface AppRoute {
   path: string;
   component: ComponentType;
   protected?: boolean;
-  roles?: string[];
+  roles?: UserRole[];
 }
 
 function LoadingScreen() {
@@ -43,7 +44,29 @@ function LoadingScreen() {
   );
 }
 
-function ProtectedRoute({ component: Component, roles }: { component: ComponentType; roles?: string[] }) {
+function normalizeRouteRole(value: unknown): UserRole {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (["admin", "company_admin", "cabinet_admin", "manager", "entreprise"].includes(normalized)) {
+    return "admin";
+  }
+
+  if (["employee", "employe", "employé", "rh", "hr"].includes(normalized)) {
+    return "employee";
+  }
+
+  if (["stagiaire", "intern", "student", "etudiant", "étudiant"].includes(normalized)) {
+    return "stagiaire";
+  }
+
+  if (["comptable", "accountant"].includes(normalized)) {
+    return "comptable";
+  }
+
+  return "employee";
+}
+
+function ProtectedRoute({ component: Component, roles }: { component: ComponentType; roles?: UserRole[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
@@ -55,10 +78,9 @@ function ProtectedRoute({ component: Component, roles }: { component: ComponentT
   }
 
   if (roles?.length) {
-    const currentRole = String(user?.profileType || user?.role || "").toLowerCase();
-    const normalizedRoles = roles.map((role) => role.toLowerCase());
+    const currentRole = normalizeRouteRole(user?.profileType || user?.role);
 
-    if (!normalizedRoles.includes(currentRole)) {
+    if (!roles.includes(currentRole)) {
       return <Redirect to="/dashboard" />;
     }
   }
@@ -110,19 +132,15 @@ const routes: AppRoute[] = [
   { path: "/dashboard/company", component: CompanyDashboard, protected: true },
   { path: "/dashboard/cabinet", component: CabinetDashboard, protected: true },
 
-  // ✅ EMPLOYEE
   { path: "/dashboard/employee", component: EmployeeDashboard, protected: true },
   { path: "/employee/dashboard", component: EmployeeDashboard, protected: true, roles: ["employee"] },
 
-  // ✅ STAGIAIRE (FIX)
   { path: "/dashboard/student", component: StudentDashboard, protected: true },
   { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["stagiaire"] },
 
-  // ✅ COMPTABLE
   { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
   { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },
 
-  // ✅ ADMIN
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
 

@@ -1,12 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { Link } from "wouter";
-import { Loader2, LogOut, RefreshCw, ShieldCheck, Users, ClipboardList, Sparkles, TimerReset } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import apiClient from "@/lib/api-client";
-import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { useToast } from "@/hooks/use-toast";
-import { useSocket } from "@/context/SocketContext";
 import { useAuth } from "@/hooks/useAuth"; // ✅ مرة واحدة فقط
 
 // ================= TYPES =================
@@ -42,9 +37,8 @@ interface AdminDashboardPayload {
 // ================= COMPONENT =================
 
 export default function AdminDashboard() {
-  const { user, logout, clearAllUsers } = useAuth(); // ✅ هنا الحل
+  const { logout, clearAllUsers } = useAuth(); // ✅ هنا الحل
   const { toast } = useToast();
-  const { socket } = useSocket();
 
   const [dashboard, setDashboard] = useState<AdminDashboardPayload>({
     stats: {

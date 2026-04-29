@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, DollarSign, Plus, Receipt, Wallet } from "lucide-react";
+import { AlertCircle, DollarSign, Plus, Wallet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
 import { StatCard } from "@/components/ui/stat-card";
 import { useDetectAnomaly, useGetFinanceRecords, useGetFinanceSummary, useGetTasks } from "@/lib/api-client";
-import type { FinancialRecord, Task, TaskStatus } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { Task, TaskStatus } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -81,22 +80,36 @@ export default function AccountantDashboard() {
         </div>
 
         {/* TASK BOARD */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {columns.map((col) => {
-            const columnTasks = tasks.filter((t) => t.status === col.id);
+        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {columns.map((col) => {
+              const columnTasks = tasks.filter((t) => t.status === col.id);
 
-            return (
-              <div key={col.id} className="border p-4 rounded">
-                <h4>{col.title}</h4>
+              return (
+                <div key={col.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <h4 className="font-bold text-gray-950">{col.title}</h4>
 
-                {columnTasks.map((task, i) => (
-                  <div key={i} className="p-2 border mt-2 rounded">
-                    {task.title}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+                  {columnTasks.map((task, i) => (
+                    <div key={i} className="mt-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm font-medium text-gray-700">
+                      {task.title}
+                    </div>
+                  ))}
+                  {!columnTasks.length && <p className="mt-3 rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">Empty</p>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="space-y-4">
+            <MlOverviewPanel title="Finance AI" />
+            <button
+              type="button"
+              onClick={() => detectAnomaly.mutate(records.map((record) => record.amount))}
+              disabled={detectAnomaly.isPending}
+              className="w-full rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+            >
+              {detectAnomaly.isPending ? "Scanning anomalies..." : "Detect anomalies"}
+            </button>
+          </div>
         </div>
 
         {/* CHART */}
