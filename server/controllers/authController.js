@@ -11,6 +11,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { validatePhoneNumberByCity } from "../services/phoneValidationService.js";
 import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
+import * as notifService from "../services/notifService.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
@@ -368,6 +369,16 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   try {
     await sendPasswordResetCode(user.email, code, user.firstName);
+    void notifService.create(user._id, user.tenantId, {
+      type: "info",
+      title: "Password reset requested",
+      message: "A password reset verification code was sent to your email.",
+      source: "system",
+      actionUrl: "/forgot-password",
+      metadata: { email: user.email },
+    }).catch((notificationError) => {
+      console.error("[AUTH] Failed to create password reset notification:", notificationError.message);
+    });
   } catch (error) {
     await VerificationCode.deleteOne({ _id: verification._id });
     console.error("[AUTH] Failed to send password reset email:", {
@@ -485,6 +496,16 @@ export const resetPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   await VerificationCode.deleteOne({ _id: verification._id });
+  void notifService.create(user._id, user.tenantId, {
+    type: "info",
+    title: "Password reset successful",
+    message: "Your password was updated successfully.",
+    source: "system",
+    actionUrl: "/login",
+    metadata: { email: user.email },
+  }).catch((notificationError) => {
+    console.error("[AUTH] Failed to create password reset success notification:", notificationError.message);
+  });
 
   return res.status(200).json(
     new ApiResponse(

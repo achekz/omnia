@@ -1,16 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
-  BarChart3,
   FileText,
   Loader2,
   Mic,
   Paperclip,
   Send,
   Sparkles,
-  Target,
-  Users,
 } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +23,36 @@ export default function AIDashboard() {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const historyStorageKey = `omni_ai_chat_history_${user?._id || user?.id || user?.email || "guest"}`;
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const storedHistory = localStorage.getItem(historyStorageKey);
+    if (!storedHistory) {
+      return;
+    }
+
+    try {
+      const parsedHistory = JSON.parse(storedHistory) as Message[];
+      if (Array.isArray(parsedHistory)) {
+        setMessages(parsedHistory);
+      }
+    } catch {
+      localStorage.removeItem(historyStorageKey);
+    }
+  }, [historyStorageKey, user]);
+
+  useEffect(() => {
+    if (!user || messages.length === 0) {
+      return;
+    }
+
+    localStorage.setItem(historyStorageKey, JSON.stringify(messages));
+  }, [historyStorageKey, messages, user]);
 
   if (!user) {
     return (
@@ -34,13 +61,6 @@ export default function AIDashboard() {
       </ModuleLayout>
     );
   }
-
-  const domains = [
-    { label: "Ventes", icon: <BarChart3 className="w-4 h-4 text-emerald-500" /> },
-    { label: "Employee", icon: <Users className="w-4 h-4 text-sky-500" /> },
-    { label: "CRM", icon: <Target className="w-4 h-4 text-blue-500" /> },
-    { label: "Analyses", icon: <Activity className="w-4 h-4 text-purple-500" /> },
-  ];
 
   const suggestions = [
     "Analyser mes ventes",
@@ -91,11 +111,52 @@ export default function AIDashboard() {
 
         <div className="w-full max-w-4xl relative z-10 flex flex-col items-center h-full">
           <div className="w-full flex justify-end mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <button
+              onClick={() => setIsHistoryOpen((current) => !current)}
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
               <Activity className="w-4 h-4" />
               Historique
             </button>
           </div>
+
+          {isHistoryOpen && (
+            <div className="w-full max-w-3xl mb-6 rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/90">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Historique de conversation</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryOpen(false)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                >
+                  Fermer
+                </button>
+              </div>
+              <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                {messages.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-slate-500 dark:border-gray-700">
+                    Aucun historique pour le moment.
+                  </p>
+                ) : (
+                  messages.map((message, index) => (
+                    <div
+                      key={`${message.role}-history-${index}`}
+                      className={`rounded-xl px-4 py-3 text-sm ${
+                        message.role === "user"
+                          ? "bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-100"
+                          : "bg-slate-50 text-slate-800 dark:bg-gray-800 dark:text-gray-100"
+                      }`}
+                    >
+                      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        {message.role === "user" ? "Vous" : "Omni AI"}
+                      </p>
+                      <p className="whitespace-pre-line">{message.text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {showChat && (
             <div className="flex-1 overflow-y-auto w-full max-w-3xl mb-6 space-y-4 px-4">
@@ -146,23 +207,6 @@ export default function AIDashboard() {
                 <p className="text-lg md:text-xl text-slate-600 font-medium tracking-wide">
                   Optimisez vos processus métier avec l'intelligence artificielle
                 </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex flex-wrap justify-center gap-3 mb-8"
-              >
-                {domains.map((domain) => (
-                  <button
-                    key={domain.label}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 rounded-full text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-600 hover:shadow-md dark:hover:bg-gray-800 transition-all hover:-translate-y-0.5"
-                  >
-                    {domain.icon}
-                    {domain.label}
-                  </button>
-                ))}
               </motion.div>
             </>
           )}

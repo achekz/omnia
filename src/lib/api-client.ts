@@ -258,7 +258,7 @@ export function useGetNotifications(options?: QueryHookOptions) {
     queryKey: ["notifications"],
     queryFn: async () => {
       try {
-        const response = await apiClient.get("/notifications");
+        const response = await apiClient.get("/notifications?limit=100");
         return unwrapCollection<Notification>(response.data, "notifications", fallbackNotifications);
       } catch {
         return fallbackNotifications;
