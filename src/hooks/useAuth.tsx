@@ -25,26 +25,34 @@ const ROLE_REDIRECTS: Record<UserRole, string> = {
   comptable: "/comptable/dashboard",
 };
 
+const ROLE_ALIASES: Record<string, UserRole> = {
+  company_admin: "admin",
+  cabinet_admin: "admin",
+  manager: "admin",
+  enterprise: "admin",
+  entreprise: "admin",
+  employe: "employee",
+  employé: "employee",
+  rh: "employee",
+  hr: "employee",
+  intern: "stagiaire",
+  student: "stagiaire",
+  etudiant: "stagiaire",
+  étudiant: "stagiaire",
+  accountant: "comptable",
+};
+
 function normalizeRole(value: unknown, fallback: UserRole = "employee"): UserRole {
   const normalized = String(value || "").trim().toLowerCase();
+  const normalizedFallback: UserRole = ["admin", "employee", "stagiaire", "comptable"].includes(fallback)
+    ? fallback
+    : "employee";
 
-  if (normalized === "admin" || normalized === "company_admin" || normalized === "cabinet_admin" || normalized === "manager" || normalized === "entreprise") {
-    return "admin";
+  if (normalized === "admin" || normalized === "employee" || normalized === "stagiaire" || normalized === "comptable") {
+    return normalized;
   }
 
-  if (normalized === "employee" || normalized === "employe" || normalized === "employé" || normalized === "rh" || normalized === "hr") {
-    return "employee";
-  }
-
-  if (normalized === "stagiaire" || normalized === "intern" || normalized === "student" || normalized === "etudiant" || normalized === "étudiant") {
-    return "stagiaire";
-  }
-
-  if (normalized === "comptable" || normalized === "accountant") {
-    return "comptable";
-  }
-
-  return fallback;
+  return ROLE_ALIASES[normalized] || normalizedFallback;
 }
 
 function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
@@ -54,7 +62,7 @@ function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
   const fullName = String(source.name || "").trim();
   const firstName = String(source.firstName || fullName.split(" ")[0] || "User").trim();
   const lastName = String(source.lastName || fullName.split(" ").slice(1).join(" ")).trim();
-  const name = fullName || `${firstName} ${lastName}`.trim();
+  const name = fullName || [firstName, lastName].filter(Boolean).join(" ").trim() || "User";
 
   return {
     _id: source._id,

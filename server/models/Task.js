@@ -19,6 +19,11 @@ const taskSchema = new Schema(
     priorityScore: { type: Number, default: 2, min: 1, max: 100 },
     delayDays: { type: Number, default: 0, min: 0 },
     plannedStartAt: { type: Date },
+    startTime: { type: Date },
+    endTime: { type: Date },
+    actualStartedAt: { type: Date },
+    actualFinishedAt: { type: Date },
+    isDelayed: { type: Boolean, default: false },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     tenantId: { type: Schema.Types.ObjectId, ref: 'Organization' },
@@ -26,6 +31,7 @@ const taskSchema = new Schema(
     completedAt: { type: Date },
     tags: [{ type: String }],
     estimatedMinutes: { type: Number },
+    estimatedDurationMinutes: { type: Number },
     actualMinutes: { type: Number },
   },
   { timestamps: true }
@@ -51,6 +57,26 @@ taskSchema.pre('save', function planAndScoreTask(next) {
 
   if (!this.plannedStartAt && this.dueDate && this.estimatedMinutes) {
     this.plannedStartAt = new Date(this.dueDate.getTime() - Math.max(this.estimatedMinutes, 30) * 60 * 1000);
+  }
+
+  if (!this.startTime && this.plannedStartAt) {
+    this.startTime = this.plannedStartAt;
+  }
+
+  if (!this.estimatedMinutes && this.estimatedDurationMinutes) {
+    this.estimatedMinutes = this.estimatedDurationMinutes;
+  }
+
+  if (!this.estimatedDurationMinutes && this.estimatedMinutes) {
+    this.estimatedDurationMinutes = this.estimatedMinutes;
+  }
+
+  if (this.startTime && this.estimatedMinutes && !this.endTime) {
+    this.endTime = new Date(this.startTime.getTime() + this.estimatedMinutes * 60 * 1000);
+  }
+
+  if (this.actualFinishedAt && this.endTime) {
+    this.isDelayed = this.actualFinishedAt.getTime() > this.endTime.getTime();
   }
 
   next();

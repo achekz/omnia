@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Users } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth"; // ✅ مرة واحدة فقط
+import { ModuleLayout } from "@/components/layout/module-layout";
 
 // ================= TYPES =================
 
@@ -37,7 +37,6 @@ interface AdminDashboardPayload {
 // ================= COMPONENT =================
 
 export default function AdminDashboard() {
-  const { logout, clearAllUsers } = useAuth(); // ✅ هنا الحل
   const { toast } = useToast();
 
   const [dashboard, setDashboard] = useState<AdminDashboardPayload>({
@@ -75,41 +74,39 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <ModuleLayout activeItem="dashboard">
+        <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin" />
-      </div>
+        </div>
+      </ModuleLayout>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
-
-      {/* ✅ زر حذف الحسابات */}
-      <button
-        onClick={clearAllUsers}
-        className="mb-4 px-4 py-2 bg-red-600 text-white rounded"
-      >
-        🧹 Supprimer les comptes
-      </button>
-
-      {/* logout */}
-      <button
-        onClick={logout}
-        className="mb-4 ml-2 px-4 py-2 bg-gray-800 text-white rounded"
-      >
-        Logout
-      </button>
-
-      {/* stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-white shadow rounded">
-          Users: {dashboard.stats.totalUsers}
+    <ModuleLayout activeItem="dashboard">
+      <div className="p-6 lg:p-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Admin Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">System overview and operational metrics.</p>
         </div>
-        <div className="p-4 bg-white shadow rounded">
-          Tasks: {dashboard.stats.totalTasks}
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Users" value={dashboard.stats.totalUsers} icon={<Users className="h-5 w-5" />} />
+          <StatCard label="Active users" value={dashboard.stats.activeUsers} icon={<Users className="h-5 w-5" />} />
+          <StatCard label="Tasks" value={dashboard.stats.totalTasks} icon={<CheckCircle2 className="h-5 w-5" />} />
+          <StatCard label="Completed" value={dashboard.stats.completedTasks} icon={<CheckCircle2 className="h-5 w-5" />} />
         </div>
       </div>
+    </ModuleLayout>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: number; icon: JSX.Element }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{icon}</div>
+      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="mt-1 text-3xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
     </div>
   );
 }

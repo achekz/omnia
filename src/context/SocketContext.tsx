@@ -52,20 +52,30 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       // General Dashboard Refresh Handler
       socketInstance.on('task_created', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
       socketInstance.on('taskCreated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
 
       socketInstance.on('task_updated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
       socketInstance.on('taskUpdated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      });
+
+      socketInstance.on('attendance_marked', () => {
+        queryClient.invalidateQueries({ queryKey: ['attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-presences'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
       });
 
       setSocket(socketInstance);

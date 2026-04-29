@@ -45,16 +45,34 @@ export const getTasks = asyncHandler(async (req, res) => {
 
 // POST /api/tasks
 export const createTask = asyncHandler(async (req, res) => {
-  const { title, description, priority, dueDate, assignedTo, tags, estimatedMinutes } = req.body;
+  const {
+    title,
+    description,
+    priority,
+    dueDate,
+    assignedTo,
+    tags,
+    estimatedMinutes,
+    estimatedDuration,
+    estimatedDurationMinutes,
+    startTime,
+  } = req.body;
   if (!title) throw new ApiError(400, 'Title is required');
+
+  const normalizedEstimatedMinutes = Number(estimatedMinutes || estimatedDurationMinutes || estimatedDuration || 0) || undefined;
+  const normalizedStartTime = startTime ? new Date(startTime) : undefined;
+  const normalizedDueDate = dueDate ? new Date(dueDate) : undefined;
 
   const taskData = {
     title,
     description,
     priority: priority || 'medium',
-    dueDate,
+    dueDate: normalizedDueDate,
     tags: tags || [],
-    estimatedMinutes,
+    estimatedMinutes: normalizedEstimatedMinutes,
+    estimatedDurationMinutes: normalizedEstimatedMinutes,
+    plannedStartAt: normalizedStartTime,
+    startTime: normalizedStartTime,
     createdBy: req.user._id,
     tenantId: req.tenantId,
   };
@@ -62,7 +80,19 @@ export const createTask = asyncHandler(async (req, res) => {
   if (isEmployeeLikeRole(req.user.role)) {
     taskData.assignedTo = req.user._id;
   } else {
-    taskData.assignedTo = assignedTo || req.user._id;
+    if (!assignedTo) {
+      throw new ApiError(400, 'Assigned user is required');
+    }
+
+    const assignedUserFilter = { _id: assignedTo, role: { $in: ['employee', 'stagiaire', 'comptable'] } };
+    if (req.tenantId) assignedUserFilter.tenantId = req.tenantId;
+
+    const assignedUser = await User.findOne(assignedUserFilter).select('_id');
+    if (!assignedUser) {
+      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+    }
+
+    taskData.assignedTo = assignedUser._id;
   }
 
   const task = await Task.create(taskData);
@@ -106,7 +136,20 @@ export const updateTask = asyncHandler(async (req, res) => {
     ['company_admin', 'cabinet_admin', 'manager', 'admin'].includes(normalizeRole(req.user.role, req.user.role));
   if (!canEdit) throw new ApiError(403, 'Not authorized to edit this task');
 
-  const allowed = ['title', 'description', 'priority', 'dueDate', 'assignedTo', 'tags', 'estimatedMinutes', 'actualMinutes'];
+  const allowed = [
+    'title',
+    'description',
+    'priority',
+    'dueDate',
+    'assignedTo',
+    'tags',
+    'estimatedMinutes',
+    'estimatedDurationMinutes',
+    'startTime',
+    'plannedStartAt',
+    'endTime',
+    'actualMinutes',
+  ];
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
   await task.populate('assignedTo', 'name email avatar');
@@ -143,9 +186,26 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
 
+  const isAssignedUser = task.assignedTo?.toString() === req.user._id.toString();
+  const isCreator = task.createdBy?.toString() === req.user._id.toString();
+  const isAdmin = normalizeRole(req.user.role) === 'admin';
+
+  if (!isAssignedUser && !isCreator && !isAdmin) {
+    throw new ApiError(403, 'Not authorized to update this task');
+  }
+
   task.status = status;
+  if (status === 'in_progress' && !task.actualStartedAt) {
+    task.actualStartedAt = new Date(Date.now());
+  }
+
   if (status === 'done') {
-    task.completedAt = new Date();
+    const finishedAt = new Date(Date.now());
+    task.completedAt = finishedAt;
+    task.actualFinishedAt = finishedAt;
+    if (task.actualStartedAt) {
+      task.actualMinutes = Math.max(1, Math.round((finishedAt.getTime() - task.actualStartedAt.getTime()) / 60000));
+    }
     // Increment tasksCompleted in ActivityLog
     const today = new Date(); today.setHours(0,0,0,0);
     await ActivityLog.findOneAndUpdate(
@@ -167,6 +227,29 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   }
   emitToRole('admin', 'task_updated', { task });
   emitToRole('admin', 'taskUpdated', { task });
+
+  if (status === 'in_progress' && task.createdBy) {
+    await notifService.create(task.createdBy, req.tenantId, {
+      type: 'info',
+      title: 'Task started',
+      message: `"${task.title}" was started.`,
+      source: 'user',
+      actionUrl: '/admin/tasks',
+      metadata: { taskId: task._id.toString() },
+    });
+  }
+
+  if (status === 'done' && task.createdBy) {
+    await notifService.create(task.createdBy, req.tenantId, {
+      type: task.isDelayed ? 'warning' : 'info',
+      title: 'Task completed',
+      message: `"${task.title}" was completed${task.isDelayed ? ' with delay' : ''}.`,
+      source: 'user',
+      actionUrl: '/admin/tasks',
+      metadata: { taskId: task._id.toString(), isDelayed: task.isDelayed },
+    });
+  }
+
   void refreshRecommendationsForScope({
     tenantId: req.tenantId || undefined,
     userIds: [task.assignedTo?.toString?.(), task.createdBy?.toString?.()].filter(Boolean),

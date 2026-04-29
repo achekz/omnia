@@ -196,6 +196,26 @@ export const validateCreateTask = [
     .optional()
     .isIn(["todo", "in_progress", "done", "overdue"])
     .withMessage("Invalid status"),
+  body("assignedTo")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid assigned user ID"),
+  body("startTime")
+    .optional()
+    .isISO8601()
+    .withMessage("Invalid start time format"),
+  body("estimatedDuration")
+    .optional()
+    .isInt({ min: 1, max: 1440 })
+    .withMessage("Estimated duration must be between 1 and 1440 minutes"),
+  body("estimatedDurationMinutes")
+    .optional()
+    .isInt({ min: 1, max: 1440 })
+    .withMessage("Estimated duration must be between 1 and 1440 minutes"),
+  body("estimatedMinutes")
+    .optional()
+    .isInt({ min: 1, max: 1440 })
+    .withMessage("Estimated duration must be between 1 and 1440 minutes"),
 ];
 
 export const validateUpdateTask = [

@@ -16,6 +16,7 @@ import { startRecommendationScheduler } from './services/schedulerService.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.routes.js';
+import attendanceRoutes from './routes/attendance.js';
 import aiRoutes from './routes/ai.routes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import financeRoutes from './routes/finance.js';
@@ -143,6 +144,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', requireDatabase, authRoutes);
 app.use('/api/users', requireDatabase, userRoutes);
 app.use('/api/admin', requireDatabase, adminRoutes);  // ADMIN only - authorize('ADMIN')
+app.use('/api/attendance', requireDatabase, attendanceRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/dashboard', requireDatabase, dashboardRoutes);
 app.use('/api/finance', requireDatabase, financeRoutes);

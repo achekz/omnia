@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Organization from '../models/Organization.js';
 import ActivityLog from '../models/ActivityLog.js';
+import Attendance from '../models/Attendance.js';
 import Task from '../models/Task.js';
 import Presence from '../models/Presence.js';
 import PerformanceLog from '../models/PerformanceLog.js';
@@ -99,6 +100,29 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { users }, 'Users retrieved'));
 });
 
+export const getAllPresences = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+
+  const records = await Attendance.find(scopeFilter)
+    .populate('userId', 'name firstName lastName email role profileType')
+    .sort({ date: -1, checkIn: 1 })
+    .limit(500);
+
+  res.json(new ApiResponse(200, { records }, 'Presences retrieved'));
+});
+
+export const getAllTasks = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+
+  const tasks = await Task.find(scopeFilter)
+    .populate('assignedTo', 'name firstName lastName email role profileType')
+    .populate('createdBy', 'name firstName lastName email role profileType')
+    .sort({ createdAt: -1 })
+    .limit(500);
+
+  res.json(new ApiResponse(200, { tasks }, 'Tasks retrieved'));
+});
+
 export const getAllTenants = asyncHandler(async (req, res) => {
   const tenants = await Organization.find({}).select('name type ownerId members plan');
   res.json(new ApiResponse(200, { tenants }, 'Tenants retrieved'));
@@ -170,6 +194,8 @@ export const getAIInsights = asyncHandler(async (req, res) => {
 export default {
   getAdminDashboard,
   getAllUsers,
+  getAllPresences,
+  getAllTasks,
   getAllTenants,
   toggleUserActive,
   deleteTenant,

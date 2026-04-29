@@ -19,8 +19,10 @@ async function migrateRoles() {
         $or: [
           { role: "accountant" },
           { role: "intern" },
+          { role: "stagiaire", profileType: "employee" },
           { profileType: "accountant" },
           { profileType: "intern" },
+          { profileType: "student" },
         ],
       },
       [
@@ -39,7 +41,9 @@ async function migrateRoles() {
               $switch: {
                 branches: [
                   { case: { $eq: ["$profileType", "accountant"] }, then: "comptable" },
-                  { case: { $eq: ["$profileType", "intern"] }, then: "employee" },
+                  { case: { $eq: ["$profileType", "intern"] }, then: "stagiaire" },
+                  { case: { $eq: ["$profileType", "student"] }, then: "stagiaire" },
+                  { case: { $and: [{ $eq: ["$role", "stagiaire"] }, { $eq: ["$profileType", "employee"] }] }, then: "stagiaire" },
                 ],
                 default: "$profileType",
               },
@@ -50,7 +54,13 @@ async function migrateRoles() {
     );
 
     const verificationResult = await VerificationCode.updateMany(
-      { role: { $in: ["accountant", "intern"] } },
+      {
+        $or: [
+          { role: { $in: ["accountant", "intern"] } },
+          { profileType: { $in: ["accountant", "intern", "student"] } },
+          { role: "stagiaire", profileType: "employee" },
+        ],
+      },
       [
         {
           $set: {
@@ -61,6 +71,17 @@ async function migrateRoles() {
                   { case: { $eq: ["$role", "intern"] }, then: "stagiaire" },
                 ],
                 default: "$role",
+              },
+            },
+            profileType: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$profileType", "accountant"] }, then: "comptable" },
+                  { case: { $eq: ["$profileType", "intern"] }, then: "stagiaire" },
+                  { case: { $eq: ["$profileType", "student"] }, then: "stagiaire" },
+                  { case: { $and: [{ $eq: ["$role", "stagiaire"] }, { $eq: ["$profileType", "employee"] }] }, then: "stagiaire" },
+                ],
+                default: "$profileType",
               },
             },
           },

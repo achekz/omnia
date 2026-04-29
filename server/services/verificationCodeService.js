@@ -1,6 +1,6 @@
 import VerificationCode from "../models/VerificationCode.js";
 import { deliverVerificationCode } from "./otpDeliveryService.js";
-import { normalizeRole } from "../utils/roleNormalization.js";
+import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
 
 const VERIFICATION_WINDOW_MS = 5 * 60 * 1000;
 
@@ -11,10 +11,12 @@ function generateOtpCode() {
 export async function createAndSendVerificationCode(payload) {
   const code = generateOtpCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_WINDOW_MS);
+  const role = normalizeRole(payload.role, "employee");
   const normalizedPayload = {
     ...payload,
     email: payload.email?.trim().toLowerCase(),
-    role: normalizeRole(payload.role, "employee"),
+    role,
+    profileType: normalizeProfileType(payload.profileType || role, role),
     verificationMethod: "email",
   };
 
@@ -63,6 +65,10 @@ export async function verifyOtpCode({ purpose, email, phoneNumber, code }) {
   if (verification.expiresAt.getTime() < Date.now()) {
     await VerificationCode.deleteOne({ _id: verification._id });
     return { verified: false, reason: "Verification code expired" };
+  }
+
+  if (verification.consumedAt) {
+    return { verified: false, reason: "Verification code already used" };
   }
 
   const isMatch = await verification.compareCode(code);

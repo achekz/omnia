@@ -21,7 +21,7 @@ function generateVerificationCode() {
 }
 
 function sanitizeUser(user) {
-  const normalizedRole = normalizeRole(user.role, "employee");
+  const normalizedRole = normalizeRole(user.role || user.profileType, "employee");
   const normalizedProfileType = normalizeProfileType(user.profileType || normalizedRole, normalizedRole);
 
   return {
@@ -179,6 +179,7 @@ export const register = asyncHandler(async (req, res) => {
     verification.firstName === firstName &&
     verification.lastName === lastName &&
     normalizeRole(verification.role, "employee") === role &&
+    normalizeProfileType(verification.profileType || verification.role, role) === profileType &&
     verification.gender === gender &&
     verification.phoneNumber === phoneValidation.phoneNumber &&
     verification.city === phoneValidation.normalizedCity &&
@@ -211,7 +212,7 @@ export const register = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save();
 
-  const savedUser = await User.findById(user._id).select("_id email role createdAt");
+  const savedUser = await User.findById(user._id).select("_id email role profileType createdAt");
   if (!savedUser) {
     console.error("[AUTH] User creation completed but document was not found in MongoDB.", {
       email,
@@ -225,6 +226,7 @@ export const register = asyncHandler(async (req, res) => {
     userId: savedUser._id,
     email: savedUser.email,
     role: savedUser.role,
+    profileType: savedUser.profileType,
     database: mongoose.connection.name,
   });
 

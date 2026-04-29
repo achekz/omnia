@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { AlignLeft, AlertTriangle, CheckCircle2, Clock, Play, Plus } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useCreateTask, useGetTasks, useUpdateTask } from "@/lib/api-client";
+import { useCreateTask, useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
 import type { TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ export default function MyTasks() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const { data: tasks = [], isLoading } = useGetTasks();
-  const updateTask = useUpdateTask();
+  const updateTaskStatus = useUpdateTaskStatus();
   const createTask = useCreateTask();
 
   const filteredTasks = tasks.filter((task) => (filter === "all" ? true : task.status === filter));
@@ -101,13 +101,25 @@ export default function MyTasks() {
                   <div className="space-y-3">
                     {columnTasks.map((task) => {
                       const taskId = task._id || task.id;
-                      const nextStatus: TaskStatus = task.status === "todo" ? "in_progress" : task.status === "in_progress" ? "done" : "todo";
+                      const startTask = () => {
+                        if (task.status === "todo" && taskId) {
+                          updateTaskStatus.mutate({ id: taskId, status: "in_progress" });
+                        }
+                      };
+
+                      const finishTask = () => {
+                        if (task.status === "in_progress" && taskId) {
+                          updateTaskStatus.mutate({ id: taskId, status: "done" });
+                        }
+                      };
 
                       return (
                         <article
                           key={taskId}
+                          onClick={startTask}
                           className={cn(
                             "rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                            task.status === "todo" && "cursor-pointer",
                             task.status === "overdue" || (task.delayDays || 0) > 0
                               ? "border-rose-200 bg-rose-50"
                               : "border-gray-200 bg-white",
@@ -116,9 +128,13 @@ export default function MyTasks() {
                           <div className="mb-3 flex items-start justify-between gap-3">
                             <p className={cn("font-semibold leading-tight", task.status === "done" ? "text-gray-400 line-through" : "text-gray-950")}>{task.title}</p>
                             <button
-                              onClick={() => taskId && updateTask.mutate({ id: taskId, data: { status: nextStatus } })}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                finishTask();
+                              }}
+                              disabled={task.status !== "in_progress" || updateTaskStatus.isPending}
                               className="shrink-0 rounded-full bg-gray-50 p-1.5 text-gray-500 hover:bg-purple-50 hover:text-purple-700"
-                              title="Move status"
+                              title={task.status === "in_progress" ? "Done" : task.status === "todo" ? "Click card to start" : "Completed"}
                             >
                               {task.status === "done" ? <CheckCircle2 className="h-4 w-4" /> : task.status === "in_progress" ? <Play className="h-4 w-4" /> : <div className="h-4 w-4 rounded-full border-2 border-current" />}
                             </button>

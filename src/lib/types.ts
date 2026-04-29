@@ -89,10 +89,38 @@ export interface Task {
   createdBy?: Partial<User> | string;
   tags?: string[];
   estimatedMinutes?: number;
+  estimatedDurationMinutes?: number;
   actualMinutes?: number;
   priorityScore?: number;
   delayDays?: number;
   plannedStartAt?: string;
+  startTime?: string;
+  endTime?: string;
+  actualStartedAt?: string;
+  actualFinishedAt?: string;
+  completedAt?: string;
+  isDelayed?: boolean;
+  createdAt?: string;
+}
+
+export type AttendanceStatus = "on_time" | "late" | "very_late";
+export type CheckOutStatus = "on_time" | "early" | "very_early";
+
+export interface Attendance {
+  _id?: string;
+  id?: string;
+  userId?: Partial<User> | string;
+  date: string;
+  dateKey: string;
+  checkIn: string;
+  checkOut?: string;
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+  status: AttendanceStatus;
+  checkOutStatus?: CheckOutStatus;
+  delayMinutes: number;
+  reason?: string;
+  checkOutReason?: string;
   createdAt?: string;
 }
 
@@ -252,4 +280,9 @@ export interface CreateTaskInput {
   description?: string;
   priority?: TaskPriority;
   dueDate?: string;
+  assignedTo?: string;
+  startTime?: string;
+  estimatedDuration?: number;
+  estimatedDurationMinutes?: number;
+  estimatedMinutes?: number;
 }

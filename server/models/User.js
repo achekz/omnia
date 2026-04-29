@@ -147,7 +147,7 @@ userSchema.virtual("fullName").get(function getFullName() {
 userSchema.pre("save", async function hashPassword(next) {
   this.name = `${this.firstName} ${this.lastName}`.trim();
   this.role = normalizeRole(this.role, "employee");
-  this.profileType = normalizeProfileType(this.profileType || this.role, "employee");
+  this.profileType = normalizeProfileType(this.profileType || this.role, this.role);
 
   if (!this.isModified("password")) {
     return next();
@@ -164,7 +164,7 @@ userSchema.methods.comparePassword = async function comparePassword(candidatePas
 
 userSchema.methods.generateAccessToken = function generateAccessToken() {
   const normalizedRole = normalizeRole(this.role, "employee");
-  const normalizedProfileType = normalizeProfileType(this.profileType, "employee");
+  const normalizedProfileType = normalizeProfileType(this.profileType || normalizedRole, normalizedRole);
 
   return jwt.sign(
     {

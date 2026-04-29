@@ -20,10 +20,14 @@ import StudentDashboard from "./pages/dashboard/student";
 import AIDashboard from "./pages/ai";
 import BudgetPage from "./pages/budget/budget";
 import PlannerPage from "./pages/planner";
+import PresencePage from "./pages/presence";
 import MyTasksPage from "./pages/tasks/my-tasks";
 import SettingsPage from "./pages/settings";
 import RuleEnginePage from "./pages/rules";
 import MyPerformancePage from "./pages/performance/my-performance";
+import AdminUsersPage from "./pages/admin/users";
+import AdminPresencesPage from "./pages/admin/presences";
+import AdminTasksPage from "./pages/admin/tasks";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
 import HelpCenterPage from "./pages/help/center";
@@ -44,26 +48,31 @@ function LoadingScreen() {
   );
 }
 
-function normalizeRouteRole(value: unknown): UserRole {
+const ROLE_ALIASES: Record<string, UserRole> = {
+  company_admin: "admin",
+  cabinet_admin: "admin",
+  manager: "admin",
+  enterprise: "admin",
+  entreprise: "admin",
+  employe: "employee",
+  employé: "employee",
+  rh: "employee",
+  hr: "employee",
+  intern: "stagiaire",
+  student: "stagiaire",
+  etudiant: "stagiaire",
+  étudiant: "stagiaire",
+  accountant: "comptable",
+};
+
+function normalizeRouteRole(value: unknown): UserRole | null {
   const normalized = String(value || "").trim().toLowerCase();
 
-  if (["admin", "company_admin", "cabinet_admin", "manager", "entreprise"].includes(normalized)) {
-    return "admin";
+  if (normalized === "admin" || normalized === "employee" || normalized === "stagiaire" || normalized === "comptable") {
+    return normalized;
   }
 
-  if (["employee", "employe", "employé", "rh", "hr"].includes(normalized)) {
-    return "employee";
-  }
-
-  if (["stagiaire", "intern", "student", "etudiant", "étudiant"].includes(normalized)) {
-    return "stagiaire";
-  }
-
-  if (["comptable", "accountant"].includes(normalized)) {
-    return "comptable";
-  }
-
-  return "employee";
+  return ROLE_ALIASES[normalized] || null;
 }
 
 function ProtectedRoute({ component: Component, roles }: { component: ComponentType; roles?: UserRole[] }) {
@@ -80,7 +89,7 @@ function ProtectedRoute({ component: Component, roles }: { component: ComponentT
   if (roles?.length) {
     const currentRole = normalizeRouteRole(user?.profileType || user?.role);
 
-    if (!roles.includes(currentRole)) {
+    if (!currentRole || !roles.includes(currentRole)) {
       return <Redirect to="/dashboard" />;
     }
   }
@@ -143,6 +152,9 @@ const routes: AppRoute[] = [
 
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
+  { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
+  { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },
+  { path: "/admin/tasks", component: AdminTasksPage, protected: true, roles: ["admin"] },
 
   { path: "/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
   { path: "/admin/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
@@ -150,6 +162,7 @@ const routes: AppRoute[] = [
   { path: "/ai", component: AIDashboard, protected: true },
   { path: "/budget", component: BudgetPage, protected: true },
   { path: "/planner", component: PlannerPage, protected: true },
+  { path: "/presence", component: PresencePage, protected: true },
   { path: "/tasks", component: MyTasksPage, protected: true },
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/performance", component: MyPerformancePage, protected: true },

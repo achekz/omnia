@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  Attendance,
   CreateTaskInput,
   DashboardStats,
   FinanceSummary,
@@ -12,6 +13,7 @@ import type {
   Task,
   TeamMemberSummary,
   UpdateTaskInput,
+  User,
 } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -400,6 +402,8 @@ export function useCreateTask() {
     },
     onSuccess: (createdTask) => {
       queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) => [createdTask, ...current]);
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -427,6 +431,95 @@ export function useUpdateTask() {
         }),
       );
     },
+  });
+}
+
+export function useUpdateTaskStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: Task["status"] }) => {
+      const response = await apiClient.patch(`/tasks/${id}/status`, { status });
+      return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetMyAttendance(month: number, year: number, options?: QueryHookOptions) {
+  return useQuery<{ records: Attendance[]; today: Attendance | null; serverTime?: string }>({
+    queryKey: ["attendance", month, year],
+    queryFn: async () => {
+      const response = await apiClient.get(`/attendance/me?month=${month}&year=${year}`);
+      return unwrapData(response.data, { records: [], today: null });
+    },
+    enabled: options?.query?.enabled ?? true,
+    initialData: { records: [], today: null },
+  });
+}
+
+export function useSendAttendanceCode() {
+  return useMutation({
+    mutationFn: async (data: { action: "check-in" | "check-out"; reason?: string }) => {
+      const response = await apiClient.post("/attendance/send-code", data);
+      return unwrapData(response.data, {});
+    },
+  });
+}
+
+export function useConfirmAttendance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { action: "check-in" | "check-out"; code: string; reason?: string }) => {
+      const response = await apiClient.post("/attendance/confirm", data);
+      return unwrapEntity<Attendance>(response.data, "attendance", {} as Attendance);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-presences"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetAdminUsers(options?: QueryHookOptions) {
+  return useQuery<User[]>({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/users");
+      return unwrapCollection<User>(response.data, "users", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    initialData: [],
+  });
+}
+
+export function useGetAdminPresences(options?: QueryHookOptions) {
+  return useQuery<Attendance[]>({
+    queryKey: ["admin-presences"],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/presences");
+      return unwrapCollection<Attendance>(response.data, "records", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    initialData: [],
+  });
+}
+
+export function useGetAdminTasks(options?: QueryHookOptions) {
+  return useQuery<Task[]>({
+    queryKey: ["admin-tasks"],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/tasks");
+      return unwrapCollection<Task>(response.data, "tasks", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    initialData: [],
   });
 }
 

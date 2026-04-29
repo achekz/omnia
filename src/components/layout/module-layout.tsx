@@ -98,6 +98,9 @@ const MODULES: NavModule[] = [
     allowedProfiles: ["admin"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/admin/dashboard" },
+      { id: "users", label: "Users", icon: <Users className="w-4 h-4" />, path: "/admin/users" },
+      { id: "presences", label: "Presences", icon: <Calendar className="w-4 h-4" />, path: "/admin/presences" },
+      { id: "admin-tasks", label: "Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/admin/tasks" },
       { id: "rules", label: "Rule Engine", icon: <ShieldCheck className="w-4 h-4" />, path: "/admin/rules" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
       { id: "settings", label: "Settings", icon: <FileText className="w-4 h-4" />, path: "/settings" },
@@ -123,6 +126,7 @@ const MODULES: NavModule[] = [
     allowedProfiles: ["company", "employee"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
+      { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
@@ -138,6 +142,7 @@ const MODULES: NavModule[] = [
     allowedProfiles: ["comptable"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
+      { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "budget", label: "Finance", icon: <Wallet className="w-4 h-4" />, path: "/budget" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "payroll", label: "Payroll", icon: <FileText className="w-4 h-4" />, path: "/paie/dashboard" },
@@ -200,6 +205,7 @@ const MODULES: NavModule[] = [
     allowedProfiles: ["stagiaire"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/student" },
+      { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "planner", label: "Study Planner", icon: <Calendar className="w-4 h-4" />, path: "/planner" },
       { id: "budget", label: "Budget Tracker", icon: <Calculator className="w-4 h-4" />, path: "/budget" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },

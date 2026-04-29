@@ -23,6 +23,20 @@ router.get(
 );
 
 router.get(
+  '/presences',
+  protect,
+  authorize('ADMIN'),
+  adminController.getAllPresences
+);
+
+router.get(
+  '/tasks',
+  protect,
+  authorize('ADMIN'),
+  adminController.getAllTasks
+);
+
+router.get(
   '/tenants',
   protect,
   authorize('ADMIN'),
