@@ -6,6 +6,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { predictPerformance } from '../services/aiService.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 import Recommendation from '../models/Recommendation.js';
+import * as mlService from '../services/mlService.js';
+
+function normalizeRiskScore(score) {
+  const numericScore = Number(score || 0);
+  if (!Number.isFinite(numericScore)) return 0;
+  return numericScore > 1 ? Math.max(0, Math.min(1, numericScore / 100)) : Math.max(0, Math.min(1, numericScore));
+}
 
 // POST /api/ml/predict
 export const predict = asyncHandler(async (req, res) => {
@@ -20,11 +27,19 @@ export const predict = asyncHandler(async (req, res) => {
     overdue_count: logs.reduce((a, l) => a + l.overdueCount, 0),
   };
 
-  const result = await predictPerformance({
+  const mlPrediction = await mlService.predict(features);
+  const fallbackResult = await predictPerformance({
     users: [{ user: req.user, tasks: [], performanceLogs: logs }],
     features,
   });
-  const prediction = result.predictions?.[0] || result;
+  const fallbackPrediction = fallbackResult.predictions?.[0] || fallbackResult;
+  const riskScore = normalizeRiskScore(mlPrediction.risk_score ?? fallbackPrediction.risk_score ?? fallbackPrediction.performanceScore);
+  const prediction = {
+    ...fallbackPrediction,
+    ...mlPrediction,
+    risk_score: riskScore,
+    risk_level: mlPrediction.risk_level || (riskScore >= 0.7 ? 'high' : riskScore >= 0.4 ? 'medium' : 'low'),
+  };
 
   const saved = await MLPrediction.create({
     userId: req.user._id,
@@ -33,7 +48,7 @@ export const predict = asyncHandler(async (req, res) => {
     input: features,
     output: prediction,
     riskLevel: prediction.risk_level,
-    riskScore: prediction.risk_score || prediction.performanceScore,
+    riskScore,
     confidence: prediction.confidence,
   });
 
@@ -41,12 +56,12 @@ export const predict = asyncHandler(async (req, res) => {
     await notifService.create(req.user._id, req.tenantId, {
       type: 'warning',
       title: '🤖 High Risk Detected',
-      message: `ML model detected high risk (score: ${prediction.risk_score}). Check your activity.`,
+      message: `ML model detected high risk (score: ${riskScore.toFixed(2)}). Check your activity.`,
       source: 'ml',
     });
   }
 
-  return res.json(new ApiResponse(200, { prediction: saved }));
+  return res.json(new ApiResponse(200, { prediction: saved, riskScore }));
 });
 
 // POST /api/ml/recommend
@@ -74,13 +89,30 @@ export const recommend = asyncHandler(async (req, res) => {
     trigger: 'manual-ml-route',
   });
 
+  await MLPrediction.create({
+    userId: req.user._id,
+    tenantId: req.tenantId,
+    modelType: 'recommendation',
+    input: context,
+    output: savedRecommendation,
+    recommendations: savedRecommendation?.recommendations || [],
+  });
+
   return res.json(new ApiResponse(200, { recommendations: savedRecommendation?.recommendations || [], raw: savedRecommendation, context }));
 });
 
 // POST /api/ml/anomaly
 export const anomaly = asyncHandler(async (req, res) => {
-  const { values } = req.body;
-  if (!values || !Array.isArray(values)) throw new ApiError(400, 'values array required');
+  let { values } = req.body;
+  if (!values) {
+    const records = await (await import('../models/FinancialRecord.js')).default
+      .find(req.tenantId ? { tenantId: req.tenantId } : {})
+      .sort({ date: -1 })
+      .limit(100)
+      .select('amount');
+    values = records.map((record) => record.amount).reverse();
+  }
+  if (!Array.isArray(values)) throw new ApiError(400, 'values array required');
 
   const result = await mlService.detectAnomaly(values);
 

@@ -30,12 +30,12 @@ export const getRecords = asyncHandler(async (req, res) => {
 // POST /api/finance/records
 export const createRecord = asyncHandler(async (req, res) => {
   if (!req.tenantId) throw new ApiError(403, 'Tenant required');
-  const { clientName, type, amount, category, description, date } = req.body;
+  const { clientName, type, amount, category, description, date, budgetLimit } = req.body;
   if (!type || !amount) throw new ApiError(400, 'type and amount are required');
 
   const record = await FinancialRecord.create({
     tenantId: req.tenantId,
-    clientName, type, amount, category, description,
+    clientName, type, amount, category, description, budgetLimit,
     date: date ? new Date(date) : new Date(),
   });
 
@@ -77,7 +77,15 @@ export const getSummary = asyncHandler(async (req, res) => {
     const cat = r.category || 'Other';
     categoryMap[cat] = (categoryMap[cat] || 0) + r.amount;
   });
-  const byCategory = Object.entries(categoryMap).map(([category, total]) => ({ category, total }));
+  const byCategory = Object.entries(categoryMap).map(([category, total]) => {
+    const budget = records.find((record) => record.category === category && record.budgetLimit)?.budgetLimit || null;
+    return {
+      category,
+      total,
+      budget,
+      overBudget: Boolean(budget && total > budget),
+    };
+  });
 
   // By month (last 6)
   const monthlyMap = {};

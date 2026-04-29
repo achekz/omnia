@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import connectDB, { startMongoReconnectLoop } from './config/db.js';
 import { initSocket } from './config/socket.js';
+import { setupSwagger } from './config/swagger.js';
 import errorHandler from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimiter.js';
 import requireDatabase from './middleware/requireDatabase.js';
@@ -20,6 +21,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import financeRoutes from './routes/finance.js';
 import mlRoutes from './routes/ml.js';
 import notificationRoutes from './routes/notifications.js';
+import ruleRoutes from './routes/rules.js';
 import teamRoutes from './routes/team.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.routes.js';
@@ -149,6 +151,8 @@ app.use('/api/tasks', requireDatabase, taskRoutes);
 app.use('/api/team', requireDatabase, teamRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', requireDatabase, searchRoutes);
+app.use('/api/rules', requireDatabase, ruleRoutes);
+setupSwagger(app);
 
 // Global error handler
 app.use(errorHandler);

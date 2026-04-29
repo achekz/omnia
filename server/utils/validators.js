@@ -190,11 +190,11 @@ export const validateCreateTask = [
     .withMessage("Invalid date format"),
   body("priority")
     .optional()
-    .isIn(["low", "medium", "high"])
-    .withMessage("Priority must be low, medium, or high"),
+    .isIn(["low", "medium", "high", "critical"])
+    .withMessage("Priority must be low, medium, high, or critical"),
   body("status")
     .optional()
-    .isIn(["todo", "in-progress", "done"])
+    .isIn(["todo", "in_progress", "done", "overdue"])
     .withMessage("Invalid status"),
 ];
 
@@ -209,12 +209,13 @@ export const validateUpdateTask = [
     .withMessage("Title must be 3-100 characters"),
   body("status")
     .optional()
-    .isIn(["todo", "in-progress", "done"])
+    .isIn(["todo", "in_progress", "done", "overdue"])
     .withMessage("Invalid status"),
 ];
 
 export const validateCreateFinanceRecord = [
   body("description")
+    .optional()
     .trim()
     .isLength({ min: 3, max: 200 })
     .withMessage("Description must be 3-200 characters"),
@@ -222,15 +223,21 @@ export const validateCreateFinanceRecord = [
     .isFloat({ min: 0.01 })
     .withMessage("Amount must be positive number"),
   body("category")
-    .isIn(["income", "expense", "investment", "savings"])
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 80 })
     .withMessage("Invalid category"),
   body("date")
+    .optional()
     .isISO8601()
     .withMessage("Invalid date format"),
   body("type")
+    .isIn(["income", "expense"])
+    .withMessage("Type must be income or expense"),
+  body("budgetLimit")
     .optional()
-    .isIn(["credit_card", "bank_transfer", "cash", "check", "online"])
-    .withMessage("Invalid payment type"),
+    .isFloat({ min: 0 })
+    .withMessage("Budget limit must be positive"),
 ];
 
 export const validateSearch = [

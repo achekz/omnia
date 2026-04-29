@@ -9,6 +9,7 @@ const financialRecordSchema = new Schema(
     type: { type: String, enum: ['income', 'expense'] },
     amount: { type: Number, required: true },
     category: { type: String },
+    budgetLimit: { type: Number },
     description: { type: String },
     date: { type: Date, default: Date.now },
     isAnomaly: { type: Boolean, default: false },

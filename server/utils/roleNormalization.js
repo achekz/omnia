@@ -1,4 +1,4 @@
-const canonicalRoles = ["admin", "employee", "comptable", "stagiaire", "student"];
+const canonicalRoles = ["admin", "entreprise", "employee", "comptable", "stagiaire", "student"];
 
 export function normalizeRole(value, fallback = "employee") {
   const normalized = String(value || "").trim().toLowerCase();
@@ -9,6 +9,10 @@ export function normalizeRole(value, fallback = "employee") {
 
   if (normalized === "accountant") {
     return "comptable";
+  }
+
+  if (["company_admin", "cabinet_admin", "manager", "enterprise", "entreprise"].includes(normalized)) {
+    return "admin";
   }
 
   if (normalized === "intern") {

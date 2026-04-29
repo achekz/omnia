@@ -1,6 +1,8 @@
 import { refreshRecommendationsForScope } from "./recommendationService.js";
+import { ruleEngine } from "./ruleEngine.js";
 
 let schedulerHandle = null;
+let ruleSchedulerHandle = null;
 
 async function runRecommendationJob() {
   try {
@@ -23,6 +25,9 @@ export async function startRecommendationScheduler() {
     schedulerHandle = cron.schedule("0 8 * * 1", () => {
       void runRecommendationJob();
     });
+    ruleSchedulerHandle = cron.schedule("*/15 * * * *", () => {
+      void ruleEngine.run({ trigger: "scheduled" });
+    });
     console.log("[CRON] node-cron scheduler started for weekly recommendations.");
     return schedulerHandle;
   } catch (error) {
@@ -33,6 +38,15 @@ export async function startRecommendationScheduler() {
 
     if (typeof schedulerHandle.unref === "function") {
       schedulerHandle.unref();
+    }
+
+    if (!ruleSchedulerHandle) {
+      ruleSchedulerHandle = setInterval(() => {
+        void ruleEngine.run({ trigger: "scheduled" });
+      }, 15 * 60 * 1000);
+      if (typeof ruleSchedulerHandle.unref === "function") {
+        ruleSchedulerHandle.unref();
+      }
     }
 
     return schedulerHandle;

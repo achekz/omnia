@@ -9,8 +9,10 @@ const router = express.Router();
 router.use(protect, tenantIsolation);
 
 router.post('/predict', predict);
+router.post('/predict-risk', predict);
 router.post('/recommend', recommend);
-router.post('/anomaly', authorize('company_admin', 'cabinet_admin'), anomaly);
+router.post('/anomaly', authorize('admin', 'entreprise', 'comptable', 'company_admin', 'cabinet_admin'), anomaly);
+router.post('/detect-anomaly', authorize('admin', 'entreprise', 'comptable', 'company_admin', 'cabinet_admin'), anomaly);
 router.get('/history', history);
 router.get('/insights', insights);
 router.get('/recommendations', recommendations);
