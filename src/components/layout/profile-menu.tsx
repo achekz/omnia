@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
-import { ChevronDown, HelpCircle, LogOut, Settings, UserRound } from "lucide-react";
+import { ChevronDown, HelpCircle, LogOut, Monitor, Settings, UserRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { DisplayAccessibilityModal } from "@/components/ui/display-accessibility-modal";
 
 export function ProfileMenu() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,6 +62,14 @@ export function ProfileMenu() {
           <div className="p-2">
             <MenuLink href="/settings" icon={<UserRound className="h-4 w-4" />} label="Profile settings" onClick={() => setIsOpen(false)} />
             <MenuLink href="/settings" icon={<Settings className="h-4 w-4" />} label="Workspace settings" onClick={() => setIsOpen(false)} />
+            <MenuButton
+              icon={<Monitor className="h-4 w-4" />}
+              label="Theme"
+              onClick={() => {
+                setIsOpen(false);
+                setShowThemeModal(true);
+              }}
+            />
             <MenuLink href="/help" icon={<HelpCircle className="h-4 w-4" />} label="Help center" onClick={() => setIsOpen(false)} />
             <div className="my-2 h-px bg-gray-100" />
             <button
@@ -76,6 +86,8 @@ export function ProfileMenu() {
           </div>
         </div>
       )}
+
+      <DisplayAccessibilityModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
     </div>
   );
 }
@@ -86,5 +98,18 @@ function MenuLink({ href, icon, label, onClick }: { href: string; icon: ReactNod
       <span className="text-gray-400">{icon}</span>
       {label}
     </Link>
+  );
+}
+
+function MenuButton({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+    >
+      <span className="text-gray-400">{icon}</span>
+      {label}
+    </button>
   );
 }

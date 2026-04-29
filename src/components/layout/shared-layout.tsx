@@ -15,7 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
-import { SettingsMenu } from "@/components/ui/settings-menu";
 import { NotificationPanel } from "@/components/notifications/notification-panel";
 import { ProfileMenu } from "@/components/layout/profile-menu";
 
@@ -147,7 +146,6 @@ export function SharedLayout({ children }: SharedLayoutProps) {
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />}
             </button>
-            <SettingsMenu />
             <ProfileMenu />
           </div>
         </header>

@@ -30,7 +30,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
-import { SettingsMenu } from "@/components/ui/settings-menu";
 import { NotificationPanel } from "@/components/notifications/notification-panel";
 import { ProfileMenu } from "@/components/layout/profile-menu";
 
@@ -278,7 +277,6 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
 
         <div className="flex items-center gap-3 shrink-0 ml-4">
           <BackButton />
-          <SettingsMenu />
 
           <button
             onClick={() => setIsNotifOpen(true)}
