@@ -35,7 +35,6 @@
 
 ## A Verifier Dans Le Code
 
-- Aligner le module finance backend avec le role `comptable` si le comptable doit gerer les finances.
 - Verifier que les routes sensibles utilisent toutes le meme middleware RBAC.
 - Ajouter des tests automatises pour:
   - authentification;
@@ -44,8 +43,15 @@
   - presence;
   - notifications.
 - Verifier que les recommandations ML se rafraichissent apres les actions importantes.
-- Ajouter une page ou section "Rapports" si le cas d'utilisation comptable "Gerer rapports" doit etre complet.
-- Ajouter un export PDF/Excel si le rapport PFE promet cette fonctionnalite.
+- Ajouter un export PDF/Excel si le rapport PFE promet cette fonctionnalite exacte. Le code fournit deja un export CSV/JSON.
+
+## Deja Complete Cote Code
+
+- Le role `comptable` peut acceder au module finance backend.
+- Le comptable peut ajouter des transactions financieres depuis l'interface.
+- Une page "Reports" existe pour le comptable.
+- Les rapports finance ont un export CSV/JSON.
+- Les endpoints `/api/finance/reports` et `/api/finance/export` sont disponibles.
 
 ## A Corriger Dans Les Diagrammes
 

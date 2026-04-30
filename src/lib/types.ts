@@ -226,6 +226,24 @@ export interface FinanceSummary {
   recentAnomalies?: FinancialRecord[];
 }
 
+export interface FinanceReport {
+  generatedAt?: string;
+  period?: {
+    startDate?: string | null;
+    endDate?: string | null;
+  };
+  summary: FinanceSummary;
+  totalRecords: number;
+  topCategory?: {
+    category: string;
+    total: number;
+    budget?: number | null;
+    overBudget?: boolean;
+  } | null;
+  anomalyRate: number;
+  records: FinancialRecord[];
+}
+
 export type RuleMetric =
   | "task.delayDays"
   | "task.priorityScore"

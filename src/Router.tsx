@@ -30,6 +30,7 @@ import AdminPresencesPage from "./pages/admin/presences";
 import AdminTasksPage from "./pages/admin/tasks";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
+import FinanceReportsPage from "./pages/reports/finance-reports";
 import HelpCenterPage from "./pages/help/center";
 import EmployeeSectionPage from "./pages/employee/section";
 
@@ -177,6 +178,8 @@ const routes: AppRoute[] = [
   { path: "/employee/projects", component: EmployeeSectionPage, protected: true },
 
   { path: "/paie/dashboard", component: PaieDashboardPage, protected: true },
+  { path: "/reports", component: FinanceReportsPage, protected: true, roles: ["comptable", "admin"] },
+  { path: "/comptable/reports", component: FinanceReportsPage, protected: true, roles: ["comptable"] },
   { path: "/help", component: HelpCenterPage, protected: true },
 ];
 

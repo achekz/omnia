@@ -228,7 +228,7 @@ Les recommandations doivent tenir compte des evenements recents, comme une tache
 - verifier le contenu exact des PDF introduction et chapitre 1 avec OCR ou copier-coller du texte source;
 - ajouter diagrammes de sequence pour presence, login, taches et notifications;
 - ajouter diagramme de classe general dans le rapport;
-- aligner le module finance backend avec le role comptable si le comptable doit gerer les finances;
 - ajouter les captures d'ecran finales;
 - ajouter les tests de validation dans le rapport;
-- uniformiser les termes: `stagiaire`, `employee`, `comptable`, `admin`.
+- uniformiser les termes: `stagiaire`, `employee`, `comptable`, `admin`;
+- ajouter des tests automatises si le projet doit fournir une preuve technique complete.

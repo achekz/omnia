@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRecords, createRecord, getSummary, getAnomalies } from '../controllers/financeController.js';
+import { getRecords, createRecord, getSummary, getAnomalies, getReport, exportReport } from '../controllers/financeController.js';
 import { protect } from '../middleware/auth.js';
 import { tenantIsolation } from '../middleware/tenant.js';
 import { authorize } from '../middleware/rbac.js';
@@ -10,7 +10,7 @@ import {
 
 const router = express.Router();
 
-router.use(protect, tenantIsolation, authorize('company_admin', 'cabinet_admin', 'manager'));
+router.use(protect, tenantIsolation, authorize('admin', 'company_admin', 'cabinet_admin', 'manager', 'comptable'));
 
 /**
  * @swagger
@@ -92,5 +92,9 @@ router.get('/summary', getSummary);
  *         description: Anomalies detected in financial data
  */
 router.get('/anomalies', getAnomalies);
+
+router.get('/reports', getReport);
+
+router.get('/export', exportReport);
 
 export default router;

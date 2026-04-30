@@ -144,6 +144,7 @@ const MODULES: NavModule[] = [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "budget", label: "Finance", icon: <Wallet className="w-4 h-4" />, path: "/budget" },
+      { id: "reports", label: "Reports", icon: <FileText className="w-4 h-4" />, path: "/comptable/reports" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "payroll", label: "Payroll", icon: <FileText className="w-4 h-4" />, path: "/paie/dashboard" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },

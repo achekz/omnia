@@ -1,7 +1,8 @@
-import { AlertTriangle, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { AlertTriangle, PiggyBank, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useGetFinanceRecords, useGetFinanceSummary } from "@/lib/api-client";
+import { useCreateFinanceRecord, useGetFinanceRecords, useGetFinanceSummary } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -11,14 +12,44 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 });
 
 export default function BudgetPage() {
+  const [clientName, setClientName] = useState("");
+  const [type, setType] = useState<"income" | "expense">("income");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [budgetLimit, setBudgetLimit] = useState("");
   const { data: summary } = useGetFinanceSummary();
   const { data: records = [] } = useGetFinanceRecords();
+  const createRecord = useCreateFinanceRecord();
 
   const budgetCards = [
     { title: "Income", value: currencyFormatter.format(summary?.totalIncome || 0), icon: <TrendingUp className="w-5 h-5 text-emerald-500" /> },
     { title: "Expenses", value: currencyFormatter.format(summary?.totalExpense || 0), icon: <TrendingDown className="w-5 h-5 text-rose-500" /> },
     { title: "Balance", value: currencyFormatter.format(summary?.balance || 0), icon: <PiggyBank className="w-5 h-5 text-indigo-600" /> },
   ];
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) return;
+
+    createRecord.mutate({
+      clientName,
+      type,
+      amount: numericAmount,
+      category: category || "General",
+      description,
+      budgetLimit: budgetLimit ? Number(budgetLimit) : undefined,
+      date: new Date().toISOString(),
+    });
+
+    setClientName("");
+    setType("income");
+    setAmount("");
+    setCategory("");
+    setDescription("");
+    setBudgetLimit("");
+  };
 
   return (
     <ModuleLayout activeItem="budget">
@@ -39,6 +70,59 @@ export default function BudgetPage() {
             </div>
           ))}
         </div>
+
+        <form onSubmit={submit} className="mb-6 grid gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-6">
+          <input
+            value={clientName}
+            onChange={(event) => setClientName(event.target.value)}
+            placeholder="Client"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900"
+          />
+          <select
+            value={type}
+            onChange={(event) => setType(event.target.value as "income" | "expense")}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900"
+          >
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          <input
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            type="number"
+            min={1}
+            required
+            placeholder="Amount"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900"
+          />
+          <input
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            placeholder="Category"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900"
+          />
+          <input
+            value={budgetLimit}
+            onChange={(event) => setBudgetLimit(event.target.value)}
+            type="number"
+            min={0}
+            placeholder="Budget limit"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900"
+          />
+          <button
+            disabled={createRecord.isPending}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Description"
+            className="min-h-16 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-6"
+          />
+        </form>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">

@@ -4,6 +4,7 @@ import type {
   Attendance,
   CreateTaskInput,
   DashboardStats,
+  FinanceReport,
   FinanceSummary,
   FinancialRecord,
   MlInsights,
@@ -227,6 +228,17 @@ const fallbackFinanceSummary: FinanceSummary = {
   balance: 125000,
   anomalyCount: 1,
   byMonth: fallbackDashboardStats.byMonth,
+};
+
+const fallbackFinanceReport: FinanceReport = {
+  generatedAt: new Date().toISOString(),
+  summary: fallbackFinanceSummary,
+  totalRecords: fallbackFinanceRecords.length,
+  topCategory: fallbackFinanceSummary.byCategory?.[0] || null,
+  anomalyRate: fallbackFinanceRecords.length
+    ? Math.round((fallbackFinanceRecords.filter((record) => record.isAnomaly).length / fallbackFinanceRecords.length) * 100)
+    : 0,
+  records: fallbackFinanceRecords,
 };
 
 const fallbackInsights: MlInsights = {
@@ -729,6 +741,65 @@ export function useGetFinanceRecords() {
       }
     },
     initialData: fallbackFinanceRecords,
+  });
+}
+
+export function useCreateFinanceRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<FinancialRecord, "_id" | "id">) => {
+      const response = await apiClient.post("/finance/records", data);
+      return unwrapEntity<FinancialRecord>(response.data, "record", { ...data, id: crypto.randomUUID() });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance-records"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-report"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetFinanceReport() {
+  return useQuery<FinanceReport>({
+    queryKey: ["finance-report"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/finance/reports");
+        return { ...fallbackFinanceReport, ...unwrapData<FinanceReport>(response.data, fallbackFinanceReport) };
+      } catch {
+        return fallbackFinanceReport;
+      }
+    },
+    initialData: fallbackFinanceReport,
+  });
+}
+
+export function useExportFinanceReport() {
+  return useMutation({
+    mutationFn: async (format: "csv" | "json" = "csv") => {
+      const response = await apiClient.get(`/finance/export?format=${format}`, {
+        responseType: format === "csv" ? "blob" : "json",
+      });
+
+      if (format === "json") {
+        const payload = JSON.stringify(unwrapData(response.data, response.data), null, 2);
+        return { blob: new Blob([payload], { type: "application/json" }), filename: "finance-report.json" };
+      }
+
+      return { blob: response.data as Blob, filename: "finance-report.csv" };
+    },
+    onSuccess: ({ blob, filename }) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    },
   });
 }
 

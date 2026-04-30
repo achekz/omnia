@@ -188,6 +188,22 @@ L'IA/ML intervient dans:
 - assistance conversationnelle;
 - rafraichissement apres creation ou changement de statut de tache.
 
+### Finance Et Rapports
+
+Endpoints principaux:
+
+```text
+GET  /api/finance/records
+POST /api/finance/records
+GET  /api/finance/summary
+GET  /api/finance/anomalies
+GET  /api/finance/reports
+GET  /api/finance/export?format=csv
+GET  /api/finance/export?format=json
+```
+
+Le role `comptable` peut gerer les transactions financieres, consulter les rapports et exporter les donnees en CSV ou JSON.
+
 ## Modele de Donnees Principal
 
 | Collection | Contenu |
@@ -212,6 +228,5 @@ L'IA/ML intervient dans:
 
 ## Points d'Attention
 
-- le module finance doit etre aligne avec le role `comptable` si ce role doit gerer les finances;
 - les diagrammes de sequence doivent etre ajoutes pour login, presence et taches;
 - les cas d'utilisation doivent garder les memes noms de roles partout: `admin`, `employee`, `stagiaire`, `comptable`.
