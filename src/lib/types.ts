@@ -211,6 +211,27 @@ export interface MlInsights {
   }>;
 }
 
+export interface AnalyticsActivityPoint {
+  date: string;
+  score?: number;
+  tasksCompleted?: number;
+  activeMinutes?: number;
+  studyHours?: number;
+}
+
+export interface AnalyticsScore {
+  current: number;
+  trend: "up" | "down" | "stable";
+  trendPct: number | string;
+  history: Array<{
+    date?: string;
+    score?: number;
+    tasksCompleted?: number;
+    activeMinutes?: number;
+    studyHours?: number;
+  }>;
+}
+
 export interface FinanceSummary {
   totalIncome?: number;
   totalExpense?: number;

@@ -1,11 +1,17 @@
-import { Award, Presentation, Target, TrendingUp, Users } from "lucide-react";
+import { AlertCircle, Award, CheckCircle2, Presentation, Target, TrendingUp } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useGetAnalyticsActivity, useGetAnalyticsScore, useGetTasks } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 export default function MyPerformancePage() {
   const { user } = useAuth();
+  const { data: tasks = [] } = useGetTasks({ query: { refetchInterval: 30000 } });
+  const { data: activity = [] } = useGetAnalyticsActivity();
+  const { data: score } = useGetAnalyticsScore();
 
-  if (!user || user.profileType !== "employee") {
+  if (!user || !["employee", "stagiaire", "comptable"].includes(user.profileType || user.role)) {
     return (
       <ModuleLayout activeItem="performances">
         <div className="p-8 text-center text-gray-500">Access Restricted</div>
@@ -13,96 +19,83 @@ export default function MyPerformancePage() {
     );
   }
 
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((task) => task.status === "done").length;
+  const inProgressTasks = tasks.filter((task) => task.status === "in_progress").length;
+  const overdueTasks = tasks.filter((task) => task.status === "overdue" || (task.delayDays || 0) > 0).length;
+  const completionRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const currentScore = score?.current || completionRate;
+  const chartData = activity.length
+    ? activity.map((item) => ({ day: new Date(item.date).toLocaleDateString(undefined, { weekday: "short" }), score: item.score || 0, tasks: item.tasksCompleted || 0 }))
+    : tasks.slice(-7).map((task, index) => ({ day: `T${index + 1}`, score: task.status === "done" ? 100 : task.status === "in_progress" ? 60 : 25, tasks: task.status === "done" ? 1 : 0 }));
+
+  const objectives = [
+    { title: "Complete assigned tasks", progress: completionRate, color: "bg-emerald-500" },
+    { title: "Keep delayed tasks under control", progress: Math.max(0, 100 - overdueTasks * 20), color: "bg-rose-500" },
+    { title: "Move active tasks to completion", progress: totalTasks ? Math.round(((completedTasks + inProgressTasks) / totalTasks) * 100) : 0, color: "bg-blue-500" },
+  ];
+
   return (
     <ModuleLayout activeItem="performances">
-      <div className="max-w-6xl mx-auto p-4 sm:p-8">
+      <div className="mx-auto max-w-6xl p-4 sm:p-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-display font-bold text-gray-900">My Performance</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track your KPIs, goals, and recent achievements.</p>
+          <h2 className="text-3xl font-display font-bold text-gray-900">My Progress</h2>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Live progress based on your assigned tasks and analytics activity.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl text-white shadow-lg shadow-purple-500/20">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Target className="w-6 h-6 text-white" />
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 p-6 text-white shadow-lg shadow-purple-500/20">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
+                <Target className="h-6 w-6 text-white" />
               </div>
-              <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">Q1 2026</span>
+              <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">{score?.trend || "stable"}</span>
             </div>
-            <h3 className="text-purple-100 text-sm font-medium">Overall Score</h3>
+            <h3 className="text-sm font-medium text-purple-100">Overall Score</h3>
             <div className="mt-1 flex items-end gap-2">
-              <span className="text-4xl font-bold">92</span>
-              <span className="text-purple-200 mb-1">/ 100</span>
+              <span className="text-4xl font-bold">{currentScore}</span>
+              <span className="mb-1 text-purple-200">/ 100</span>
             </div>
-            <p className="text-sm mt-4 text-purple-100 flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-emerald-300" />
-              +4% from last quarter
+            <p className="mt-4 flex items-center gap-1 text-sm text-purple-100">
+              <TrendingUp className="h-4 w-4 text-emerald-300" />
+              {score?.trendPct || 0}% trend
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                <Award className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Task Completion</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">On-time delivery rate</p>
-              </div>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">98.5%</span>
-            </div>
-            <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full mt-4 overflow-hidden">
-              <div className="h-full bg-emerald-500 w-[98.5%] rounded-full" />
-            </div>
-          </div>
+          <MetricCard title="Task Completion" value={`${completionRate}%`} subtitle={`${completedTasks}/${totalTasks} completed`} icon={<Award className="h-6 w-6" />} tone="emerald" />
+          <MetricCard title="Late Tasks" value={String(overdueTasks)} subtitle="Needs attention" icon={<AlertCircle className="h-6 w-6" />} tone="rose" />
+        </div>
 
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Peer Feedback</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Average team rating</p>
-              </div>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">4.8</span>
-              <span className="text-gray-500 dark:text-gray-400 mb-1">/ 5.0</span>
-            </div>
-            <div className="flex gap-1 mt-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <svg key={star} className={`w-5 h-5 ${star <= 4 ? "text-amber-400" : "text-gray-300"}`} fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
+        <div className="mb-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-gray-950">Progress trend</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                <Tooltip />
+                <Area type="monotone" dataKey="score" stroke="#7c3aed" fill="#ede9fe" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Presentation className="w-5 h-5 text-purple-600" />
-              Current Objectives (OKRs)
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 p-6">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <Presentation className="h-5 w-5 text-purple-600" />
+              Current Objectives
             </h3>
           </div>
           <div className="divide-y divide-gray-100">
-            {[
-              { title: "Increase system test coverage to 85%", progress: 65, color: "bg-blue-500" },
-              { title: "Complete Q1 compliance training", progress: 100, color: "bg-emerald-500" },
-              { title: "Mentor 2 junior developers", progress: 40, color: "bg-purple-500" },
-              { title: "Deploy AI module to staging", progress: 85, color: "bg-amber-500" },
-            ].map((okr, index) => (
-              <div key={`${okr.title}-${index}`} className="p-6">
-                <div className="flex justify-between items-center mb-2">
+            {objectives.map((okr) => (
+              <div key={okr.title} className="p-6">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium text-gray-900">{okr.title}</span>
                   <span className="text-sm font-semibold text-gray-700">{okr.progress}%</span>
                 </div>
-                <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${okr.color} rounded-full transition-all duration-1000`} style={{ width: `${okr.progress}%` }} />
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div className={cn("h-full rounded-full transition-all duration-1000", okr.color)} style={{ width: `${Math.min(100, Math.max(0, okr.progress))}%` }} />
                 </div>
               </div>
             ))}
@@ -110,5 +103,28 @@ export default function MyPerformancePage() {
         </div>
       </div>
     </ModuleLayout>
+  );
+}
+
+function MetricCard({ title, value, subtitle, icon, tone }: { title: string; value: string; subtitle: string; icon: JSX.Element; tone: "emerald" | "rose" }) {
+  const tones = {
+    emerald: "bg-emerald-100 text-emerald-600",
+    rose: "bg-rose-100 text-rose-600",
+  };
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-3">
+        <div className={cn("rounded-lg p-2", tones[tone])}>{icon}</div>
+        <div>
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-500">{subtitle}</p>
+        </div>
+      </div>
+      <div className="flex items-end gap-2">
+        <span className="text-3xl font-bold text-gray-900">{value}</span>
+        {tone === "emerald" && <CheckCircle2 className="mb-1 h-5 w-5 text-emerald-500" />}
+      </div>
+    </div>
   );
 }

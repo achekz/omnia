@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  AnalyticsActivityPoint,
+  AnalyticsScore,
   Attendance,
   CreateTaskInput,
   DashboardStats,
@@ -256,6 +258,15 @@ const fallbackInsights: MlInsights = {
   anomalies: [],
 };
 
+const fallbackAnalyticsActivity: AnalyticsActivityPoint[] = [];
+
+const fallbackAnalyticsScore: AnalyticsScore = {
+  current: 0,
+  trend: "stable",
+  trendPct: 0,
+  history: [],
+};
+
 const fallbackRules: Rule[] = [
   {
     id: "default-delay-rule",
@@ -502,7 +513,7 @@ export function useGetMyAttendance(month: number, year: number, options?: QueryH
   return useQuery<{ records: Attendance[]; today: Attendance | null; serverTime?: string }>({
     queryKey: ["attendance", month, year],
     queryFn: async () => {
-      const response = await apiClient.get(`/attendance/me?month=${month}&year=${year}`);
+      const response = await apiClient.get(`/presence/me?month=${month}&year=${year}`);
       return unwrapData(response.data, { records: [], today: null });
     },
     enabled: options?.query?.enabled ?? true,
@@ -513,7 +524,7 @@ export function useGetMyAttendance(month: number, year: number, options?: QueryH
 export function useSendAttendanceCode() {
   return useMutation({
     mutationFn: async (data: { action: "check-in" | "check-out"; reason?: string }) => {
-      const response = await apiClient.post("/attendance/send-code", data);
+      const response = await apiClient.post("/presence/send-code", data);
       return unwrapData(response.data, {});
     },
   });
@@ -524,7 +535,7 @@ export function useConfirmAttendance() {
 
   return useMutation({
     mutationFn: async (data: { action: "check-in" | "check-out"; code: string; reason?: string }) => {
-      const response = await apiClient.post("/attendance/confirm", data);
+      const response = await apiClient.post("/presence/confirm", data);
       return unwrapEntity<Attendance>(response.data, "attendance", {} as Attendance);
     },
     onSuccess: () => {
@@ -629,6 +640,36 @@ export function useDetectAnomaly() {
       queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
+  });
+}
+
+export function useGetAnalyticsActivity() {
+  return useQuery<AnalyticsActivityPoint[]>({
+    queryKey: ["analytics-activity"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/analytics/activity");
+        return unwrapData<{ activity?: AnalyticsActivityPoint[] }>(response.data, { activity: fallbackAnalyticsActivity }).activity || fallbackAnalyticsActivity;
+      } catch {
+        return fallbackAnalyticsActivity;
+      }
+    },
+    initialData: fallbackAnalyticsActivity,
+  });
+}
+
+export function useGetAnalyticsScore() {
+  return useQuery<AnalyticsScore>({
+    queryKey: ["analytics-score"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/analytics/score");
+        return { ...fallbackAnalyticsScore, ...unwrapData<AnalyticsScore>(response.data, fallbackAnalyticsScore) };
+      } catch {
+        return fallbackAnalyticsScore;
+      }
+    },
+    initialData: fallbackAnalyticsScore,
   });
 }
 
