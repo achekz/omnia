@@ -77,7 +77,7 @@ LOG_LEVEL=INFO
 ### Step 3: Start ML Service
 
 ```bash
-python app_improved.py
+python app.py
 ```
 
 You should see:
@@ -300,7 +300,7 @@ RUN pip install -r requirements.txt
 COPY ml_service/ .
 
 EXPOSE 5001
-CMD ["python", "app_improved.py"]
+CMD ["python", "app.py"]
 ```
 
 **Build and run:**
@@ -411,9 +411,9 @@ Replace rule-based predictor with scikit-learn model:
 from sklearn.ensemble import RandomForestClassifier
 
 def _initialize_trained_model(self):
-    self.model = RandomForestClassifier(n_estimators=100)
-    # Load trained model
-    self.model = joblib.load('model.pkl')
+    # Current implementation uses rule-based predictors from ml_service/models.
+    # No external model.pkl file is required for startup.
+    self.model = None
 ```
 
 ---

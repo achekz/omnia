@@ -682,17 +682,8 @@ apiClient.interceptors.response.use(
 
 #### ❌ DÉPENDANCE EXTERNE NON DOCUMENTÉE
 ```python
-# ml_service/app.py (EXTERNAL SERVICE)
-
-from flask import Flask, request
-import joblib
-
-app = Flask(__name__)
-model = joblib.load('model.pkl')
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    features = request.json
+# ml_service/app.py delegates to app_improved.py.
+# The service now starts without loading a missing model.pkl.
     # INPUT: 
     # {
     #   "tasks_completed_last_7d": 12,

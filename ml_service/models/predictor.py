@@ -3,10 +3,7 @@ ML Predictor Model
 Risk prediction based on user activity patterns
 """
 
-import numpy as np
-import joblib
-from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 import json
 from datetime import datetime
 
@@ -37,7 +34,7 @@ class UserRiskPredictor:
             'engagement_rate',
         ]
         self.trained = True
-        print("✅ Using rule-based model (no pre-trained weights)")
+        print("Using rule-based model (no pre-trained weights)")
 
     def predict(self, features: Dict[str, float]) -> Dict:
         """
@@ -172,9 +169,9 @@ class UserRiskPredictor:
             }
             with open(path, 'w') as f:
                 json.dump(model_data, f)
-            print(f"✅ Model saved to {path}")
+            print(f"Model saved to {path}")
         except Exception as e:
-            print(f"❌ Error saving model: {e}")
+            print(f"Error saving model: {e}")
 
     def load_model(self, path: str):
         """Load model from disk"""
@@ -184,9 +181,9 @@ class UserRiskPredictor:
             self.feature_names = model_data.get('feature_names')
             self.model_version = model_data.get('model_version', '1.0')
             self.trained = model_data.get('trained', False)
-            print(f"✅ Model loaded from {path}")
+            print(f"Model loaded from {path}")
         except Exception as e:
-            print(f"⚠️ Error loading model: {e}, using default")
+            print(f"Error loading model: {e}, using default")
             self._initialize_simple_model()
 
     def get_model_info(self) -> Dict:

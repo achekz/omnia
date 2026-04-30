@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB, { startMongoReconnectLoop } from './config/db.js';
 import { initSocket } from './config/socket.js';
 import { setupSwagger } from './config/swagger.js';
@@ -30,8 +32,12 @@ import uploadRoutes from './routes/upload.routes.js';
 import searchRoutes from './routes/search.routes.js';
 import { resetAuthSystem } from './seed/resetAuthSystem.js';
 
-// Load env
+// Load env from the process cwd, then from server/.env. This keeps the backend
+// working whether it is started from /server or from the repository root.
 dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const httpServer = http.createServer(app);

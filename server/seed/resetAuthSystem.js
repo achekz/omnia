@@ -7,35 +7,47 @@ import User from "../models/User.js";
 
 dotenv.config();
 
-const ACCOUNTS = [
-  {
-    email: "ranyme13@gmail.com",
-    firstName: "Ranyme",
-    lastName: "Stagiaire",
-    password: process.env.RANYME_PASSWORD || "Ranyme@123",
-    phoneNumber: "+21620000013",
-    role: "stagiaire",
-    gender: "female",
-  },
-  {
-    email: "najetkhbrahem1979@gmail.com",
-    firstName: "Najet",
-    lastName: "Khbrahem",
-    password: process.env.NAJET_PASSWORD || "Najet@123",
-    phoneNumber: "+21620001979",
-    role: "stagiaire",
-    gender: "female",
-  },
-  {
-    email: "chaymagaabel777@gmail.com",
-    firstName: "Chayma",
-    lastName: "Gaabel",
-    password: process.env.COMPTABLE_PASSWORD || "Comptable@123",
-    phoneNumber: "+21620000777",
-    role: "comptable",
-    gender: "female",
-  },
-];
+function requireEnv(name) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`${name} is missing`);
+  }
+
+  return value;
+}
+
+function getRecoveryAccounts() {
+  return [
+    {
+      email: "ranyme13@gmail.com",
+      firstName: "Ranyme",
+      lastName: "Stagiaire",
+      password: requireEnv("RANYME_PASSWORD"),
+      phoneNumber: "+21620000013",
+      role: "stagiaire",
+      gender: "female",
+    },
+    {
+      email: "najetkhbrahem1979@gmail.com",
+      firstName: "Najet",
+      lastName: "Khbrahem",
+      password: requireEnv("NAJET_PASSWORD"),
+      phoneNumber: "+21620001979",
+      role: "stagiaire",
+      gender: "female",
+    },
+    {
+      email: "chaymagaabel777@gmail.com",
+      firstName: "Chayma",
+      lastName: "Gaabel",
+      password: requireEnv("COMPTABLE_PASSWORD"),
+      phoneNumber: "+21620000777",
+      role: "comptable",
+      gender: "female",
+    },
+  ];
+}
 
 function sameKey(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -131,7 +143,6 @@ export async function recreateAccount(account) {
     profileType: savedUser.profileType,
     passwordMatches,
     tokenValid: decoded.id === String(savedUser._id),
-    password: account.password,
   };
 }
 
@@ -226,14 +237,16 @@ export async function resetAuthSystem({ connect = true, close = true } = {}) {
       console.log(`Deleted ${result.deletedCount} non-admin user(s).`);
     }
 
-    for (const account of ACCOUNTS) {
+    const accounts = getRecoveryAccounts();
+
+    for (const account of accounts) {
       const result = await recreateAccount(account);
       console.log(`Account ready: ${result.email}`);
       console.log(`  Role: ${result.role}`);
       console.log(`  ProfileType: ${result.profileType}`);
       console.log(`  Password OK: ${result.passwordMatches}`);
       console.log(`  JWT OK: ${result.tokenValid}`);
-      console.log(`  Password: ${result.password}\n`);
+      console.log("");
     }
 
     await repairAttendanceRecords();

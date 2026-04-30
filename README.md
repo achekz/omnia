@@ -77,6 +77,8 @@ Le module IA/ML fournit:
 
 ## Lancement Local
 
+Avant de lancer le backend, verifier que le fichier reel `server/.env` existe. Il doit etre cree a partir de [server/.env.example](server/.env.example) avec les vraies valeurs MongoDB/JWT/email. Ce fichier est ignore par Git et ne doit jamais etre publie.
+
 ### Backend
 
 ```bash
@@ -102,6 +104,8 @@ pip install -r requirements.txt
 python app.py
 ```
 
+`app.py` delegates to `app_improved.py`, which uses the available rule-based ML models and does not require a missing `model.pkl`.
+
 ## Scripts Utiles
 
 ```bash
@@ -113,12 +117,15 @@ npm run reset-auth-system
 
 ## Comptes de Test
 
-| Email | Role | Mot de passe |
+Les mots de passe des comptes de test sont lus depuis `server/.env`:
+`RANYME_PASSWORD`, `NAJET_PASSWORD`, `COMPTABLE_PASSWORD`.
+
+| Email | Role | Variable |
 | --- | --- | --- |
-| admin@gmail.com | admin | Admin123@ |
-| ranyme13@gmail.com | stagiaire | Ranyme@123 |
-| najetkhbrahem1979@gmail.com | stagiaire | Najet@123 |
-| chaymagaabel777@gmail.com | comptable | Comptable@123 |
+| admin@gmail.com | admin | `ADMIN_PASSWORD` |
+| ranyme13@gmail.com | stagiaire | `RANYME_PASSWORD` |
+| najetkhbrahem1979@gmail.com | stagiaire | `NAJET_PASSWORD` |
+| chaymagaabel777@gmail.com | comptable | `COMPTABLE_PASSWORD` |
 
 ## Documentation
 

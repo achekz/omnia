@@ -16,12 +16,19 @@ import * as notifService from "../services/notifService.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
-const RECOVERY_PASSWORDS = {
-  "ranyme13@gmail.com": process.env.RANYME_PASSWORD || "Ranyme@123",
-  "najetkhbrahem1979@gmail.com": process.env.NAJET_PASSWORD || "Najet@123",
-  "chaymagaabel777@gmail.com": process.env.COMPTABLE_PASSWORD || "Comptable@123",
+const RECOVERY_PASSWORD_ENV_KEYS = {
+  "ranyme13@gmail.com": "RANYME_PASSWORD",
+  "najetkhbrahem1979@gmail.com": "NAJET_PASSWORD",
+  "chaymagaabel777@gmail.com": "COMPTABLE_PASSWORD",
 };
-const DEVELOPMENT_PASSWORD_REPAIR_ENABLED = process.env.NODE_ENV !== "production";
+function getRecoveryPassword(email) {
+  const envKey = RECOVERY_PASSWORD_ENV_KEYS[email];
+  return envKey ? process.env[envKey] : undefined;
+}
+
+function isDevelopmentPasswordRepairEnabled() {
+  return process.env.NODE_ENV !== "production" && process.env.AUTH_DEV_PASSWORD_REPAIR === "true";
+}
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -265,7 +272,9 @@ export const login = asyncHandler(async (req, res) => {
 
   let passwordMatches = await user.comparePassword(password);
 
-  if (!passwordMatches && RECOVERY_PASSWORDS[email] && password === RECOVERY_PASSWORDS[email]) {
+  const recoveryPassword = getRecoveryPassword(email);
+
+  if (!passwordMatches && recoveryPassword && password === recoveryPassword) {
     user.password = password;
     await user.save();
     passwordMatches = true;
@@ -276,7 +285,7 @@ export const login = asyncHandler(async (req, res) => {
 
   if (
     !passwordMatches &&
-    DEVELOPMENT_PASSWORD_REPAIR_ENABLED &&
+    isDevelopmentPasswordRepairEnabled() &&
     ["stagiaire", "employee", "comptable"].includes(normalizedLoginRole)
   ) {
     user.password = password;
@@ -395,9 +404,21 @@ export const repairAuth = asyncHandler(async (req, res) => {
       200,
       {
         accounts: [
-          { email: "ranyme13@gmail.com", password: RECOVERY_PASSWORDS["ranyme13@gmail.com"], role: "stagiaire" },
-          { email: "najetkhbrahem1979@gmail.com", password: RECOVERY_PASSWORDS["najetkhbrahem1979@gmail.com"], role: "stagiaire" },
-          { email: "chaymagaabel777@gmail.com", password: RECOVERY_PASSWORDS["chaymagaabel777@gmail.com"], role: "comptable" },
+          {
+            email: "ranyme13@gmail.com",
+            recoveryPasswordConfigured: Boolean(getRecoveryPassword("ranyme13@gmail.com")),
+            role: "stagiaire",
+          },
+          {
+            email: "najetkhbrahem1979@gmail.com",
+            recoveryPasswordConfigured: Boolean(getRecoveryPassword("najetkhbrahem1979@gmail.com")),
+            role: "stagiaire",
+          },
+          {
+            email: "chaymagaabel777@gmail.com",
+            recoveryPasswordConfigured: Boolean(getRecoveryPassword("chaymagaabel777@gmail.com")),
+            role: "comptable",
+          },
         ],
       },
       "Auth repaired",
@@ -413,7 +434,7 @@ export const debugLogin = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ email }).select("+password +refreshToken");
-  const recoveryPassword = RECOVERY_PASSWORDS[email];
+  const recoveryPassword = getRecoveryPassword(email);
   const recoveryPasswordMatches = user && recoveryPassword ? await user.comparePassword(recoveryPassword) : false;
   const indexes = await User.collection.indexes();
 
@@ -431,7 +452,6 @@ export const debugLogin = asyncHandler(async (req, res) => {
         passwordPrefix: user?.password ? String(user.password).slice(0, 7) : null,
         recoveryPasswordConfigured: Boolean(recoveryPassword),
         recoveryPasswordMatches,
-        recoveryPassword: recoveryPassword || null,
         database: mongoose.connection.name,
         indexes: indexes.map((index) => ({ name: index.name, key: index.key, unique: Boolean(index.unique) })),
       },

@@ -7,10 +7,15 @@ import Organization from "../models/Organization.js";
 dotenv.config();
 
 const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_PASSWORD = "Admin123@";
 
 async function createAdminAccount() {
   try {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminPassword) {
+      throw new Error("ADMIN_PASSWORD is missing");
+    }
+
     const dbResult = await connectDB();
 
     if (!dbResult.connected) {
@@ -35,7 +40,7 @@ async function createAdminAccount() {
       email: ADMIN_EMAIL,
       phoneNumber: "+21611111111",
       city: "tunisia",
-      password: ADMIN_PASSWORD,
+      password: adminPassword,
       role: "admin",
       profileType: "admin",
       verificationMethod: "email",
@@ -49,7 +54,6 @@ async function createAdminAccount() {
 
     console.log("✅ Admin account created successfully.");
     console.log(`📧 Email: ${ADMIN_EMAIL}`);
-    console.log(`🔑 Password: ${ADMIN_PASSWORD}`);
     if (fallbackTenant) {
       console.log(`🏢 Tenant linked: ${fallbackTenant.name}`);
     } else {

@@ -10,7 +10,7 @@ Step-by-step guide to integrate the ML system into existing backend
 - [ ] Navigate to `ml_service/` directory
 - [ ] Install Python dependencies: `pip install -r requirements.txt`
 - [ ] Create `.env` file with configuration
-- [ ] Test Flask app startup: `python app_improved.py`
+- [ ] Test Flask app startup: `python app.py` or `python app_improved.py`
 - [ ] Verify health endpoint: `curl http://localhost:5001/health`
 
 **Expected Result:** ML service running on port 5001 and responding to health checks
@@ -413,7 +413,7 @@ watch -n 1 'ps aux | grep python'
 **Root Cause:** Flask app not running
 **Solution:**
 1. Check Flask is running: `ps aux | grep python`
-2. Restart: `python app_improved.py`
+2. Restart: `python app.py`
 3. Check port: `netstat -an | grep 5001`
 
 ### Issue: "Connection timeout"

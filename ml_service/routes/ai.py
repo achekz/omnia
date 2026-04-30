@@ -45,7 +45,7 @@ def ai_endpoint():
                 "error": "Empty response from AI"
             }), 500
 
-        print("✅ AI RESPONSE:", ai_response)
+        print("AI RESPONSE:", ai_response)
 
         return jsonify({
             "response": ai_response,
@@ -58,7 +58,7 @@ def ai_endpoint():
         }), 500
 
     except Exception as e:
-        print("❌ ERROR:", str(e))
+        print("ERROR:", str(e))
         return jsonify({
             "error": str(e)
         }), 500

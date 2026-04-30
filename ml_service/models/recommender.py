@@ -53,7 +53,7 @@ class RecommendationEngine:
                     {
                         'category': 'time_management',
                         'title': 'Improve Deadline Management',
-                        'description': f"You\'re missing {f.get('missed_deadline_ratio', 0)*100:.0f}% of deadlines",
+                        'description': 'Your missed deadline rate is above the recommended threshold',
                         'priority': 'high',
                         'action': 'deadline_planning',
                     },
