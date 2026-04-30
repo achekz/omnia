@@ -3,24 +3,27 @@
  * This creates context for real, intelligent responses
  * NOTE: This is kept for backward compatibility but not used in the new ai.service.js
  */
+import { normalizeRole } from "../utils/roleNormalization.js";
+
 export function buildPrompt(user, message, context) {
   if (!message) {
     return "Please provide a question.";
   }
 
+  const role = normalizeRole(user?.role || user?.profileType, "employee");
   const roleDescriptions = {
-    EMPLOYEE: "You are a productivity assistant for an employee",
-    COMPANY_ADMIN: "You are a strategic consultant for company management",
-    CABINET_ADMIN: "You are a financial advisor for accounting",
-    STUDENT: "You are an academic assistant for students",
+    admin: "You are a strategic consultant for administration",
+    employee: "You are a productivity assistant for an employee",
+    comptable: "You are a financial advisor for accounting",
+    stagiaire: "You are an academic and internship assistant for stagiaires",
   };
 
-  const roleDesc = roleDescriptions[user?.role] || "You are a general assistant";
-  const contextSummary = formatContext(context, user?.role);
+  const roleDesc = roleDescriptions[role] || "You are a general assistant";
+  const contextSummary = formatContext(context, role);
 
   return `
 # User Profile
-- Role: ${user?.role || "guest"}
+- Role: ${role || "guest"}
 - Name: ${user?.name || "User"}
 
 # System Message
@@ -54,11 +57,11 @@ function formatContext(context, role) {
   const parts = [];
 
   // Extract relevant context based on role
-  if (role === "EMPLOYEE" && context.tasks?.length > 0) {
+  if (role === "employee" && context.tasks?.length > 0) {
     parts.push(`- ${context.tasks.length} tasks available`);
   }
   
-  if (role === "COMPANY_ADMIN") {
+  if (role === "admin") {
     if (context.teamActivity?.length > 0) {
       parts.push(`- ${context.teamActivity.length} team activities`);
     }
@@ -67,13 +70,13 @@ function formatContext(context, role) {
     }
   }
 
-  if (role === "CABINET_ADMIN") {
+  if (role === "comptable") {
     if (context.financialData?.length > 0) {
       parts.push(`- Financial records available`);
     }
   }
 
-  if (role === "STUDENT") {
+  if (role === "stagiaire") {
     if (context.courses?.length > 0) {
       parts.push(`- ${context.courses.length} courses enrolled`);
     }

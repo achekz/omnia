@@ -2,6 +2,7 @@ import { useEffect, type ComponentType } from "react";
 import { Redirect, Route, Switch, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import type { UserRole } from "@/lib/types";
+import { normalizeRoleOrNull } from "@/lib/roles";
 
 import NotFound from "./pages/not-found";
 import LandingPage from "./pages/landing";
@@ -16,7 +17,7 @@ import DashboardHub from "./pages/dashboard";
 import CompanyDashboard from "./pages/dashboard/company";
 import CabinetDashboard from "./pages/dashboard/cabinet";
 import EmployeeDashboard from "./pages/dashboard/employee";
-import StudentDashboard from "./pages/dashboard/student";
+import StagiaireDashboard from "./pages/dashboard/stagiaire";
 import AIDashboard from "./pages/ai";
 import BudgetPage from "./pages/budget/budget";
 import PlannerPage from "./pages/planner";
@@ -49,33 +50,6 @@ function LoadingScreen() {
   );
 }
 
-const ROLE_ALIASES: Record<string, UserRole> = {
-  company_admin: "admin",
-  cabinet_admin: "admin",
-  manager: "admin",
-  enterprise: "admin",
-  entreprise: "admin",
-  employe: "employee",
-  employé: "employee",
-  rh: "employee",
-  hr: "employee",
-  intern: "stagiaire",
-  student: "stagiaire",
-  etudiant: "stagiaire",
-  étudiant: "stagiaire",
-  accountant: "comptable",
-};
-
-function normalizeRouteRole(value: unknown): UserRole | null {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  if (normalized === "admin" || normalized === "employee" || normalized === "stagiaire" || normalized === "comptable") {
-    return normalized;
-  }
-
-  return ROLE_ALIASES[normalized] || null;
-}
-
 function ProtectedRoute({ component: Component, roles }: { component: ComponentType; roles?: UserRole[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -88,7 +62,7 @@ function ProtectedRoute({ component: Component, roles }: { component: ComponentT
   }
 
   if (roles?.length) {
-    const currentRole = normalizeRouteRole(user?.profileType || user?.role);
+    const currentRole = normalizeRoleOrNull(user?.profileType || user?.role);
 
     if (!currentRole || !roles.includes(currentRole)) {
       return <Redirect to="/dashboard" />;
@@ -145,8 +119,7 @@ const routes: AppRoute[] = [
   { path: "/dashboard/employee", component: EmployeeDashboard, protected: true },
   { path: "/employee/dashboard", component: EmployeeDashboard, protected: true, roles: ["employee"] },
 
-  { path: "/dashboard/student", component: StudentDashboard, protected: true },
-  { path: "/student/dashboard", component: StudentDashboard, protected: true, roles: ["stagiaire"] },
+  { path: "/stagiaire/dashboard", component: StagiaireDashboard, protected: true, roles: ["stagiaire"] },
 
   { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
   { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },

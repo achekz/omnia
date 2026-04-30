@@ -14,7 +14,7 @@ const metricOptions: { value: RuleMetric; label: string }[] = [
   { value: "finance.expensesThisMonth", label: "Monthly expenses" },
   { value: "finance.balanceThisMonth", label: "Monthly balance" },
   { value: "finance.recordAmount", label: "Transaction amount" },
-  { value: "student.examDueDays", label: "Exam due days" },
+  { value: "stagiaire.examDueDays", label: "Exam due days" },
 ];
 
 const operatorOptions: { value: RuleOperator; label: string }[] = [
@@ -210,7 +210,7 @@ export default function RuleEnginePage() {
                   <select value={form.resource} onChange={(event) => setForm({ ...form, resource: event.target.value as Rule["resource"] })} className="form-input">
                     <option value="task">Task</option>
                     <option value="finance">Finance</option>
-                    <option value="student">Student</option>
+                    <option value="stagiaire">Stagiaire</option>
                   </select>
                 </Field>
                 <Field label="Cooldown">

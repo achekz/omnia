@@ -47,6 +47,7 @@
 
 ## Deja Complete Cote Code
 
+- Les roles sont normalises cote backend et frontend avec les valeurs canoniques `admin`, `employee`, `stagiaire`, `comptable`.
 - Le role `comptable` peut acceder au module finance backend.
 - Le comptable peut ajouter des transactions financieres depuis l'interface.
 - Une page "Reports" existe pour le comptable.

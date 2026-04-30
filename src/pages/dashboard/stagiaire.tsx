@@ -5,7 +5,7 @@ import { Clock, Wallet, CheckCircle, CalendarClock } from "lucide-react";
 import { useGetDashboardStats, useGetTasks } from "@/lib/api-client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-export default function StudentDashboard() {
+export default function StagiaireDashboard() {
   useGetDashboardStats(); // Used for prefetching, not rendered directly in this view
   const { data: tasks = [] } = useGetTasks();
   const examTasks = tasks
@@ -27,7 +27,7 @@ export default function StudentDashboard() {
   return (
     <ModuleLayout>
       <div className="mb-8">
-        <h2 className="text-3xl font-display font-bold text-white">Student Hub</h2>
+        <h2 className="text-3xl font-display font-bold text-white">Stagiaire Hub</h2>
       </div>
 
       {/* Row 1: Stats */}

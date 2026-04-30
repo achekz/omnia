@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useLocation } from "wouter";
 import type { AxiosError } from "axios";
 import apiClient from "../lib/api-client";
-import type { AuthResponse, LoginRequest, RegisterRequest, User, UserRole } from "../lib/types";
+import type { AuthResponse, LoginRequest, RegisterRequest, User } from "../lib/types";
+import { getRoleRedirect, normalizeRole } from "../lib/roles";
 import { useToast } from "./use-toast";
 
 interface AuthContextType {
@@ -23,43 +24,6 @@ const USER_STORAGE_KEY = "user";
 const LEGACY_TOKEN_STORAGE_KEY = "omni_ai_token";
 const LEGACY_REFRESH_TOKEN_STORAGE_KEY = "omni_ai_refreshToken";
 const LEGACY_USER_STORAGE_KEY = "omni_ai_user";
-
-const ROLE_REDIRECTS: Record<UserRole, string> = {
-  admin: "/admin/dashboard",
-  employee: "/employee/dashboard",
-  stagiaire: "/student/dashboard",
-  comptable: "/comptable/dashboard",
-};
-
-const ROLE_ALIASES: Record<string, UserRole> = {
-  company_admin: "admin",
-  cabinet_admin: "admin",
-  manager: "admin",
-  enterprise: "admin",
-  entreprise: "admin",
-  employe: "employee",
-  employé: "employee",
-  rh: "employee",
-  hr: "employee",
-  intern: "stagiaire",
-  student: "stagiaire",
-  etudiant: "stagiaire",
-  étudiant: "stagiaire",
-  accountant: "comptable",
-};
-
-function normalizeRole(value: unknown, fallback: UserRole = "employee"): UserRole {
-  const normalized = String(value || "").trim().toLowerCase();
-  const normalizedFallback: UserRole = ["admin", "employee", "stagiaire", "comptable"].includes(fallback)
-    ? fallback
-    : "employee";
-
-  if (normalized === "admin" || normalized === "employee" || normalized === "stagiaire" || normalized === "comptable") {
-    return normalized;
-  }
-
-  return ROLE_ALIASES[normalized] || normalizedFallback;
-}
 
 function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
   const source = rawUser as Partial<User> & Record<string, unknown>;
@@ -93,8 +57,7 @@ function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
 }
 
 function getRedirectPath(user: User) {
-  const role = normalizeRole(user.role || user.profileType, "employee");
-  return ROLE_REDIRECTS[role];
+  return getRoleRedirect(user.role || user.profileType);
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

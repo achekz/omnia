@@ -272,7 +272,7 @@ export type RuleMetric =
   | "finance.expensesThisMonth"
   | "finance.balanceThisMonth"
   | "finance.recordAmount"
-  | "student.examDueDays";
+  | "stagiaire.examDueDays";
 
 export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "in" | "contains";
 
@@ -297,7 +297,7 @@ export interface Rule {
   name: string;
   description?: string;
   trigger: "scheduled" | "task" | "finance" | "manual";
-  resource: "task" | "finance" | "student";
+  resource: "task" | "finance" | "stagiaire";
   roles?: string[];
   conditions: RuleCondition[];
   action: RuleAction;

@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { normalizeRole } from '../utils/roleNormalization.js';
 
 let io;
 const userSocketMap = new Map(); // userId → socketId
@@ -27,7 +28,7 @@ export const initSocket = (httpServer) => {
         userSocketMap.set(normalizedUserId, socket.id);
         socket.join(`user:${normalizedUserId}`);
         if (role) {
-          socket.join(`role:${String(role).toLowerCase()}`);
+          socket.join(`role:${normalizeRole(role, role)}`);
         }
         if (tenantId) {
           socket.join(`tenant:${tenantId}`);
@@ -63,7 +64,7 @@ export const emitToUser = (userId, event, data) => {
 
 export const emitToRole = (role, event, data) => {
   if (!io || !role) return;
-  io.to(`role:${String(role).toLowerCase()}`).emit(event, data);
+  io.to(`role:${normalizeRole(role, role)}`).emit(event, data);
 };
 
 export const emitToTenant = (tenantId, event, data) => {

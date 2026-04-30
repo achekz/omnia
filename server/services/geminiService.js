@@ -1,3 +1,5 @@
+import { normalizeRole } from "../utils/roleNormalization.js";
+
 const DEFAULT_MODEL = "grok-4.20-reasoning";
 const XAI_BASE_URL = "https://api.x.ai/v1/chat/completions";
 const FALLBACK_MODELS = ["grok-4.20-reasoning", "grok-4"];
@@ -15,19 +17,13 @@ function getXaiApiKey() {
 }
 
 function getRoleInstruction(role) {
-  const normalizedRole = String(role || "").toLowerCase();
+  const normalizedRole = normalizeRole(role, "employee");
 
   switch (normalizedRole) {
-    case "rh":
-    case "hr":
     case "employee":
       return "User role is employee. Answer like a productivity assistant. Focus on execution, organization, and efficiency.";
-    case "student":
-      return "User role is student. Answer like a study assistant. Be clear, structured, and educational.";
-    case "accountant":
     case "comptable":
       return "User role is comptable. Answer like a finance assistant. Be precise, practical, and business-focused.";
-    case "intern":
     case "stagiaire":
       return "User role is stagiaire. Answer like a productivity assistant for guided execution, learning, and follow-through.";
     default:

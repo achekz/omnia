@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { getAllowedRoles } from "../utils/roleNormalization.js";
+import { getAllowedRoles, normalizeRole } from "../utils/roleNormalization.js";
 
 const { Schema } = mongoose;
 
@@ -54,6 +54,7 @@ const emailVerificationCodeSchema = new Schema(
 );
 
 emailVerificationCodeSchema.methods.setCode = async function setCode(code) {
+  this.role = normalizeRole(this.role, "employee");
   const salt = await bcrypt.genSalt(10);
   this.codeHash = await bcrypt.hash(code, salt);
 };

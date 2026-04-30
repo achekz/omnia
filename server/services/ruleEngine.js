@@ -40,7 +40,7 @@ async function getTenantAdmins(tenantId) {
   if (!tenantId) return [];
   return User.find({
     tenantId,
-    role: { $in: ['admin', 'entreprise', 'company_admin', 'cabinet_admin'] },
+    role: 'admin',
     isActive: true,
   }).select('_id');
 }
@@ -102,7 +102,7 @@ async function metricValue(rule, condition, context) {
     return context.task?.status;
   }
 
-  if (condition.metric === 'student.examDueDays') {
+  if (condition.metric === 'stagiaire.examDueDays' || condition.metric === 'student.examDueDays') {
     if (!context.task?.dueDate) return 999;
     const hasExamTag = (context.task.tags || []).some((tag) => ['exam', 'examen', 'revision'].includes(String(tag).toLowerCase()));
     return hasExamTag ? daysBetween(new Date(), context.task.dueDate) : 999;
@@ -153,7 +153,7 @@ async function matchesRule(rule, context) {
 async function contextsForRule(rule, scopeTenantId) {
   const baseFilter = rule.tenantId ? { tenantId: rule.tenantId } : (scopeTenantId ? { tenantId: scopeTenantId } : {});
 
-  if (rule.resource === 'task' || rule.resource === 'student') {
+  if (rule.resource === 'task' || rule.resource === 'stagiaire' || rule.resource === 'student') {
     const tasks = await Task.find({
       ...baseFilter,
       status: { $in: ['todo', 'in_progress', 'overdue'] },
@@ -210,7 +210,7 @@ class RuleEngine {
         description: 'IF monthly expenses are high THEN notify tenant admins',
         trigger: 'scheduled',
         resource: 'finance',
-        roles: ['admin', 'entreprise', 'comptable'],
+        roles: ['admin', 'comptable'],
         conditions: [{ metric: 'finance.expensesThisMonth', operator: 'gt', value: 10000 }],
         action: {
           type: 'notify',
@@ -224,11 +224,11 @@ class RuleEngine {
       },
       {
         name: 'Exam revision reminder',
-        description: 'IF tagged exam/revision task is due soon THEN notify student',
+        description: 'IF tagged exam/revision task is due soon THEN notify stagiaire',
         trigger: 'scheduled',
-        resource: 'student',
+        resource: 'stagiaire',
         roles: ['stagiaire'],
-        conditions: [{ metric: 'student.examDueDays', operator: 'lte', value: 3 }],
+        conditions: [{ metric: 'stagiaire.examDueDays', operator: 'lte', value: 3 }],
         action: {
           type: 'notify',
           target: 'assignedUser',

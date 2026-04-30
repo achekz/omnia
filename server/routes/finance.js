@@ -10,7 +10,7 @@ import {
 
 const router = express.Router();
 
-router.use(protect, tenantIsolation, authorize('admin', 'company_admin', 'cabinet_admin', 'manager', 'comptable'));
+router.use(protect, tenantIsolation, authorize('admin', 'comptable'));
 
 /**
  * @swagger

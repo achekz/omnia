@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
+import { normalizeRole } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { NotificationPanel } from "@/components/notifications/notification-panel";
@@ -45,7 +46,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
   const getNavLinks = (): NavLink[] => {
-    switch (user.profileType) {
+    switch (normalizeRole(user.profileType || user.role)) {
       case "comptable":
         return [
           { name: "Dashboard", path: "/comptable/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -60,7 +61,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
         ];
       case "stagiaire":
         return [
-          { name: "Dashboard", path: "/dashboard/student", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "Dashboard", path: "/stagiaire/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
           { name: "Study Plan", path: "/planner", icon: <BookOpen className="w-5 h-5" /> },
           { name: "Exams", path: "/planner", icon: <GraduationCap className="w-5 h-5" /> },
           { name: "Budget", path: "/budget", icon: <Wallet className="w-5 h-5" /> },

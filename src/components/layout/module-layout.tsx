@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
+import { normalizeRole } from "@/lib/roles";
+import type { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { NotificationPanel } from "@/components/notifications/notification-panel";
@@ -39,7 +41,7 @@ interface ModuleLayoutProps {
   onItemChange?: (moduleId: string, itemId: string) => void;
 }
 
-type ProfileType = "company" | "cabinet" | "employee" | "comptable" | "stagiaire" | "admin";
+type ProfileType = UserRole | "company" | "cabinet";
 
 interface NavItem {
   id: string;
@@ -205,7 +207,7 @@ const MODULES: NavModule[] = [
     activeSidebarStyle: "bg-purple-50 text-purple-600 font-semibold",
     allowedProfiles: ["stagiaire"],
     items: [
-      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/student" },
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/stagiaire/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "planner", label: "Study Planner", icon: <Calendar className="w-4 h-4" />, path: "/planner" },
       { id: "performances", label: "Progress", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
@@ -222,8 +224,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const [activeModuleId, setActiveModuleId] = useState("");
   const [activeSidebarItem, setActiveSidebarItem] = useState(activeItem);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const rawProfile = String(user?.profileType || user?.role || "employee").toLowerCase();
-  const currentProfile = (rawProfile === "accountant" ? "comptable" : rawProfile === "intern" ? "stagiaire" : rawProfile) as ProfileType;
+  const currentProfile = normalizeRole(user?.profileType || user?.role) as ProfileType;
 
   const { data: notifications = [] } = useGetNotifications({
     query: { enabled: !!user, refetchInterval: 30000 },

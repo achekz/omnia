@@ -32,8 +32,8 @@ const createDemoAccounts = async () => {
       name: 'Company Admin',
       email: 'company@demo.com',
       password: 'demo123', // Will be hashed by pre-save hook
-      role: 'COMPANY_ADMIN',
-      profileType: 'company',
+      role: 'employee',
+      profileType: 'employee',
       tenantId: techCorp._id,
       isActive: true,
     });
@@ -48,7 +48,7 @@ const createDemoAccounts = async () => {
       name: 'Tech Manager',
       email: 'manager@techcorp.com',
       password: 'demo123',
-      role: 'MANAGER',
+      role: 'employee',
       profileType: 'employee',
       tenantId: techCorp._id,
       isActive: true,
@@ -60,7 +60,7 @@ const createDemoAccounts = async () => {
       name: 'Alice Employee',
       email: 'employee@demo.com',
       password: 'demo123',
-      role: 'USER',
+      role: 'employee',
       profileType: 'employee',
       tenantId: techCorp._id,
       isActive: true,
@@ -82,8 +82,8 @@ const createDemoAccounts = async () => {
       name: 'Cabinet Admin',
       email: 'cabinet@demo.com',
       password: 'demo123',
-      role: 'CABINET_ADMIN',
-      profileType: 'cabinet',
+      role: 'comptable',
+      profileType: 'comptable',
       tenantId: cabinetOrg._id,
       isActive: true,
     });
@@ -98,18 +98,18 @@ const createDemoAccounts = async () => {
       name: 'Solo Employee',
       email: 'emp.solo@gmail.com',
       password: 'demo123',
-      role: 'USER',
+      role: 'employee',
       profileType: 'employee',
       isActive: true,
     });
     console.log('✅ Created emp.solo@gmail.com (password: demo123)');
 
     await User.create({
-      name: 'Demo Student',
+      name: 'Demo Stagiaire',
       email: 'student@demo.com',
       password: 'demo123',
-      role: 'USER',
-      profileType: 'student',
+      role: 'stagiaire',
+      profileType: 'stagiaire',
       isActive: true,
     });
     console.log('✅ Created student@demo.com (password: demo123)');

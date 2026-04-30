@@ -40,8 +40,8 @@ const run = async () => {
       name: 'Company Admin',
       email: 'company@demo.com',
       password: 'demo123',
-      role: 'company_admin',
-      profileType: 'company',
+      role: 'admin',
+      profileType: 'admin',
       tenantId: techCorp._id,
     });
     techCorp.ownerId = companyAdmin._id;
@@ -50,7 +50,7 @@ const run = async () => {
       name: 'Tech Manager',
       email: 'manager@techcorp.com',
       password: 'demo123',
-      role: 'manager',
+      role: 'employee',
       profileType: 'employee',
       tenantId: techCorp._id,
     });
@@ -74,8 +74,8 @@ const run = async () => {
       name: 'Cabinet Admin',
       email: 'cabinet@demo.com',
       password: 'demo123',
-      role: 'cabinet_admin',
-      profileType: 'cabinet',
+      role: 'comptable',
+      profileType: 'comptable',
       tenantId: cabinetOrg._id,
     });
     cabinetOrg.ownerId = cabinetAdmin._id;
@@ -92,11 +92,11 @@ const run = async () => {
     });
 
     const student = await User.create({
-      name: 'Demo Student',
+      name: 'Demo Stagiaire',
       email: 'student@demo.com',
       password: 'demo123',
-      role: 'student',
-      profileType: 'student',
+      role: 'stagiaire',
+      profileType: 'stagiaire',
     });
 
     console.log('👥 Users Created');
@@ -164,7 +164,7 @@ const run = async () => {
           activeMinutes: Math.floor(Math.random() * 180),
           loginCount: 1,
           score: Math.floor(Math.random() * 60) + 30, // 30-90
-          studyHours: u.profileType === 'student' ? Math.random() * 4 : undefined,
+          studyHours: u.profileType === 'stagiaire' ? Math.random() * 4 : undefined,
         });
       }
     }

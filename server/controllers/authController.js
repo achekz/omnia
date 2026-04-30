@@ -58,6 +58,19 @@ function sanitizeUser(user) {
   };
 }
 
+async function persistCanonicalRole(user) {
+  const role = normalizeRole(user.role || user.profileType, "employee");
+  const profileType = normalizeProfileType(user.profileType || role, role);
+
+  if (user.role !== role || user.profileType !== profileType) {
+    user.role = role;
+    user.profileType = profileType;
+    await User.updateOne({ _id: user._id }, { $set: { role, profileType } });
+  }
+
+  return user;
+}
+
 export const sendCode = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
@@ -316,6 +329,8 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Email verification required");
   }
 
+  await persistCanonicalRole(user);
+
   if (!String(user.password || "").startsWith("$2")) {
     user.password = password;
     await user.save();
@@ -368,6 +383,8 @@ export const adminLogin = asyncHandler(async (req, res) => {
   if (!user.isVerified) {
     throw new ApiError(403, "Email verification required");
   }
+
+  await persistCanonicalRole(user);
 
   user.lastLogin = new Date();
 
@@ -690,6 +707,8 @@ export const getMe = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
+
+  await persistCanonicalRole(user);
 
   return res.status(200).json(
     new ApiResponse(

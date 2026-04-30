@@ -2,18 +2,40 @@ from flask import Blueprint, request, jsonify
 
 bp = Blueprint('recommend', __name__)
 
+ROLE_ALIASES = {
+    'student': 'stagiaire',
+    'etudiant': 'stagiaire',
+    'étudiant': 'stagiaire',
+    'intern': 'stagiaire',
+    'accountant': 'comptable',
+    'cabinet': 'comptable',
+    'company': 'admin',
+    'company_admin': 'admin',
+    'cabinet_admin': 'admin',
+    'manager': 'admin',
+    'rh': 'employee',
+    'hr': 'employee',
+    'employe': 'employee',
+    'employé': 'employee',
+    'user': 'employee',
+}
+
+def normalize_role(value):
+    key = str(value or 'employee').strip().lower()
+    return ROLE_ALIASES.get(key, key if key in ['admin', 'employee', 'stagiaire', 'comptable'] else 'employee')
+
 @bp.route('', methods=['POST'])
 def recommend_endpoint():
     try:
         data = request.get_json()
         context = data.get('context', {})
         
-        profile = context.get('profileType', 'employee')
+        profile = normalize_role(context.get('profileType') or context.get('role'))
         pending = context.get('pending_tasks_count', 0)
         
         recs = []
         
-        if profile == 'student':
+        if profile == 'stagiaire':
             if pending > 3:
                 recs = [
                     "Break your upcoming assignments into smaller 25-minute Pomodoro sessions.",
@@ -25,7 +47,7 @@ def recommend_endpoint():
                     "Great job staying on top of your studying. Consider reviewing lighter topics.",
                     "Prepare notes for next week's classes early."
                 ]
-        elif profile == 'cabinet' or profile == 'company':
+        elif profile == 'admin' or profile == 'comptable':
             recs = [
                 "Review outstanding pending approvals to unblock your team.",
                 "Check financial anomaly reports generated in the last 24h.",

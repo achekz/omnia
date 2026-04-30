@@ -219,7 +219,7 @@ Les recommandations doivent tenir compte des evenements recents, comme une tache
 | Sequence creer compte | `/api/auth/send-code`, `/api/auth/verify-code`, `/api/auth/register` |
 | Cas admin | dashboard admin, users, presences, tasks, rules, AI |
 | Cas employee | dashboard employee, presence, tasks, performance, AI |
-| Cas stagiaire | dashboard student/stagiaire, presence, planner, budget, tasks, AI |
+| Cas stagiaire | dashboard stagiaire, presence, planner, budget, tasks, AI |
 | Cas comptable | dashboard comptable, presence, finance/budget, tasks, payroll, AI |
 | Cas global | routes communes auth, dashboard, notifications, recommendations |
 
@@ -230,5 +230,5 @@ Les recommandations doivent tenir compte des evenements recents, comme une tache
 - ajouter diagramme de classe general dans le rapport;
 - ajouter les captures d'ecran finales;
 - ajouter les tests de validation dans le rapport;
-- uniformiser les termes: `stagiaire`, `employee`, `comptable`, `admin`;
+- conserver les termes canoniques: `stagiaire`, `employee`, `comptable`, `admin`;
 - ajouter des tests automatises si le projet doit fournir une preuve technique complete.

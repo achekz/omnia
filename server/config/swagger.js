@@ -64,7 +64,7 @@ const swaggerOptions = {
             },
             role: {
               type: 'string',
-              enum: ['student', 'employee', 'cabinet_admin', 'company_admin'],
+              enum: ['admin', 'employee', 'stagiaire', 'comptable'],
               example: 'employee'
             },
             avatar: {
@@ -198,7 +198,7 @@ export const swaggerEndpoints = {
  *                 type: string
  *               role:
  *                 type: string
- *                 enum: [student, employee, cabinet_admin, company_admin]
+ *                 enum: [admin, employee, stagiaire, comptable]
  *     responses:
  *       201:
  *         description: User created successfully

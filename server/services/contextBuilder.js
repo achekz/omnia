@@ -1,5 +1,6 @@
 import Task from "../models/Task.js";
 import ActivityLog from "../models/ActivityLog.js";
+import { normalizeRole } from "../utils/roleNormalization.js";
 
 export async function getContext(user) {
   if (!user) {
@@ -10,62 +11,64 @@ export async function getContext(user) {
   }
 
   try {
-  if (user.role === "EMPLOYEE") {
+    const role = normalizeRole(user.role || user.profileType, "employee");
+
+    if (role === "employee") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
       const logs = await ActivityLog.find({ userId: user._id }).limit(5).catch(() => []);
 
       return {
         userType: "employee",
-        userRole: user.role,
+        userRole: role,
         tasks: tasks || [],
         activity: logs || [],
         timestamp: new Date(),
       };
     }
 
-  if (user.role === "COMPANY_ADMIN") {
+    if (role === "admin") {
       const employees = await ActivityLog.find({ tenantId: user.tenantId }).limit(10).catch(() => []);
 
       return {
-        userType: "company_admin",
-        userRole: user.role,
+        userType: "admin",
+        userRole: role,
         teamActivity: employees || [],
         timestamp: new Date(),
       };
     }
 
-  if (user.role === "CABINET_ADMIN") {
+    if (role === "comptable") {
       return {
-        userType: "cabinet_admin",
-        userRole: user.role,
+        userType: "comptable",
+        userRole: role,
         message: "Financial data and client information available",
         timestamp: new Date(),
       };
     }
 
-  if (user.role === "STAGIAIRE" || user.role === "student" || user.role === "stagiaire") {
+    if (role === "stagiaire") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
 
       return {
         userType: "stagiaire",
-        userRole: user.role,
+        userRole: role,
         studyTasks: tasks || [],
         timestamp: new Date(),
       };
     }
 
-    // Default for other roles
     return {
-      userType: user.role || "USER",
-      userRole: user.role,
+      userType: role,
+      userRole: role,
       timestamp: new Date(),
     };
 
   } catch (err) {
     console.error("Context builder error:", err.message);
+    const role = normalizeRole(user.role || user.profileType, "employee");
     return {
-      userType: user.role || "user",
-      userRole: user.role,
+      userType: role,
+      userRole: role,
       timestamp: new Date(),
       error: "Context fetch failed",
     };

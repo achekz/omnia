@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { normalizeRole } from '../utils/roleNormalization.js';
 
 const { Schema } = mongoose;
 
@@ -14,6 +15,7 @@ const ruleConditionSchema = new Schema(
         'finance.expensesThisMonth',
         'finance.balanceThisMonth',
         'finance.recordAmount',
+        'stagiaire.examDueDays',
         'student.examDueDays',
       ],
     },
@@ -56,7 +58,7 @@ const ruleSchema = new Schema(
     },
     resource: {
       type: String,
-      enum: ['task', 'finance', 'student'],
+      enum: ['task', 'finance', 'stagiaire', 'student'],
       required: true,
     },
     roles: [{ type: String }],
@@ -74,5 +76,26 @@ const ruleSchema = new Schema(
 );
 
 ruleSchema.index({ tenantId: 1, isActive: 1, trigger: 1 });
+
+function normalizeResource(resource) {
+  return resource === 'student' ? 'stagiaire' : resource;
+}
+
+function normalizeMetric(metric) {
+  return metric === 'student.examDueDays' ? 'stagiaire.examDueDays' : metric;
+}
+
+ruleSchema.pre('validate', function normalizeRule(next) {
+  this.resource = normalizeResource(this.resource);
+  this.roles = (this.roles || []).map((role) => normalizeRole(role, role));
+  this.conditions = (this.conditions || []).map((condition) => {
+    const conditionObject = condition.toObject?.() || condition;
+    return {
+      ...conditionObject,
+      metric: normalizeMetric(condition.metric),
+    };
+  });
+  next();
+});
 
 export default mongoose.model('Rule', ruleSchema);

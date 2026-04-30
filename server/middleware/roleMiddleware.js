@@ -1,11 +1,13 @@
+import { normalizeRole } from "../utils/roleNormalization.js";
+
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const normalizedRequiredRoles = roles.map((role) => String(role).toLowerCase());
-    const normalizedUserRole = String(req.user.role || "").toLowerCase();
+    const normalizedRequiredRoles = roles.map((role) => normalizeRole(role, role));
+    const normalizedUserRole = normalizeRole(req.user.role || req.user.profileType, "");
 
     console.log("[RBAC] Required roles:", normalizedRequiredRoles);
 

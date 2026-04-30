@@ -2,6 +2,16 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { ApiError } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { normalizeProfileType, normalizeRole } from '../utils/roleNormalization.js';
+
+function attachCanonicalRole(user) {
+  const role = normalizeRole(user.role || user.profileType, 'employee');
+  const profileType = normalizeProfileType(user.profileType || role, role);
+
+  user.role = role;
+  user.profileType = profileType;
+  return user;
+}
 
 export const protect = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -26,7 +36,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   }
 
   req.auth = decoded;
-  req.user = user;
+  req.user = attachCanonicalRole(user);
   next();
 });
 
@@ -45,7 +55,7 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
 
     if (user && user.isActive) {
       req.auth = decoded;
-      req.user = user;
+      req.user = attachCanonicalRole(user);
     }
   } catch (error) {
     console.error("[AUTH] Optional auth failed:", error.message);

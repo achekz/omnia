@@ -29,7 +29,6 @@ def ai_endpoint():
             timeout=30
         )
 
-        # 🔴 vérifier erreur Ollama
         if response.status_code != 200:
             return jsonify({
                 "error": "Ollama request failed",
