@@ -27,8 +27,10 @@ async function updatePasswords() {
         try {
           // Hash the plain text password
           const hashedPassword = await bcrypt.hash(user.password, 12);
-          user.password = hashedPassword;
-          await user.save();
+          await User.updateOne(
+            { _id: user._id },
+            { $set: { password: hashedPassword, refreshToken: null } },
+          );
           console.log(`✅ Updated: ${user.email}`);
           updated++;
         } catch (err) {

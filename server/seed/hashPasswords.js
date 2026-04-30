@@ -36,8 +36,10 @@ async function hashPlainPasswords() {
       try {
         console.log(`🔄 ${user.email}: Hashing password...`);
         const hashedPassword = await bcrypt.hash(user.password, 12);
-        user.password = hashedPassword;
-        await user.save();
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { password: hashedPassword, refreshToken: null } },
+        );
         console.log(`   ✅ Hashed successfully!`);
         hashed++;
       } catch (err) {

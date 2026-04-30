@@ -17,6 +17,12 @@ import type {
 } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const TOKEN_STORAGE_KEY = "token";
+const REFRESH_TOKEN_STORAGE_KEY = "refreshToken";
+const USER_STORAGE_KEY = "user";
+const LEGACY_TOKEN_STORAGE_KEY = "omni_ai_token";
+const LEGACY_REFRESH_TOKEN_STORAGE_KEY = "omni_ai_refreshToken";
+const LEGACY_USER_STORAGE_KEY = "omni_ai_user";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -26,13 +32,39 @@ const apiClient = axios.create({
   },
 });
 
+const PUBLIC_API_PATHS = new Set([
+  "/auth/send-code",
+  "/auth/verify-code",
+  "/auth/register",
+  "/auth/login",
+  "/auth/admin-login",
+  "/auth/repair",
+  "/auth/debug-login",
+  "/auth/forgot-password",
+  "/auth/verify-reset-code",
+  "/auth/reset-password",
+  "/auth/refresh-token",
+  "/auth/test-email",
+]);
+
+function isPublicApiRequest(url = "") {
+  try {
+    const path = url.startsWith("http") ? new URL(url).pathname : url;
+    return PUBLIC_API_PATHS.has(path.replace(/^\/api(?=\/)/, ""));
+  } catch {
+    return PUBLIC_API_PATHS.has(url.replace(/^\/api(?=\/)/, ""));
+  }
+}
+
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("omni_ai_token");
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
 
     if (token) {
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (!isPublicApiRequest(config.url)) {
+      return Promise.reject(new axios.CanceledError("Authentication token missing"));
     }
 
     return config;
@@ -49,7 +81,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("omni_ai_refreshToken");
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
 
         if (!refreshToken) {
           throw new Error("No refresh token");
@@ -62,15 +94,19 @@ apiClient.interceptors.response.use(
           throw new Error("Invalid refresh response");
         }
 
-        localStorage.setItem("omni_ai_token", newToken);
+        localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+        localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, newToken);
         originalRequest.headers = originalRequest.headers ?? {};
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
         return apiClient(originalRequest);
       } catch {
-        localStorage.removeItem("omni_ai_token");
-        localStorage.removeItem("omni_ai_refreshToken");
-        localStorage.removeItem("omni_ai_user");
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_USER_STORAGE_KEY);
         window.location.href = "/login";
       }
     }
@@ -519,6 +555,7 @@ export function useGetAdminTasks(options?: QueryHookOptions) {
       return unwrapCollection<Task>(response.data, "tasks", []);
     },
     enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
     initialData: [],
   });
 }

@@ -26,8 +26,11 @@ async function fixPasswordHashing() {
         console.log(`❌ User ${user.email}: Password NOT properly hashed`);
         // Hash the password
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-        await user.save();
+        const hashedPassword = await bcrypt.hash(user.password, salt);
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { password: hashedPassword, refreshToken: null } },
+        );
         console.log(`✅ Fixed: ${user.email}\n`);
         fixed++;
       } else {

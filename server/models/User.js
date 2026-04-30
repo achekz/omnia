@@ -7,6 +7,7 @@ const { Schema } = mongoose;
 
 const allowedRoles = getAllowedRoles();
 const allowedGenders = ["male", "female"];
+const bcryptHashPattern = /^\$2[aby]\$\d{2}\$/;
 
 const userSchema = new Schema(
   {
@@ -140,25 +141,55 @@ const userSchema = new Schema(
   },
 );
 
+userSchema.index({ role: 1 });
+userSchema.index({ profileType: 1 });
+
 userSchema.virtual("fullName").get(function getFullName() {
   return `${this.firstName} ${this.lastName}`.trim();
 });
 
 userSchema.pre("save", async function hashPassword(next) {
-  this.name = `${this.firstName} ${this.lastName}`.trim();
-  this.role = normalizeRole(this.role, "employee");
-  this.profileType = normalizeProfileType(this.profileType || this.role, this.role);
+  try {
+    this.email = String(this.email || "").trim().toLowerCase();
+    this.name = `${this.firstName} ${this.lastName}`.trim();
+    this.role = normalizeRole(this.role, "employee");
+    this.profileType = normalizeProfileType(this.profileType || this.role, this.role);
 
-  if (!this.isModified("password")) {
-    return next();
+    if (this.role === "admin" && (this.isNew || this.isModified("role"))) {
+      const existingAdmin = await this.constructor.exists({
+        _id: { $ne: this._id },
+        role: "admin",
+      });
+
+      if (existingAdmin) {
+        throw new Error("Only one admin account is allowed");
+      }
+    }
+
+    if (!this.isModified("password")) {
+      return next();
+    }
+
+    if (!bcryptHashPattern.test(this.password)) {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 userSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
+  if (!candidatePassword || !this.password) {
+    return false;
+  }
+
+  if (!bcryptHashPattern.test(this.password)) {
+    return candidatePassword === this.password;
+  }
+
   return bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -174,7 +205,7 @@ userSchema.methods.generateAccessToken = function generateAccessToken() {
       aiProfile: normalizedRole,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE || "15m" },
+    { expiresIn: process.env.JWT_EXPIRE || "7d" },
   );
 };
 

@@ -14,7 +14,8 @@ import { ApiError } from '../utils/ApiResponse.js';
 export const rateLimit = (options = {}) => {
   const {
     windowMs = 15 * 60 * 1000,  // 15 minutes
-    maxRequests = 100,           // per window
+    max = undefined,
+    maxRequests = max ?? 100,    // per window
     keyGenerator = (req) => req.ip,
     message = 'Too many requests, please try again later',
     statusCode = 429
@@ -23,6 +24,10 @@ export const rateLimit = (options = {}) => {
   const windowSeconds = Math.ceil(windowMs / 1000);
 
   return async (req, res, next) => {
+    if (process.env.DISABLE_RATE_LIMITS !== "false" && process.env.NODE_ENV !== "production") {
+      return next();
+    }
+
     try {
       const key = `ratelimit:${keyGenerator(req)}`;
       const currentCount = await incrementCounter(key, 1, windowSeconds);

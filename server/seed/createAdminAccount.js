@@ -17,23 +17,14 @@ async function createAdminAccount() {
       throw dbResult.error || new Error("MongoDB connection failed");
     }
 
-    console.log("🔧 Removing old admin accounts...");
+    const adminExists = await User.findOne({ role: "admin" }).select("email");
+    if (adminExists) {
+      throw new Error(`Admin already exists: ${adminExists.email}`);
+    }
 
-    const oldAdmins = await User.find({
-      $or: [
-        { email: ADMIN_EMAIL },
-        { role: { $in: ["admin", "ADMIN"] } },
-        { profileType: { $in: ["admin", "ADMIN"] } },
-      ],
-    }).select("_id email role profileType");
-
-    if (oldAdmins.length > 0) {
-      console.log(`🗑️ Found ${oldAdmins.length} old admin account(s). Deleting them...`);
-      await User.deleteMany({
-        _id: { $in: oldAdmins.map((user) => user._id) },
-      });
-    } else {
-      console.log("ℹ️ No existing admin accounts found.");
+    const emailExists = await User.findOne({ email: ADMIN_EMAIL }).select("email role");
+    if (emailExists) {
+      throw new Error(`Email already exists: ${emailExists.email}`);
     }
 
     const fallbackTenant = await Organization.findOne({}).select("_id name");

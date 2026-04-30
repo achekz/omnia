@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
 
@@ -22,16 +21,19 @@ async function createTestAccount() {
     // Delete if exists
     await User.deleteOne({ email: testEmail });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(testPassword, 12);
-
     // Create user
     const user = await User.create({
-      name: 'Test User',
+      firstName: 'Test',
+      lastName: 'User',
       email: testEmail,
-      password: hashedPassword,
-      role: 'USER',
+      phoneNumber: '+21620000123',
+      city: 'tunisia',
+      password: testPassword,
+      role: 'employee',
       profileType: 'employee',
+      verificationMethod: 'email',
+      gender: 'male',
+      isVerified: true,
       isActive: true,
     });
 

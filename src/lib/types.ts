@@ -74,7 +74,7 @@ export interface RegisterRequest extends SendCodeRequest {
   confirmPassword: string;
 }
 
-export type TaskStatus = "todo" | "in_progress" | "done" | "overdue";
+export type TaskStatus = "todo" | "in_progress" | "done" | "overdue" | "declined";
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
 export interface Task {
@@ -98,6 +98,10 @@ export interface Task {
   endTime?: string;
   actualStartedAt?: string;
   actualFinishedAt?: string;
+  acceptedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
+  completedBy?: Partial<User> | string;
   completedAt?: string;
   isDelayed?: boolean;
   createdAt?: string;
@@ -110,6 +114,7 @@ export interface Attendance {
   _id?: string;
   id?: string;
   userId?: Partial<User> | string;
+  userSnapshot?: Partial<User>;
   date: string;
   dateKey: string;
   checkIn: string;
@@ -133,6 +138,7 @@ export interface Notification {
   isRead: boolean;
   source?: string;
   actionUrl?: string;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 

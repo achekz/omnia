@@ -37,7 +37,7 @@ export function normalizeProfileType(value, fallback = "employee") {
 }
 
 export function isEmployeeLikeRole(value) {
-  return ["employee", "stagiaire"].includes(normalizeRole(value));
+  return ["employee", "stagiaire", "comptable"].includes(normalizeRole(value));
 }
 
 export function getAllowedRoles() {

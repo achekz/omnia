@@ -4,10 +4,12 @@
   "description": "Production-ready OmniAI SaaS Platform",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js",
+    "dev": "nodemon --watch server.js --watch controllers --watch models --watch middleware --watch routes --watch services --watch utils --watch config --ext js,json server.js",
     "start": "node server.js",
     "typecheck": "powershell -ExecutionPolicy Bypass -File scripts/typecheck.ps1",
     "create-admin": "node seed/createAdminAccount.js",
+    "fix-stagiaire-accounts": "node seed/resetAuthSystem.js",
+    "reset-auth-system": "node seed/resetAuthSystem.js",
     "migrate-roles": "node seed/migrateRoles.js",
     "seed": "node seed/createDemoAccounts.js",
     "test": "jest"

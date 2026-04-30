@@ -1,191 +1,184 @@
-import { useState, type FormEvent } from "react";
-import { AlignLeft, AlertTriangle, CheckCircle2, Clock, Play, Plus } from "lucide-react";
+import { CheckCircle2, Clock, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useCreateTask, useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
-import type { TaskStatus } from "@/lib/types";
+import { useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
+import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+type TaskFilter = "all" | TaskStatus;
+
+const filters: { value: TaskFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "todo", label: "New" },
+  { value: "in_progress", label: "In progress" },
+  { value: "done", label: "Done" },
+  { value: "declined", label: "Cancelled" },
+];
+
+const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
+  todo: { label: "Waiting confirmation", tone: "bg-amber-50 text-amber-700 border-amber-100", icon: <Clock className="h-4 w-4" /> },
+  overdue: { label: "Waiting confirmation", tone: "bg-rose-50 text-rose-700 border-rose-100", icon: <Clock className="h-4 w-4" /> },
+  in_progress: { label: "In progress", tone: "bg-sky-50 text-sky-700 border-sky-100", icon: <PlayCircle className="h-4 w-4" /> },
+  done: { label: "Completed", tone: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: <CheckCircle2 className="h-4 w-4" /> },
+  declined: { label: "Cancelled", tone: "bg-rose-50 text-rose-700 border-rose-100", icon: <XCircle className="h-4 w-4" /> },
+};
+
+function getUserName(user: Partial<User> | string | undefined) {
+  if (!user || typeof user === "string") return "Admin";
+  return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Admin";
+}
 
 export default function MyTasks() {
-  const [filter, setFilter] = useState<"all" | "todo" | "in_progress" | "done">("all");
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-
-  const { data: tasks = [], isLoading } = useGetTasks();
+  const [filter, setFilter] = useState<TaskFilter>("all");
+  const { data: tasks = [], isLoading } = useGetTasks({ query: { refetchInterval: 15000 } });
   const updateTaskStatus = useUpdateTaskStatus();
-  const createTask = useCreateTask();
 
   const filteredTasks = tasks.filter((task) => (filter === "all" ? true : task.status === filter));
-  const kanbanColumns: { id: TaskStatus; title: string }[] = [
-    { id: "todo", title: "To Do" },
-    { id: "in_progress", title: "In Progress" },
-    { id: "overdue", title: "Overdue" },
-    { id: "done", title: "Done" },
-  ];
 
-  const handleCreateTask = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    createTask.mutate({ title: newTaskTitle, status: "todo" });
-    setNewTaskTitle("");
+  const updateStatus = (task: Task, status: TaskStatus) => {
+    const id = task._id || task.id;
+    if (!id) return;
+    updateTaskStatus.mutate({ id, status });
   };
 
   return (
     <ModuleLayout activeItem="tasks">
-      <div className="max-w-5xl mx-auto p-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h2 className="text-3xl font-display font-bold text-gray-900">My Tasks</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your pending actions and assignments.</p>
+      <div className="mx-auto max-w-6xl p-6 lg:p-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <ListChecks className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-display font-bold text-gray-950">My Tasks</h2>
+              <p className="text-sm text-gray-500">Confirm, postpone, and finish tasks assigned by admin.</p>
+            </div>
           </div>
 
-          <div className="flex bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm border border-gray-200 dark:border-gray-700">
-            {(["all", "todo", "in_progress", "done"] as const).map((value) => (
+          <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+            {filters.map((item) => (
               <button
-                key={value}
-                onClick={() => setFilter(value)}
+                key={item.value}
+                type="button"
+                onClick={() => setFilter(item.value)}
                 className={cn(
-                  "px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors",
-                  filter === value
-                    ? "bg-purple-50 text-purple-700"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800",
+                  "rounded-lg px-3 py-2 text-xs font-bold transition",
+                  filter === item.value ? "bg-gray-950 text-white" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
                 )}
               >
-                {value.replace("_", " ")}
+                {item.label}
               </button>
             ))}
           </div>
         </div>
 
-        <form onSubmit={handleCreateTask} className="mb-8">
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(event) => setNewTaskTitle(event.target.value)}
-              placeholder="What needs to be done?"
-              className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-gray-900 dark:text-gray-100"
-            />
-            <button
-              type="submit"
-              disabled={!newTaskTitle.trim() || createTask.isPending}
-              className="absolute right-2 p-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+        {isLoading ? (
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500">Loading tasks...</div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
+            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+            <p className="font-semibold text-gray-950">No tasks found</p>
+            <p className="mt-1 text-sm text-gray-500">New admin assignments will appear here.</p>
           </div>
-        </form>
-
-        <div className="grid gap-4 lg:grid-cols-4">
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400 lg:col-span-4">Loading tasks...</div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center rounded-2xl border border-gray-200 bg-white lg:col-span-4">
-              <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-gray-300" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No tasks found</h3>
-              <p className="text-gray-500 dark:text-gray-400">You&apos;re all caught up!</p>
-            </div>
-          ) : (
-            kanbanColumns.map((column) => {
-              const columnTasks = filteredTasks.filter((task) => task.status === column.id);
-
-              return (
-                <section key={column.id} className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between px-2 py-1">
-                    <h3 className="font-bold text-gray-950">{column.title}</h3>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">{columnTasks.length}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {columnTasks.map((task) => {
-                      const taskId = task._id || task.id;
-                      const startTask = () => {
-                        if (task.status === "todo" && taskId) {
-                          updateTaskStatus.mutate({ id: taskId, status: "in_progress" });
-                        }
-                      };
-
-                      const finishTask = () => {
-                        if (task.status === "in_progress" && taskId) {
-                          updateTaskStatus.mutate({ id: taskId, status: "done" });
-                        }
-                      };
-
-                      return (
-                        <article
-                          key={taskId}
-                          onClick={startTask}
-                          className={cn(
-                            "rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-                            task.status === "todo" && "cursor-pointer",
-                            task.status === "overdue" || (task.delayDays || 0) > 0
-                              ? "border-rose-200 bg-rose-50"
-                              : "border-gray-200 bg-white",
-                          )}
-                        >
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <p className={cn("font-semibold leading-tight", task.status === "done" ? "text-gray-400 line-through" : "text-gray-950")}>{task.title}</p>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                finishTask();
-                              }}
-                              disabled={task.status !== "in_progress" || updateTaskStatus.isPending}
-                              className="shrink-0 rounded-full bg-gray-50 p-1.5 text-gray-500 hover:bg-purple-50 hover:text-purple-700"
-                              title={task.status === "in_progress" ? "Done" : task.status === "todo" ? "Click card to start" : "Completed"}
-                            >
-                              {task.status === "done" ? <CheckCircle2 className="h-4 w-4" /> : task.status === "in_progress" ? <Play className="h-4 w-4" /> : <div className="h-4 w-4 rounded-full border-2 border-current" />}
-                            </button>
-                          </div>
-                          {task.description && <p className="mb-3 text-sm text-gray-500 line-clamp-3">{task.description}</p>}
-                          <div className="flex flex-wrap items-center gap-2 text-xs">
-                            {task.priority && <PriorityBadge priority={task.priority} />}
-                            {task.dueDate && (
-                              <span className={cn("flex items-center gap-1", task.status === "overdue" || (task.delayDays || 0) > 0 ? "font-semibold text-rose-700" : "text-gray-500")}>
-                                <Clock className="h-3.5 w-3.5" />
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </span>
-                            )}
-                            {(task.delayDays || 0) > 0 && (
-                              <span className="flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700">
-                                <AlertTriangle className="h-3 w-3" />
-                                {task.delayDays}d late
-                              </span>
-                            )}
-                            {task.description && <AlignLeft className="h-3.5 w-3.5 text-gray-400" />}
-                          </div>
-                        </article>
-                      );
-                    })}
-                    {!columnTasks.length && <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">Empty</div>}
-                  </div>
-                </section>
-              );
-            })
-          )}
-        </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {filteredTasks.map((task) => (
+              <TaskCard
+                key={task._id || task.id}
+                task={task}
+                isUpdating={updateTaskStatus.isPending}
+                onConfirm={() => updateStatus(task, "in_progress")}
+                onDecline={() => updateStatus(task, "declined")}
+                onComplete={() => updateStatus(task, "done")}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </ModuleLayout>
   );
 }
 
-function PriorityBadge({ priority }: { priority: string }) {
+function TaskCard({
+  task,
+  isUpdating,
+  onConfirm,
+  onDecline,
+  onComplete,
+}: {
+  task: Task;
+  isUpdating: boolean;
+  onConfirm: () => void;
+  onDecline: () => void;
+  onComplete: () => void;
+}) {
+  const meta = statusMeta[task.status] || statusMeta.todo;
+  const needsDecision = task.status === "todo" || task.status === "overdue";
+
   return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 font-bold uppercase tracking-wide",
-        priority === "critical"
-          ? "bg-rose-100 text-rose-700"
-          : priority === "high"
-            ? "bg-orange-100 text-orange-700"
-            : priority === "medium"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-600",
+    <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold leading-tight text-gray-950">{task.title}</h3>
+          <p className="mt-1 text-xs font-semibold uppercase text-gray-400">Assigned by {getUserName(task.createdBy as Partial<User>)}</p>
+        </div>
+        <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold", meta.tone)}>
+          {meta.icon}
+          {meta.label}
+        </span>
+      </div>
+
+      {task.description && <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-gray-600">{task.description}</p>}
+
+      <div className="mb-4 flex flex-wrap gap-2 text-xs text-gray-500">
+        {task.startTime && (
+          <span className="rounded-full bg-gray-50 px-2.5 py-1 font-semibold">
+            Start: {new Date(task.startTime).toLocaleString()}
+          </span>
+        )}
+        {(task.estimatedMinutes || task.estimatedDurationMinutes) && (
+          <span className="rounded-full bg-gray-50 px-2.5 py-1 font-semibold">
+            {task.estimatedMinutes || task.estimatedDurationMinutes} min
+          </span>
+        )}
+        {task.acceptedAt && <span className="rounded-full bg-sky-50 px-2.5 py-1 font-semibold text-sky-700">Confirmed</span>}
+        {task.declinedAt && <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">Plus tard</span>}
+      </div>
+
+      {needsDecision && (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isUpdating}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Confirmer
+          </button>
+          <button
+            type="button"
+            onClick={onDecline}
+            disabled={isUpdating}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-rose-700 disabled:opacity-50"
+          >
+            <PauseCircle className="h-4 w-4" />
+            Plus tard
+          </button>
+        </div>
       )}
-    >
-      {priority}
-    </span>
+
+      {task.status === "in_progress" && (
+        <button
+          type="button"
+          onClick={onComplete}
+          disabled={isUpdating}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          Terminer
+        </button>
+      )}
+    </article>
   );
 }

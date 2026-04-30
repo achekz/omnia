@@ -25,8 +25,11 @@ const fixPasswords = async () => {
       if (!isBcrypted) {
         console.log(`   ❌ NOT HASHED! Fixing...`);
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-        await user.save();
+        const hashedPassword = await bcrypt.hash(user.password, salt);
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { password: hashedPassword, refreshToken: null } },
+        );
         console.log(`   ✅ Password fixed and saved\n`);
       } else {
         console.log(`   ✅ Already properly hashed\n`);

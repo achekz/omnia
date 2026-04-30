@@ -5,8 +5,9 @@ import {
   useGetNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
+  useUpdateTaskStatus,
 } from "@/lib/api-client";
-import type { Notification } from "@/lib/types";
+import type { Notification, TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type NotificationCategory = "all" | "ml" | "tasks" | "finance";
@@ -41,6 +42,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const clearRead = useClearReadNotifications();
+  const updateTaskStatus = useUpdateTaskStatus();
 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const filteredNotifications = useMemo(
@@ -132,7 +134,9 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                   key={notification._id ?? notification.id}
                   notification={notification}
                   onMarkRead={(id) => markRead.mutate(id)}
+                  onTaskAction={(id, status) => updateTaskStatus.mutate({ id, status })}
                   isUpdating={markRead.isPending}
+                  isTaskUpdating={updateTaskStatus.isPending}
                 />
               ))}
             </div>
@@ -146,14 +150,24 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 function NotificationCard({
   notification,
   onMarkRead,
+  onTaskAction,
   isUpdating,
+  isTaskUpdating,
 }: {
   notification: Notification;
   onMarkRead: (id: string) => void;
+  onTaskAction: (taskId: string, status: TaskStatus) => void;
   isUpdating: boolean;
+  isTaskUpdating: boolean;
 }) {
   const category = getNotificationCategory(notification);
   const id = notification._id || notification.id;
+  const taskId = typeof notification.metadata?.taskId === "string" ? notification.metadata.taskId : "";
+  const isActionableTask =
+    category === "tasks" &&
+    taskId &&
+    !notification.isRead &&
+    (notification.metadata?.actionRequired === true || String(notification.title).toLowerCase().includes("assigned"));
   const categoryMeta = {
     ml: { label: "ML alert", icon: <Bot className="h-4 w-4" />, tone: "bg-violet-50 text-violet-700 border-violet-100" },
     tasks: { label: "Task", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
@@ -182,6 +196,32 @@ function NotificationCard({
         <div className="min-w-0 flex-1">
           <h3 className="font-bold leading-tight text-slate-950">{notification.title}</h3>
           <p className="mt-1 text-sm leading-relaxed text-slate-600">{notification.message}</p>
+          {isActionableTask && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onTaskAction(taskId, "in_progress");
+                  if (id) onMarkRead(id);
+                }}
+                disabled={isTaskUpdating}
+                className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Confirmer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onTaskAction(taskId, "declined");
+                  if (id) onMarkRead(id);
+                }}
+                disabled={isTaskUpdating}
+                className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                Plus tard
+              </button>
+            </div>
+          )}
           <div className="mt-3 flex items-center justify-between gap-3">
             <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", notification.isRead ? "bg-slate-100 text-slate-500" : "bg-violet-100 text-violet-700")}>
               {notification.isRead ? "Read" : "Unread"}

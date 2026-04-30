@@ -22,6 +22,7 @@ export const create = async (userId, tenantId, { type, title, message, source, a
       message: notif.message,
       source: notif.source,
       actionUrl: notif.actionUrl,
+      metadata: notif.metadata,
       isRead: false,
       createdAt: notif.createdAt,
     });

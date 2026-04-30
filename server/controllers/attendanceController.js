@@ -82,11 +82,37 @@ async function notifyAdmins(req, payload) {
   );
 }
 
+function buildUserSnapshot(user) {
+  const firstName = String(user?.firstName || "").trim();
+  const lastName = String(user?.lastName || "").trim();
+  const name = String(user?.name || `${firstName} ${lastName}`.trim() || "User").trim();
+
+  return {
+    name,
+    firstName,
+    lastName,
+    email: String(user?.email || "").trim().toLowerCase(),
+    role: String(user?.role || user?.profileType || "").trim().toLowerCase(),
+    profileType: String(user?.profileType || user?.role || "").trim().toLowerCase(),
+  };
+}
+
 function serializeAttendance(record) {
   if (!record) return null;
   const raw = typeof record.toObject === "function" ? record.toObject() : record;
+  const populatedUser = raw.userId && typeof raw.userId === "object" ? raw.userId : null;
+  const snapshot = raw.userSnapshot || {};
+
   return {
     ...raw,
+    userId: populatedUser || {
+      name: snapshot.name,
+      firstName: snapshot.firstName,
+      lastName: snapshot.lastName,
+      email: snapshot.email,
+      role: snapshot.role,
+      profileType: snapshot.profileType,
+    },
     checkInTime: raw.checkIn ? formatClock(new Date(raw.checkIn)) : null,
     checkOutTime: raw.checkOut ? formatClock(new Date(raw.checkOut)) : null,
   };
@@ -208,6 +234,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
         status: checkInState.status,
         delayMinutes: checkInState.delayMinutes,
         reason: String(reason).trim(),
+        userSnapshot: buildUserSnapshot(req.user),
       });
     } catch (error) {
       if (error?.code === 11000) {
@@ -260,6 +287,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
     attendance.checkOut = now;
     attendance.checkOutStatus = checkOutState.checkOutStatus;
     attendance.checkOutReason = String(reason).trim();
+    attendance.userSnapshot = attendance.userSnapshot?.email ? attendance.userSnapshot : buildUserSnapshot(req.user);
     await attendance.save();
     await attendance.populate("userId", "name firstName lastName email role profileType");
 

@@ -26,10 +26,16 @@ async function resetPassword(emailArg, passwordArg) {
       const allUsers = await User.find({}).select('email name');
       allUsers.forEach(u => console.log(`   • ${u.email}`));
     } else {
-      // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 12);
-      user.password = hashedPassword;
-      await user.save();
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            password: hashedPassword,
+            refreshToken: null,
+          },
+        },
+      );
 
       console.log(`✅ Password reset successfully!\n`);
       console.log(`📝 Login credentials:`);

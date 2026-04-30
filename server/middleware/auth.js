@@ -25,6 +25,7 @@ export const protect = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, 'User not found');
   }
 
+  req.auth = decoded;
   req.user = user;
   next();
 });
@@ -43,6 +44,7 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
     const user = await User.findById(decoded.id).select("-password");
 
     if (user && user.isActive) {
+      req.auth = decoded;
       req.user = user;
     }
   } catch (error) {

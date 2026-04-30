@@ -1,11 +1,15 @@
 import { CalendarCheck2 } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGetAdminPresences } from "@/lib/api-client";
-import type { User } from "@/lib/types";
+import type { Attendance, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-function getUser(recordUser: unknown): Partial<User> {
-  return typeof recordUser === "object" && recordUser ? (recordUser as Partial<User>) : {};
+function getUser(record: Attendance): Partial<User> {
+  if (typeof record.userId === "object" && record.userId) {
+    return record.userId as Partial<User>;
+  }
+
+  return record.userSnapshot || {};
 }
 
 function label(value?: string) {
@@ -49,7 +53,7 @@ export default function AdminPresencesPage() {
                 </tr>
               ) : records.length ? (
                 records.map((record) => {
-                  const user = getUser(record.userId);
+                  const user = getUser(record);
                   const status = label(record.status);
 
                   return (

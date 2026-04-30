@@ -1,15 +1,23 @@
 import { useState, type FormEvent } from "react";
-import { ClipboardList, Clock, Plus } from "lucide-react";
+import { CheckCircle2, ClipboardList, Clock, PauseCircle, PlayCircle, Plus, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useCreateTask, useGetAdminTasks, useGetAdminUsers } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@/lib/types";
+import type { TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function getUserName(user: Partial<User> | string | undefined) {
   if (!user || typeof user === "string") return "-";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "-";
 }
+
+const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
+  todo: { label: "Pending", tone: "bg-amber-100 text-amber-700", icon: <Clock className="h-3 w-3" /> },
+  overdue: { label: "Pending late", tone: "bg-rose-100 text-rose-700", icon: <Clock className="h-3 w-3" /> },
+  in_progress: { label: "Confirmed / In progress", tone: "bg-sky-100 text-sky-700", icon: <PlayCircle className="h-3 w-3" /> },
+  done: { label: "Completed", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-3 w-3" /> },
+  declined: { label: "Cancelled", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-3 w-3" /> },
+};
 
 export default function AdminTasksPage() {
   const [title, setTitle] = useState("");
@@ -96,7 +104,7 @@ export default function AdminTasksPage() {
                 <th className="px-5 py-4">Started</th>
                 <th className="px-5 py-4">Finished</th>
                 <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4">Delayed</th>
+                <th className="px-5 py-4">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -105,26 +113,47 @@ export default function AdminTasksPage() {
                   <td className="px-5 py-8 text-center text-gray-500" colSpan={8}>Loading tasks...</td>
                 </tr>
               ) : tasks.length ? (
-                tasks.map((task) => (
-                  <tr key={task._id || task.id} className="text-gray-700 dark:text-gray-200">
-                    <td className="px-5 py-4">
-                      <p className="font-semibold text-gray-950 dark:text-gray-100">{task.title}</p>
-                      {task.description && <p className="mt-1 line-clamp-1 text-xs text-gray-500">{task.description}</p>}
-                    </td>
-                    <td className="px-5 py-4">{getUserName(task.assignedTo as Partial<User>)}</td>
-                    <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
-                    <td className="px-5 py-4">{task.estimatedMinutes || task.estimatedDurationMinutes || 0} min</td>
-                    <td className="px-5 py-4">{task.actualStartedAt ? new Date(task.actualStartedAt).toLocaleString() : "-"}</td>
-                    <td className="px-5 py-4">{task.actualFinishedAt || task.completedAt ? new Date(task.actualFinishedAt || task.completedAt || "").toLocaleString() : "-"}</td>
-                    <td className="px-5 py-4 capitalize">{task.status.replace("_", " ")}</td>
-                    <td className="px-5 py-4">
-                      <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", task.isDelayed ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>
-                        <Clock className="h-3 w-3" />
-                        {task.isDelayed ? "Delayed" : "On track"}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                tasks.map((task) => {
+                  const meta = statusMeta[task.status] || statusMeta.todo;
+
+                  return (
+                    <tr key={task._id || task.id} className="text-gray-700 dark:text-gray-200">
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-gray-950 dark:text-gray-100">{task.title}</p>
+                        {task.description && <p className="mt-1 line-clamp-1 text-xs text-gray-500">{task.description}</p>}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold">{getUserName(task.assignedTo as Partial<User>)}</p>
+                        {typeof task.assignedTo === "object" && task.assignedTo?.role && (
+                          <p className="mt-1 text-xs capitalize text-gray-400">{task.assignedTo.role}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
+                      <td className="px-5 py-4">{task.estimatedMinutes || task.estimatedDurationMinutes || 0} min</td>
+                      <td className="px-5 py-4">{task.actualStartedAt || task.acceptedAt ? new Date(task.actualStartedAt || task.acceptedAt || "").toLocaleString() : "-"}</td>
+                      <td className="px-5 py-4">{task.actualFinishedAt || task.completedAt ? new Date(task.actualFinishedAt || task.completedAt || "").toLocaleString() : "-"}</td>
+                      <td className="px-5 py-4">
+                        <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", meta.tone)}>
+                          {meta.icon}
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {task.status === "declined" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
+                            <PauseCircle className="h-3 w-3" />
+                            Plus tard
+                          </span>
+                        ) : (
+                          <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", task.isDelayed ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>
+                            <Clock className="h-3 w-3" />
+                            {task.isDelayed ? "Delayed" : "On track"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td className="px-5 py-8 text-center text-gray-500" colSpan={8}>No tasks found.</td>

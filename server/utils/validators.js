@@ -194,7 +194,7 @@ export const validateCreateTask = [
     .withMessage("Priority must be low, medium, high, or critical"),
   body("status")
     .optional()
-    .isIn(["todo", "in_progress", "done", "overdue"])
+    .isIn(["todo", "in_progress", "done", "overdue", "declined"])
     .withMessage("Invalid status"),
   body("assignedTo")
     .optional()

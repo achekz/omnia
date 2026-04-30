@@ -17,6 +17,12 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const TOKEN_STORAGE_KEY = "token";
+const REFRESH_TOKEN_STORAGE_KEY = "refreshToken";
+const USER_STORAGE_KEY = "user";
+const LEGACY_TOKEN_STORAGE_KEY = "omni_ai_token";
+const LEGACY_REFRESH_TOKEN_STORAGE_KEY = "omni_ai_refreshToken";
+const LEGACY_USER_STORAGE_KEY = "omni_ai_user";
 
 const ROLE_REDIRECTS: Record<UserRole, string> = {
   admin: "/admin/dashboard",
@@ -58,7 +64,7 @@ function normalizeRole(value: unknown, fallback: UserRole = "employee"): UserRol
 function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
   const source = rawUser as Partial<User> & Record<string, unknown>;
   const role = normalizeRole(source.role || source.profileType, "employee");
-  const profileType = normalizeRole(source.profileType || source.role, role);
+  const profileType = role;
   const fullName = String(source.name || "").trim();
   const firstName = String(source.firstName || fullName.split(" ")[0] || "User").trim();
   const lastName = String(source.lastName || fullName.split(" ").slice(1).join(" ")).trim();
@@ -87,7 +93,8 @@ function normalizeUser(rawUser: Partial<User> | Record<string, unknown>): User {
 }
 
 function getRedirectPath(user: User) {
-  return ROLE_REDIRECTS[user.profileType] || ROLE_REDIRECTS[user.role] || "/employee/dashboard";
+  const role = normalizeRole(user.role || user.profileType, "employee");
+  return ROLE_REDIRECTS[role];
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -107,9 +114,29 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function clearStoredAuth() {
-  localStorage.removeItem("omni_ai_token");
-  localStorage.removeItem("omni_ai_refreshToken");
-  localStorage.removeItem("omni_ai_user");
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_USER_STORAGE_KEY);
+}
+
+function getStoredToken() {
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+}
+
+function getStoredUser() {
+  return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem(LEGACY_USER_STORAGE_KEY);
+}
+
+function persistAuth(authData: AuthResponse, normalizedUser: User) {
+  localStorage.setItem(TOKEN_STORAGE_KEY, authData.accessToken);
+  localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, authData.refreshToken);
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+  localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, authData.accessToken);
+  localStorage.setItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY, authData.refreshToken);
+  localStorage.setItem(LEGACY_USER_STORAGE_KEY, JSON.stringify(normalizedUser));
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -121,8 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem("omni_ai_token");
-      const storedUser = localStorage.getItem("omni_ai_user");
+      const storedToken = getStoredToken();
+      const storedUser = getStoredUser();
 
       if (!storedToken) {
         setIsLoading(false);
@@ -137,7 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const response = await apiClient.get("/auth/me");
         const normalizedUser = normalizeUser(response.data?.data?.user || response.data?.user || {});
-        localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+        localStorage.setItem(LEGACY_USER_STORAGE_KEY, JSON.stringify(normalizedUser));
         setUser(normalizedUser);
       } catch {
         clearStoredAuth();
@@ -153,13 +181,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (data: LoginRequest) => {
     try {
-      const response = await apiClient.post("/auth/login", data);
+      const response = await apiClient.post("/auth/login", {
+        email: data.email.trim().toLowerCase(),
+        password: data.password.trim(),
+      });
       const authData = response.data.data as AuthResponse;
       const normalizedUser = normalizeUser(authData.user);
 
-      localStorage.setItem("omni_ai_token", authData.accessToken);
-      localStorage.setItem("omni_ai_refreshToken", authData.refreshToken);
-      localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
+      persistAuth(authData, normalizedUser);
 
       setToken(authData.accessToken);
       setUser(normalizedUser);
@@ -182,9 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authData = response.data.data as AuthResponse;
       const normalizedUser = normalizeUser(authData.user);
 
-      localStorage.setItem("omni_ai_token", authData.accessToken);
-      localStorage.setItem("omni_ai_refreshToken", authData.refreshToken);
-      localStorage.setItem("omni_ai_user", JSON.stringify(normalizedUser));
+      persistAuth(authData, normalizedUser);
 
       setToken(authData.accessToken);
       setUser(normalizedUser);
@@ -203,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const currentToken = localStorage.getItem("omni_ai_token");
+      const currentToken = getStoredToken();
       if (currentToken) {
         await apiClient.post("/auth/logout");
       }

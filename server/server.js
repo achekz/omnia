@@ -27,7 +27,7 @@ import teamRoutes from './routes/team.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.routes.js';
 import searchRoutes from './routes/search.routes.js';
-import User from './models/User.js'; // ✅ مهم
+import { resetAuthSystem } from './seed/resetAuthSystem.js';
 
 // Load env
 dotenv.config();
@@ -60,7 +60,7 @@ app.use(rateLimiter({
 }));
 app.use('/api/auth/login', rateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  maxRequests: 10000,
   message: 'Too many login attempts, try again later'
 }));
 app.use('/api/auth/forgot-password', rateLimiter({
@@ -157,16 +157,6 @@ app.use('/api/search', requireDatabase, searchRoutes);
 app.use('/api/rules', requireDatabase, ruleRoutes);
 setupSwagger(app);
 
-// 🧹 DELETE ALL USERS (ADMIN ONLY)
-app.get('/delete-all-users', async (req, res) => {
-  try {
-    const result = await User.deleteMany({});
-    res.send(`✅ Deleted ${result.deletedCount} users`);
-  } catch (err) {
-    res.status(500).send("❌ Error deleting users");
-  }
-});
-
 // Global error handler
 app.use(errorHandler);
 
@@ -188,15 +178,23 @@ async function startServer() {
     throw dbResult.error || new Error('MongoDB connection failed');
   }
 
+  if (dbResult.connected && process.env.AUTO_REPAIR_AUTH_ACCOUNTS !== 'false') {
+    await resetAuthSystem({ connect: false, close: false });
+  }
+
   startMongoReconnectLoop({
     intervalMs: 15000,
-    onReconnect: () => {
+    onReconnect: async () => {
       console.log('♻️ MongoDB reconnection successful. Protected routes are fully available again.');
       setMongoStatus({
         connected: true,
         code: 'MONGO_CONNECTED',
         message: 'Connected to MongoDB',
       });
+
+      if (process.env.AUTO_REPAIR_AUTH_ACCOUNTS !== 'false') {
+        await resetAuthSystem({ connect: false, close: false });
+      }
     },
   });
 

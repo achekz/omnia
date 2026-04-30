@@ -8,7 +8,7 @@ const taskSchema = new Schema(
     description: { type: String },
     status: {
       type: String,
-      enum: ['todo', 'in_progress', 'done', 'overdue'],
+      enum: ['todo', 'in_progress', 'done', 'overdue', 'declined'],
       default: 'todo',
     },
     priority: {
@@ -23,6 +23,10 @@ const taskSchema = new Schema(
     endTime: { type: Date },
     actualStartedAt: { type: Date },
     actualFinishedAt: { type: Date },
+    acceptedAt: { type: Date },
+    declinedAt: { type: Date },
+    declineReason: { type: String, trim: true },
+    completedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     isDelayed: { type: Boolean, default: false },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -43,7 +47,7 @@ taskSchema.pre('save', function planAndScoreTask(next) {
   const basePriority = { low: 1, medium: 2, high: 3, critical: 4 }[this.priority] || 2;
   const now = new Date();
 
-  if (this.dueDate && this.dueDate < now && this.status !== 'done') {
+  if (this.dueDate && this.dueDate < now && !['done', 'declined'].includes(this.status)) {
     this.delayDays = Math.floor((now.getTime() - this.dueDate.getTime()) / (24 * 60 * 60 * 1000));
     this.status = this.status === 'todo' || this.status === 'in_progress' ? 'overdue' : this.status;
   } else {

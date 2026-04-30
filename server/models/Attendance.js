@@ -57,6 +57,14 @@ const attendanceSchema = new Schema(
       trim: true,
       default: "",
     },
+    userSnapshot: {
+      name: { type: String, trim: true, default: "" },
+      firstName: { type: String, trim: true, default: "" },
+      lastName: { type: String, trim: true, default: "" },
+      email: { type: String, trim: true, lowercase: true, default: "" },
+      role: { type: String, trim: true, default: "" },
+      profileType: { type: String, trim: true, default: "" },
+    },
   },
   {
     timestamps: true,

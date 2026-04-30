@@ -19,6 +19,24 @@ function normalizeRoleFilter(role) {
   return normalized ? normalizeRole(normalized, "") : null;
 }
 
+function serializeAttendanceRecord(record) {
+  const raw = typeof record.toObject === 'function' ? record.toObject() : record;
+  const populatedUser = raw.userId && typeof raw.userId === 'object' ? raw.userId : null;
+  const snapshot = raw.userSnapshot || {};
+
+  return {
+    ...raw,
+    userId: populatedUser || {
+      name: snapshot.name,
+      firstName: snapshot.firstName,
+      lastName: snapshot.lastName,
+      email: snapshot.email,
+      role: snapshot.role,
+      profileType: snapshot.profileType,
+    },
+  };
+}
+
 export const getAdminDashboard = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -108,7 +126,7 @@ export const getAllPresences = asyncHandler(async (req, res) => {
     .sort({ date: -1, checkIn: 1 })
     .limit(500);
 
-  res.json(new ApiResponse(200, { records }, 'Presences retrieved'));
+  res.json(new ApiResponse(200, { records: records.map(serializeAttendanceRecord) }, 'Presences retrieved'));
 });
 
 export const getAllTasks = asyncHandler(async (req, res) => {
