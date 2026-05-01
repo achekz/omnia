@@ -1,5 +1,14 @@
 import express from 'express';
-import { getTasks, createTask, updateTask, deleteTask, updateTaskStatus, getTaskStats } from '../controllers/taskController.js';
+import {
+  acceptTask,
+  createTask,
+  deleteTask,
+  getTaskStats,
+  getTasks,
+  sendTaskLater,
+  updateTask,
+  updateTaskStatus,
+} from '../controllers/taskController.js';
 import { protect } from '../middleware/auth.js';
 import { tenantIsolation } from '../middleware/tenant.js';
 import {
@@ -60,6 +69,10 @@ router.get('/stats', getTaskStats);
  *         description: List of tasks
  */
 router.get('/', getTasks);
+
+router.patch('/:id/accept', acceptTask);
+
+router.patch('/:id/later', sendTaskLater);
 
 /**
  * @swagger

@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import ActivityLog from '../models/ActivityLog.js';
+import MLPrediction from '../models/MLPrediction.js';
 import User from '../models/User.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -305,14 +306,55 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  void refreshRecommendationsForScope({
-    tenantId: req.tenantId || undefined,
-    userIds: [task.assignedTo?._id?.toString?.(), task.createdBy?._id?.toString?.()].filter(Boolean),
-    trigger: 'task-status-updated',
+  void (async () => {
+    const userIds = [task.assignedTo?._id?.toString?.(), task.createdBy?._id?.toString?.()].filter(Boolean);
+    const savedRecommendation = await refreshRecommendationsForScope({
+      tenantId: req.tenantId || undefined,
+      userIds,
+      trigger: `task-${status}`,
+    });
+
+    if (task.assignedTo?._id && savedRecommendation) {
+      await MLPrediction.create({
+        userId: task.assignedTo._id,
+        tenantId: req.tenantId,
+        modelType: 'recommendation',
+        input: {
+          trigger: `task-${status}`,
+          taskId: task._id.toString(),
+          status,
+          priority: task.priority,
+          delayDays: task.delayDays,
+          isDelayed: task.isDelayed,
+        },
+        output: savedRecommendation,
+        recommendations: savedRecommendation.recommendations || [],
+      });
+
+      emitToUser(task.assignedTo._id.toString(), 'ml_insights_updated', {
+        taskId: task._id.toString(),
+        status,
+        recommendationId: savedRecommendation._id?.toString?.(),
+      });
+    }
+  })().catch((error) => {
+    console.error('[Task ML] Failed to refresh recommendations after task status update:', error);
   });
 
   return res.json(new ApiResponse(200, { task }, 'Status updated'));
 });
+
+// PATCH /api/tasks/:id/accept
+export const acceptTask = (req, res, next) => {
+  req.body = { ...req.body, status: 'in_progress' };
+  return updateTaskStatus(req, res, next);
+};
+
+// PATCH /api/tasks/:id/later
+export const sendTaskLater = (req, res, next) => {
+  req.body = { ...req.body, status: 'declined', declineReason: req.body?.declineReason || 'Plus tard' };
+  return updateTaskStatus(req, res, next);
+};
 
 // GET /api/tasks/stats
 export const getTaskStats = asyncHandler(async (req, res) => {

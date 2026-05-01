@@ -433,6 +433,23 @@ export function useGetTasks(options?: QueryHookOptions) {
   });
 }
 
+export function useGetAssignedTasks(options?: QueryHookOptions) {
+  return useQuery<Task[]>({
+    queryKey: ["assigned-tasks"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get("/tasks?limit=100");
+        return unwrapCollection<Task>(response.data, "tasks", []);
+      } catch {
+        return [];
+      }
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: [],
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
 
@@ -503,8 +520,46 @@ export function useUpdateTaskStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+    },
+  });
+}
+
+export function useAcceptAssignedTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.patch(`/tasks/${id}/accept`);
+      return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "in_progress" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+  });
+}
+
+export function useSendAssignedTaskLater() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, declineReason = "Plus tard" }: { id: string; declineReason?: string }) => {
+      const response = await apiClient.patch(`/tasks/${id}/later`, { declineReason });
+      return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "declined", declineReason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 }
