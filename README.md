@@ -101,10 +101,13 @@ cd ml_service
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python train_models.py
 python app.py
 ```
 
-`app.py` delegates to `app_improved.py`, which uses the available rule-based ML models and does not require a missing `model.pkl`.
+`train_models.py` genere les artefacts scikit-learn dans `ml_service/trained_models/`:
+`risk_predictor.pkl`, `recommendation_content_based.pkl` et `anomaly_detector.pkl`.
+`app.py` delegates to `app_improved.py`, which keeps the rule-based fallback available if trained artifacts are not loaded.
 
 ## Scripts Utiles
 

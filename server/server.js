@@ -67,7 +67,7 @@ app.use(rateLimiter({
 }));
 app.use('/api/auth/login', rateLimiter({
   windowMs: 15 * 60 * 1000,
-  maxRequests: 10000,
+  max: 100,
   message: 'Too many login attempts, try again later'
 }));
 app.use('/api/auth/forgot-password', rateLimiter({

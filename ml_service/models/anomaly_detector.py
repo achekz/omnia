@@ -5,7 +5,13 @@ Detect unusual user behavior patterns
 
 from typing import Dict, List, Tuple
 from datetime import datetime
+from pathlib import Path
 import numpy as np
+
+try:
+    import joblib
+except ModuleNotFoundError:
+    joblib = None
 
 class AnomalyDetector:
     """Detect anomalies in user behavior"""
@@ -13,6 +19,8 @@ class AnomalyDetector:
     def __init__(self):
         """Initialize anomaly detector"""
         self.model_version = "1.0"
+        self.model = None
+        self.feature_names = None
         
         # Anomaly thresholds (can be tuned)
         self.thresholds = {
@@ -22,6 +30,9 @@ class AnomalyDetector:
             'deadline_crisis': 0.5,  # >50% missed deadlines
             'engagement_loss': 0.3,  # <0.3 logins per day
         }
+        default_model_path = Path(__file__).resolve().parents[1] / "trained_models" / "anomaly_detector.pkl"
+        if default_model_path.exists():
+            self.load_model(str(default_model_path))
 
     def detect(self, features: Dict[str, float], historical_features: List[Dict] = None) -> Dict:
         """
@@ -34,7 +45,7 @@ class AnomalyDetector:
         Returns:
             Dict with detected anomalies and severity
         """
-        anomalies = []
+        anomalies = self._detect_with_trained_model(features)
 
         # 1. Zero Activity Anomaly
         if features.get('avg_daily_tasks', 0) == 0 and features.get('avg_daily_active_minutes', 0) == 0:
@@ -117,8 +128,33 @@ class AnomalyDetector:
             'anomaly_level': self._classify_anomaly_level(anomalies),
             'has_critical_anomaly': any(a['severity'] == 'high' for a in anomalies),
             'model_version': self.model_version,
+            'model_type': 'IsolationForest' if self.model is not None else 'rule-based-anomaly-detector',
             'timestamp': datetime.now().isoformat(),
         }
+
+    def _detect_with_trained_model(self, features: Dict[str, float]) -> List[Dict]:
+        if self.model is None or not self.feature_names:
+            return []
+
+        try:
+            row = [[float(features.get(name, 0) or 0) for name in self.feature_names]]
+            prediction = int(self.model.predict(row)[0])
+            score = float(self.model.decision_function(row)[0])
+
+            if prediction != -1:
+                return []
+
+            severity = 'high' if score < -0.08 else 'medium'
+            return [{
+                'type': 'ml_isolation_forest',
+                'severity': severity,
+                'description': f'Trained anomaly model detected unusual behavior (score {score:.3f})',
+                'recommendation': 'Review the user activity pattern and recent task history',
+                'score': round(score, 4),
+            }]
+        except Exception as e:
+            print(f"Trained anomaly detector error: {e}")
+            return []
 
     def _classify_anomaly_level(self, anomalies: List[Dict]) -> str:
         """Classify overall anomaly level"""
@@ -211,8 +247,9 @@ class AnomalyDetector:
         """Get model information"""
         return {
             'model_version': self.model_version,
-            'model_type': 'rule-based-anomaly-detector',
+            'model_type': 'IsolationForest' if self.model is not None else 'rule-based-anomaly-detector',
             'anomaly_types': [
+                'ml_isolation_forest',
                 'zero_activity',
                 'extreme_spike',
                 'extreme_drop',
@@ -222,7 +259,21 @@ class AnomalyDetector:
                 'negative_trend',
             ],
             'thresholds': self.thresholds,
+            'feature_count': len(self.feature_names) if self.feature_names else 0,
         }
+
+    def load_model(self, path: str):
+        """Load trained IsolationForest artifact"""
+        try:
+            if joblib is None:
+                raise RuntimeError("joblib is not installed")
+            model_data = joblib.load(path)
+            self.model = model_data.get('pipeline')
+            self.feature_names = model_data.get('feature_names')
+            self.model_version = model_data.get('model_version', self.model_version)
+            print(f"Trained anomaly detector loaded from {path}")
+        except Exception as e:
+            print(f"Error loading anomaly model: {e}, using rule-based fallback")
 
 
 # Initialize global anomaly detector instance

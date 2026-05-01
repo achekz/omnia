@@ -6,6 +6,12 @@ Risk prediction based on user activity patterns
 from typing import Dict, List
 import json
 from datetime import datetime
+from pathlib import Path
+
+try:
+    import joblib
+except ModuleNotFoundError:
+    joblib = None
 
 class UserRiskPredictor:
     """Predict user risk level based on activity features"""
@@ -18,8 +24,12 @@ class UserRiskPredictor:
         self.model_version = "1.0"
         self.trained = False
 
+        default_model_path = Path(__file__).resolve().parents[1] / "trained_models" / "risk_predictor.pkl"
+
         if model_path:
             self.load_model(model_path)
+        elif default_model_path.exists():
+            self.load_model(str(default_model_path))
         else:
             self._initialize_simple_model()
 
@@ -46,7 +56,9 @@ class UserRiskPredictor:
         Returns:
             Dict with risk_level, risk_score, confidence, explanation
         """
-        # Extract relevant features
+        if self.model is not None and self.feature_names:
+            return self._predict_with_trained_model(features)
+
         risk_score = self._calculate_risk_score(features)
         risk_level = self._classify_risk(risk_score)
         confidence = self._calculate_confidence(features)
@@ -57,6 +69,21 @@ class UserRiskPredictor:
             'confidence': round(float(confidence), 4),
             'explanation': self._get_explanation(features, risk_score),
             'model_version': self.model_version,
+            'timestamp': datetime.now().isoformat(),
+        }
+
+    def _predict_with_trained_model(self, features: Dict[str, float]) -> Dict:
+        row = [[float(features.get(name, 0) or 0) for name in self.feature_names]]
+        probability = float(self.model.predict_proba(row)[0][1])
+        risk_level = self._classify_risk(probability)
+
+        return {
+            'risk_level': risk_level,
+            'risk_score': round(probability, 4),
+            'confidence': round(float(self._calculate_confidence(features)), 4),
+            'explanation': self._get_explanation(features, probability),
+            'model_version': self.model_version,
+            'model_type': 'LogisticRegression',
             'timestamp': datetime.now().isoformat(),
         }
 
@@ -176,6 +203,17 @@ class UserRiskPredictor:
     def load_model(self, path: str):
         """Load model from disk"""
         try:
+            if str(path).endswith(".pkl"):
+                if joblib is None:
+                    raise RuntimeError("joblib is not installed")
+                model_data = joblib.load(path)
+                self.model = model_data.get('pipeline')
+                self.feature_names = model_data.get('feature_names')
+                self.model_version = model_data.get('model_version', '1.0')
+                self.trained = self.model is not None
+                print(f"Trained risk predictor loaded from {path}")
+                return
+
             with open(path, 'r') as f:
                 model_data = json.load(f)
             self.feature_names = model_data.get('feature_names')
@@ -193,7 +231,7 @@ class UserRiskPredictor:
             'trained': self.trained,
             'feature_count': len(self.feature_names) if self.feature_names else 0,
             'features': self.feature_names,
-            'model_type': 'rule-based-predictor',
+            'model_type': 'LogisticRegression' if self.model is not None else 'rule-based-predictor',
         }
 
 

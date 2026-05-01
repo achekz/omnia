@@ -6,6 +6,12 @@ Personalized recommendations based on user behavior
 from typing import Dict, List, Tuple
 from datetime import datetime
 import json
+from pathlib import Path
+
+try:
+    import joblib
+except ModuleNotFoundError:
+    joblib = None
 
 class RecommendationEngine:
     """Generate personalized recommendations for users"""
@@ -13,6 +19,11 @@ class RecommendationEngine:
     def __init__(self):
         """Initialize recommendation engine"""
         self.model_version = "1.0"
+        self.model = None
+        self.catalog = []
+        self.vectorizer = None
+        self.nearest_neighbors = None
+        self.item_matrix = None
         
         # Recommendation rules
         self.recommendation_rules = {
@@ -91,6 +102,9 @@ class RecommendationEngine:
                 ]
             },
         }
+        default_model_path = Path(__file__).resolve().parents[1] / "trained_models" / "recommendation_content_based.pkl"
+        if default_model_path.exists():
+            self.load_model(str(default_model_path))
 
     def recommend(self, features: Dict[str, float]) -> Dict:
         """
@@ -102,7 +116,7 @@ class RecommendationEngine:
         Returns:
             Dict with recommendations and explanations
         """
-        recommendations = []
+        recommendations = self._recommend_with_trained_model(features)
         
         # Apply each rule
         for rule_name, rule in self.recommendation_rules.items():
@@ -126,8 +140,48 @@ class RecommendationEngine:
             'total_recommendations': len(recommendations),
             'categories': list(set(r['category'] for r in recommendations)),
             'model_version': self.model_version,
+            'model_type': 'ContentBased-TFIDF-NearestNeighbors' if self.model is not None else 'rule-based-recommender',
             'timestamp': datetime.now().isoformat(),
         }
+
+    def _profile_text(self, features: Dict[str, float]) -> str:
+        role = features.get('role') or features.get('profileType') or 'employee'
+        avg_tasks = float(features.get('avg_daily_tasks', 0) or 0)
+        missed_ratio = float(features.get('missed_deadline_ratio', 0) or 0)
+        performance_score = float(features.get('performance_score', 0) or 0)
+        engagement = float(features.get('engagement_rate', 0) or 0)
+        task_trend = float(features.get('task_trend_7d', 0) or 0)
+
+        activity = "low activity" if avg_tasks < 2 else "steady activity" if avg_tasks < 6 else "high activity"
+        deadlines = "deadline risk" if missed_ratio > 0.25 else "healthy deadlines"
+        performance = "low performance" if performance_score < 45 else "strong performance" if performance_score > 75 else "average performance"
+        engagement_text = "low engagement" if engagement < 1 else "regular engagement"
+        trend = "declining trend" if task_trend < -0.25 else "improving trend" if task_trend > 0.25 else "stable trend"
+        return f"{role} {activity} {deadlines} {performance} {engagement_text} {trend}"
+
+    def _recommend_with_trained_model(self, features: Dict[str, float]) -> List[Dict]:
+        if self.model is None or not self.vectorizer or not self.nearest_neighbors or not self.catalog:
+            return []
+
+        try:
+            query = self.vectorizer.transform([self._profile_text(features)])
+            count = min(3, len(self.catalog))
+            _, indices = self.nearest_neighbors.kneighbors(query, n_neighbors=count)
+            recommendations = []
+            for index in indices[0]:
+                item = self.catalog[int(index)]
+                recommendations.append({
+                    'category': item.get('category', 'general'),
+                    'title': item.get('title', 'Recommended action'),
+                    'description': item.get('text', item.get('title', 'Recommended action')),
+                    'priority': item.get('priority', 'medium'),
+                    'action': item.get('id', 'content_based_recommendation'),
+                    'source': 'trained_content_based_model',
+                })
+            return recommendations
+        except Exception as e:
+            print(f"Content recommender error: {e}")
+            return []
 
     def recommend_batch(self, features_list: List[Dict]) -> List[Dict]:
         """Generate recommendations for multiple users"""
@@ -246,10 +300,27 @@ class RecommendationEngine:
         """Get model information"""
         return {
             'model_version': self.model_version,
-            'model_type': 'rule-based-recommender',
+            'model_type': 'ContentBased-TFIDF-NearestNeighbors' if self.model is not None else 'rule-based-recommender',
             'rule_count': len(self.recommendation_rules),
             'rules': list(self.recommendation_rules.keys()),
+            'catalog_size': len(self.catalog),
         }
+
+    def load_model(self, path: str):
+        """Load trained content-based recommendation artifact"""
+        try:
+            if joblib is None:
+                raise RuntimeError("joblib is not installed")
+            model_data = joblib.load(path)
+            self.model = model_data
+            self.model_version = model_data.get('model_version', self.model_version)
+            self.catalog = model_data.get('catalog', [])
+            self.vectorizer = model_data.get('vectorizer')
+            self.nearest_neighbors = model_data.get('nearest_neighbors')
+            self.item_matrix = model_data.get('item_matrix')
+            print(f"Trained recommendation model loaded from {path}")
+        except Exception as e:
+            print(f"Error loading recommendation model: {e}, using rule-based fallback")
 
 
 # Initialize global recommender instance
