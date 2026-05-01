@@ -2,14 +2,11 @@ import { useState, type ReactNode, type SVGProps } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Bell,
-  BookOpen,
   BrainCircuit,
   CheckSquare,
   FileText,
-  GraduationCap,
   LayoutDashboard,
   Menu,
-  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
@@ -62,9 +59,6 @@ export function SharedLayout({ children }: SharedLayoutProps) {
       case "stagiaire":
         return [
           { name: "Dashboard", path: "/stagiaire/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { name: "Study Plan", path: "/planner", icon: <BookOpen className="w-5 h-5" /> },
-          { name: "Exams", path: "/planner", icon: <GraduationCap className="w-5 h-5" /> },
-          { name: "Budget", path: "/budget", icon: <Wallet className="w-5 h-5" /> },
         ];
       default:
         return [];

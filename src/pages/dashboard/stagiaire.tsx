@@ -1,9 +1,7 @@
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { StatCard } from "@/components/ui/stat-card";
 import { MlOverviewPanel } from "@/components/ai/ml-overview-panel";
-import { Clock, Wallet, CheckCircle, CalendarClock } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import { useGetDashboardStats, useGetTasks } from "@/lib/api-client";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function StagiaireDashboard() {
   useGetDashboardStats(); // Used for prefetching, not rendered directly in this view
@@ -11,60 +9,12 @@ export default function StagiaireDashboard() {
   const examTasks = tasks
     .filter((task) => task.tags?.some((tag) => ["exam", "examen", "revision"].includes(tag.toLowerCase())) || task.title.toLowerCase().includes("exam"))
     .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
-  const nextExam = examTasks[0];
-  const daysUntilExam = nextExam?.dueDate
-    ? Math.max(0, Math.ceil((new Date(nextExam.dueDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
-    : 12;
-
-  const budgetData = [
-    { name: 'Rent & Utilities', value: 800, color: 'hsl(var(--primary))' },
-    { name: 'Food', value: 300, color: 'hsl(var(--accent))' },
-    { name: 'Transport', value: 100, color: 'hsl(var(--chart-3))' },
-    { name: 'Study Materials', value: 150, color: 'hsl(var(--chart-4))' },
-    { name: 'Entertainment', value: 200, color: 'hsl(var(--chart-5))' },
-  ];
-
   return (
     <ModuleLayout>
       <div className="mb-8">
         <h2 className="text-3xl font-display font-bold text-white">Stagiaire Hub</h2>
       </div>
 
-      {/* Row 1: Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center border border-accent/30 bg-accent/5">
-          <p className="text-sm font-medium text-accent">Next Exam In</p>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-5xl font-display font-bold text-white">{daysUntilExam}</span>
-            <span className="text-muted-foreground dark:text-gray-300">days</span>
-          </div>
-          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">{nextExam?.title || "Advanced Calculus"}</p>
-        </div>
-        
-        <StatCard
-          title="Study Hours (Week)"
-          value="24.5"
-          icon={<Clock className="w-8 h-8 text-primary" />}
-          trend={15}
-          delay={0.1}
-        />
-        <StatCard
-          title="Budget Used"
-          value="68%"
-          icon={<Wallet className="w-8 h-8 text-rose-400" />}
-          trend={-5}
-          delay={0.2}
-        />
-        <StatCard
-          title="Task Completion"
-          value="94%"
-          icon={<CheckCircle className="w-8 h-8 text-emerald-400" />}
-          trend={2}
-          delay={0.3}
-        />
-      </div>
-
-      {/* Row 2: Study Plan & Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 glass-panel rounded-2xl border border-white/5 p-6">
           <div className="flex justify-between items-center mb-6">
@@ -105,34 +55,6 @@ export default function StagiaireDashboard() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass-panel rounded-2xl border border-white/5 p-6">
-            <h3 className="text-lg font-semibold text-white mb-6">Budget Tracker</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={budgetData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {budgetData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => `$${value}`}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           <MlOverviewPanel title="Study Risk AI" />
 
           <div className="glass-panel rounded-2xl border border-white/5 p-6">

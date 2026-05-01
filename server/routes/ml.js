@@ -10,7 +10,9 @@ router.use(protect, tenantIsolation);
 
 router.post('/predict', predict);
 router.post('/predict-risk', predict);
+router.post('/predict-productivity', predict);
 router.post('/recommend', recommend);
+router.post('/recommend-study', recommend);
 router.post('/anomaly', authorize('admin', 'comptable'), anomaly);
 router.post('/detect-anomaly', authorize('admin', 'comptable'), anomaly);
 router.get('/history', history);

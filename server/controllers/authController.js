@@ -16,18 +16,77 @@ import * as notifService from "../services/notifService.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
-const RECOVERY_PASSWORD_ENV_KEYS = {
-  "ranyme13@gmail.com": "RANYME_PASSWORD",
-  "najetkhbrahem1979@gmail.com": "NAJET_PASSWORD",
-  "chaymagaabel777@gmail.com": "COMPTABLE_PASSWORD",
+const RECOVERY_ACCOUNTS = {
+  "ranyme13@gmail.com": {
+    envKey: "RANYME_PASSWORD",
+    firstName: "Ranyme",
+    lastName: "Stagiaire",
+    phoneNumber: "+21620000013",
+    role: "stagiaire",
+    gender: "female",
+  },
+  "najetkhbrahem1979@gmail.com": {
+    envKey: "NAJET_PASSWORD",
+    firstName: "Najet",
+    lastName: "Khbrahem",
+    phoneNumber: "+21620001979",
+    role: "stagiaire",
+    gender: "female",
+  },
+  "chaymagaabel777@gmail.com": {
+    envKey: "COMPTABLE_PASSWORD",
+    firstName: "Chayma",
+    lastName: "Gaabel",
+    phoneNumber: "+21620000777",
+    role: "comptable",
+    gender: "female",
+  },
 };
+
+function getRecoveryAccount(email) {
+  return RECOVERY_ACCOUNTS[email];
+}
+
 function getRecoveryPassword(email) {
-  const envKey = RECOVERY_PASSWORD_ENV_KEYS[email];
-  return envKey ? process.env[envKey] : undefined;
+  const account = getRecoveryAccount(email);
+  return account?.envKey ? process.env[account.envKey] : undefined;
 }
 
 function isDevelopmentPasswordRepairEnabled() {
   return process.env.NODE_ENV !== "production" && process.env.AUTH_DEV_PASSWORD_REPAIR === "true";
+}
+
+async function repairRecoveryAccountForLogin(email, password) {
+  const account = getRecoveryAccount(email);
+  const recoveryPassword = getRecoveryPassword(email);
+
+  if (!account || !recoveryPassword || password !== recoveryPassword) {
+    return null;
+  }
+
+  let user = await User.findOne({ email }).select("+password +refreshToken");
+
+  if (!user) {
+    user = new User({ email });
+  }
+
+  const role = normalizeRole(account.role, "employee");
+
+  user.firstName = account.firstName;
+  user.lastName = account.lastName;
+  user.phoneNumber = account.phoneNumber;
+  user.city = "tunisia";
+  user.password = recoveryPassword;
+  user.role = role;
+  user.profileType = role;
+  user.verificationMethod = "email";
+  user.gender = account.gender;
+  user.isVerified = true;
+  user.isActive = true;
+  user.refreshToken = null;
+  await user.save();
+
+  return User.findById(user._id).select("+password +refreshToken");
 }
 
 function generateVerificationCode() {
@@ -277,10 +336,14 @@ export const login = asyncHandler(async (req, res) => {
   const password = String(req.body.password || "").trim();
   const email = req.body.email?.trim().toLowerCase();
 
-  const user = await User.findOne({ email }).select("+password +refreshToken");
+  let user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user) {
-    console.error("[AUTH] Login failed: user not found", { email });
-    throw new ApiError(401, "Invalid credentials");
+    user = await repairRecoveryAccountForLogin(email, password);
+
+    if (!user) {
+      console.error("[AUTH] Login failed: user not found", { email });
+      throw new ApiError(401, "Invalid credentials");
+    }
   }
 
   let passwordMatches = await user.comparePassword(password);
@@ -288,10 +351,9 @@ export const login = asyncHandler(async (req, res) => {
   const recoveryPassword = getRecoveryPassword(email);
 
   if (!passwordMatches && recoveryPassword && password === recoveryPassword) {
-    user.password = password;
-    await user.save();
-    passwordMatches = true;
-    console.log("[AUTH] Repaired password during login", { email, role: user.role });
+    user = await repairRecoveryAccountForLogin(email, password);
+    passwordMatches = Boolean(user) && (await user.comparePassword(password));
+    console.log("[AUTH] Repaired recovery account during login", { email, role: user?.role, repaired: passwordMatches });
   }
 
   const normalizedLoginRole = normalizeRole(user.role, "employee");

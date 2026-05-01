@@ -37,12 +37,6 @@ const faqItems: FAQItem[] = [
       "AI Insight is our machine learning feature that analyzes your data to provide predictive insights, anomaly detection in finances, and personalized recommendations to help you make better decisions.",
   },
   {
-    category: "Features",
-    question: "Can I track my budget?",
-    answer:
-      "Yes! The Budget Tracker feature (available for students) lets you set budgets, track spending, and receive alerts when you're approaching limits. It uses AI to suggest savings opportunities.",
-  },
-  {
     category: "Security",
     question: "How is my data protected?",
     answer:

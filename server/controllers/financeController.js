@@ -1,4 +1,5 @@
 import FinancialRecord from '../models/FinancialRecord.js';
+import Task from '../models/Task.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as mlService from '../services/mlService.js';
@@ -119,6 +120,32 @@ export const createRecord = asyncHandler(async (req, res) => {
 export const getSummary = asyncHandler(async (req, res) => {
   const records = await FinancialRecord.find(buildFinanceFilter(req));
   return res.json(new ApiResponse(200, summarizeRecords(records)));
+});
+
+// GET /api/finance/overview
+export const getOverview = asyncHandler(async (req, res) => {
+  const records = await FinancialRecord.find(buildFinanceFilter(req)).lean();
+  const summary = summarizeRecords(records);
+  const activeClients = new Set(records.map((record) => record.clientName).filter(Boolean)).size;
+  const declarations = records.filter((record) => {
+    const category = String(record.category || '').toLowerCase();
+    const description = String(record.description || '').toLowerCase();
+    return category.includes('tva') || category.includes('tax') || description.includes('declaration') || description.includes('déclaration');
+  }).length;
+  const taskFilter = req.tenantId ? { tenantId: req.tenantId } : {};
+  const urgentTasks = await Task.countDocuments({
+    ...taskFilter,
+    status: { $in: ['todo', 'in_progress', 'overdue'] },
+    priority: { $in: ['high', 'critical'] },
+  });
+
+  return res.json(new ApiResponse(200, {
+    revenue: summary.totalIncome,
+    activeClients,
+    declarations,
+    urgentTasks,
+    riskScore: summary.anomalyCount,
+  }));
 });
 
 // GET /api/finance/anomalies

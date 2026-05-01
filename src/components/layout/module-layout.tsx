@@ -145,7 +145,7 @@ const MODULES: NavModule[] = [
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
-      { id: "budget", label: "Finance", icon: <Wallet className="w-4 h-4" />, path: "/budget" },
+      { id: "budget", label: "Finance", icon: <Wallet className="w-4 h-4" />, path: "/comptable/reports" },
       { id: "reports", label: "Reports", icon: <FileText className="w-4 h-4" />, path: "/comptable/reports" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "payroll", label: "Payroll", icon: <FileText className="w-4 h-4" />, path: "/paie/dashboard" },
@@ -209,9 +209,7 @@ const MODULES: NavModule[] = [
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/stagiaire/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
-      { id: "planner", label: "Study Planner", icon: <Calendar className="w-4 h-4" />, path: "/planner" },
       { id: "performances", label: "Progress", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
-      { id: "budget", label: "Budget Tracker", icon: <Calculator className="w-4 h-4" />, path: "/budget" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],

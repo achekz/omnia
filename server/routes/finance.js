@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRecords, createRecord, getSummary, getAnomalies, getReport, exportReport } from '../controllers/financeController.js';
+import { getRecords, createRecord, getSummary, getOverview, getAnomalies, getReport, exportReport } from '../controllers/financeController.js';
 import { protect } from '../middleware/auth.js';
 import { tenantIsolation } from '../middleware/tenant.js';
 import { authorize } from '../middleware/rbac.js';
@@ -78,6 +78,8 @@ router.post('/records', validateCreateFinanceRecord, handleValidationErrors, cre
  *         description: Financial summary with totals
  */
 router.get('/summary', getSummary);
+
+router.get('/overview', getOverview);
 
 /**
  * @swagger

@@ -4,13 +4,22 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 // GET /api/notifications
 export const getNotifications = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, unreadOnly } = req.query;
+  const { page = 1, limit = 'all', unreadOnly } = req.query;
   const filter = { userId: req.user._id };
   if (unreadOnly === 'true') filter.isRead = false;
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const normalizedLimit = limit === 'all'
+    ? 0
+    : Math.min(200, Math.max(1, parseInt(limit, 10) || 100));
+  const skip = normalizedLimit ? (Math.max(1, parseInt(page, 10) || 1) - 1) * normalizedLimit : 0;
+  const query = Notification.find(filter).sort({ createdAt: -1 }).skip(skip);
+
+  if (normalizedLimit) {
+    query.limit(normalizedLimit);
+  }
+
   const [notifications, total, unreadCount] = await Promise.all([
-    Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+    query,
     Notification.countDocuments(filter),
     Notification.countDocuments({ userId: req.user._id, isRead: false }),
   ]);

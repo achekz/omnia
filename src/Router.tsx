@@ -19,8 +19,6 @@ import CabinetDashboard from "./pages/dashboard/cabinet";
 import EmployeeDashboard from "./pages/dashboard/employee";
 import StagiaireDashboard from "./pages/dashboard/stagiaire";
 import AIDashboard from "./pages/ai";
-import BudgetPage from "./pages/budget/budget";
-import PlannerPage from "./pages/planner";
 import PresencePage from "./pages/presence";
 import MyTasksPage from "./pages/tasks/my-tasks";
 import SettingsPage from "./pages/settings";
@@ -134,8 +132,6 @@ const routes: AppRoute[] = [
   { path: "/admin/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
 
   { path: "/ai", component: AIDashboard, protected: true },
-  { path: "/budget", component: BudgetPage, protected: true },
-  { path: "/planner", component: PlannerPage, protected: true },
   { path: "/presence", component: PresencePage, protected: true },
   { path: "/tasks", component: MyTasksPage, protected: true },
   { path: "/settings", component: SettingsPage, protected: true },

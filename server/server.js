@@ -13,6 +13,11 @@ import errorHandler from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimiter.js';
 import requireDatabase from './middleware/requireDatabase.js';
 import { startRecommendationScheduler } from './services/schedulerService.js';
+import { protect } from './middleware/auth.js';
+import { tenantIsolation } from './middleware/tenant.js';
+import { authorize } from './middleware/rbac.js';
+import { chatWithAI } from './controllers/aiController.js';
+import { getAnomalies } from './controllers/financeController.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -155,8 +160,10 @@ app.use('/api/attendance', requireDatabase, attendanceRoutes);
 app.use('/api/presence', requireDatabase, attendanceRoutes);
 app.use('/api/analytics', requireDatabase, analyticsRoutes);
 app.use('/api/ai', aiRoutes);
+app.post('/api/ai-assistant', requireDatabase, protect, chatWithAI);
 app.use('/api/dashboard', requireDatabase, dashboardRoutes);
 app.use('/api/finance', requireDatabase, financeRoutes);
+app.get('/api/anomalies', requireDatabase, protect, tenantIsolation, authorize('admin', 'comptable'), getAnomalies);
 app.use('/api/ml', requireDatabase, mlRoutes);
 app.use('/api/notifications', requireDatabase, notificationRoutes);
 app.use('/api/tasks', requireDatabase, taskRoutes);
