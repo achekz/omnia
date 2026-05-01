@@ -4,7 +4,6 @@ import {
   Bell,
   BrainCircuit,
   CheckSquare,
-  FileText,
   LayoutDashboard,
   Menu,
 } from "lucide-react";
@@ -47,7 +46,6 @@ export function SharedLayout({ children }: SharedLayoutProps) {
       case "comptable":
         return [
           { name: "Dashboard", path: "/comptable/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { name: "Payroll", path: "/paie/dashboard", icon: <FileText className="w-5 h-5" /> },
           { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
       case "employee":
