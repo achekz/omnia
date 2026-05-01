@@ -53,7 +53,7 @@ function getRecoveryPassword(email) {
 }
 
 function isDevelopmentPasswordRepairEnabled() {
-  return process.env.NODE_ENV !== "production" && process.env.AUTH_DEV_PASSWORD_REPAIR === "true";
+  return process.env.NODE_ENV !== "production" && process.env.AUTH_DEV_PASSWORD_REPAIR !== "false";
 }
 
 async function repairRecoveryAccountForLogin(email, password) {
