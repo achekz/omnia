@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const mlClient = axios.create({
-  baseURL: process.env.ML_SERVICE_URL || "http://localhost:5000",
+  baseURL: process.env.ML_SERVICE_URL || "http://127.0.0.1:5000",
   timeout: 8000,
 });
 
@@ -9,14 +9,19 @@ const mlClient = axios.create({
 export const predict = async (features) => {
   try {
     const { data } = await mlClient.post("/predict-risk", {
-      features: features,
+      features: [
+        features.tasks_completed_last_7d || 0,
+        features.avg_daily_active_minutes || 0,
+        features.deadlines_missed_last_30d || 0,
+        features.login_frequency || 0,
+        features.overdue_count || 0,
+      ],
     });
 
     return data;
   } catch (error) {
     console.error("ML ERROR:", error.message);
 
-    // fallback
     const overdue = Number(features.overdue_count || 0);
     const completed = Number(features.tasks_completed_last_7d || 0);
 
@@ -34,7 +39,7 @@ export const predict = async (features) => {
 export const recommend = async (features) => {
   try {
     const { data } = await mlClient.post("/recommend", {
-      features: features,
+      features: Object.values(features),
     });
 
     return data;
@@ -44,10 +49,10 @@ export const recommend = async (features) => {
 };
 
 // -------- ANOMALY --------
-export const detectAnomaly = async (features) => {
+export const detectAnomaly = async (values) => {
   try {
     const { data } = await mlClient.post("/detect-anomaly", {
-      features: features,
+      features: values,
     });
 
     return data;

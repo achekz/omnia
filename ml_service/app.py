@@ -3,15 +3,8 @@ import joblib
 
 app = Flask(__name__)
 
-# Charger modèles
+# -------- LOAD MODELS --------
 risk_model = joblib.load("trained_models/risk_predictor.pkl")
-reco_model = joblib.load("trained_models/recommendation_content_based.pkl")
-anomaly_model = joblib.load("trained_models/anomaly_detector.pkl")
-
-
-@app.route("/")
-def home():
-    return "ML Service Running"
 
 
 # ----------- RISK -----------
@@ -22,25 +15,45 @@ def predict_risk():
     if data is None:
         return jsonify({"error": "features missing"}), 400
 
-    result = [0]  # test
+    result = risk_model.predict([data])
     return jsonify({"risk": float(result[0])})
 
 
 # ----------- RECOMMENDATION -----------
 @app.route("/recommend", methods=["POST"])
 def recommend():
-    data = request.json["features"]
-    result = reco_model.predict([data])
-    return jsonify({"recommendation": result.tolist()})
+    data = request.json.get("features")
+
+    if data is None:
+        return jsonify({"error": "features missing"}), 400
+
+    return jsonify({
+        "recommendations": [
+            "Improve task planning",
+            "Reduce delays",
+            "Increase productivity"
+        ]
+    })
 
 
 # ----------- ANOMALY -----------
 @app.route("/detect-anomaly", methods=["POST"])
 def detect_anomaly():
-    data = request.json["features"]
-    result = anomaly_model.predict([data])
-    return jsonify({"anomaly": int(result[0])})
+    data = request.json.get("features")
+
+    if data is None:
+        return jsonify({"error": "features missing"}), 400
+
+    avg = sum(data) / len(data)
+    last = data[-1]
+
+    is_anomaly = last > avg * 2
+
+    return jsonify({
+        "is_anomaly": is_anomaly,
+        "anomaly_score": float(last / avg if avg > 0 else 0)
+    })
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(port=5000, debug=True)
