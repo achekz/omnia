@@ -16,13 +16,14 @@ import * as notifService from "../services/notifService.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
+// APRÈS
 const RECOVERY_ACCOUNTS = {
-  "ranyme13@gmail.com": {
-    envKey: "RANYME_PASSWORD",
-    firstName: "Ranyme",
-    lastName: "Stagiaire",
-    phoneNumber: "+21620000013",
-    role: "stagiaire",
+  "chaymagaabel777@gmail.com": {
+    envKey: "COMPTABLE_PASSWORD",
+    firstName: "Chayma",
+    lastName: "Gaabel",
+    phoneNumber: "+21620000777",
+    role: "comptable",
     gender: "female",
   },
   "najetkhbrahem1979@gmail.com": {
@@ -33,12 +34,20 @@ const RECOVERY_ACCOUNTS = {
     role: "stagiaire",
     gender: "female",
   },
-  "chaymagaabel777@gmail.com": {
-    envKey: "COMPTABLE_PASSWORD",
+  "direction.tlab2022@gmail.com": {
+    envKey: "DIRECTION_PASSWORD",
+    firstName: "Direction",
+    lastName: "Tlab",
+    phoneNumber: "+21620002022",
+    role: "employee",
+    gender: "male",
+  },
+  "chaymagaabel78@gmail.com": {
+    envKey: "CHAYMA78_PASSWORD",
     firstName: "Chayma",
     lastName: "Gaabel",
-    phoneNumber: "+21620000777",
-    role: "comptable",
+    phoneNumber: "+21620000078",
+    role: "stagiaire",
     gender: "female",
   },
 };

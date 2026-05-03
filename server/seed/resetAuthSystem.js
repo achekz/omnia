@@ -28,15 +28,16 @@ function createLogger(silent) {
   };
 }
 
+// APRÈS
 function getRecoveryAccounts() {
   return [
     {
-      email: "ranyme13@gmail.com",
-      firstName: "Ranyme",
-      lastName: "Stagiaire",
-      password: requireEnv("RANYME_PASSWORD"),
-      phoneNumber: "+21620000013",
-      role: "stagiaire",
+      email: "chaymagaabel777@gmail.com",
+      firstName: "Chayma",
+      lastName: "Gaabel",
+      password: requireEnv("COMPTABLE_PASSWORD"),
+      phoneNumber: "+21620000777",
+      role: "comptable",
       gender: "female",
     },
     {
@@ -49,12 +50,21 @@ function getRecoveryAccounts() {
       gender: "female",
     },
     {
-      email: "chaymagaabel777@gmail.com",
+      email: "direction.tlab2022@gmail.com",
+      firstName: "Direction",
+      lastName: "Tlab",
+      password: requireEnv("DIRECTION_PASSWORD"),
+      phoneNumber: "+21620002022",
+      role: "employee",
+      gender: "male",
+    },
+    {
+      email: "chaymagaabel78@gmail.com",
       firstName: "Chayma",
       lastName: "Gaabel",
-      password: requireEnv("COMPTABLE_PASSWORD"),
-      phoneNumber: "+21620000777",
-      role: "comptable",
+      password: requireEnv("CHAYMA78_PASSWORD"),
+      phoneNumber: "+21620000078",
+      role: "stagiaire",
       gender: "female",
     },
   ];
