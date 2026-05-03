@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import type { Notification } from '@/lib/types';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -39,6 +40,13 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
       // Global Notification Handler
       socketInstance.on('new_notification', (notif) => {
+        queryClient.setQueryData<Notification[]>(['notifications'], (current = []) => {
+          const id = notif._id || notif.id;
+          if (id && current.some((notification) => (notification._id || notification.id) === id)) {
+            return current;
+          }
+          return [notif, ...current];
+        });
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
         queryClient.invalidateQueries({ queryKey: ['ml-insights'] });
         queryClient.invalidateQueries({ queryKey: ['finance-summary'] });

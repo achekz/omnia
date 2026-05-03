@@ -10,6 +10,7 @@ import * as notifService from '../services/notifService.js';
 import { isEmployeeLikeRole, normalizeRole } from '../utils/roleNormalization.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 import { sendAlert } from '../services/emailService.js';
+import { ruleEngine } from '../services/ruleEngine.js';
 
 const ASSIGNABLE_ROLES = ['employee', 'stagiaire', 'comptable'];
 const ADMIN_ROLES = ['company_admin', 'cabinet_admin', 'manager', 'admin'];
@@ -61,6 +62,20 @@ async function sendTaskAssignmentEmail(task, assignedUser) {
     );
   } catch (error) {
     console.error('[Task Email] Failed to send task assignment email:', error.message);
+  }
+}
+
+async function evaluateTaskRules(task, req, trigger = 'task') {
+  try {
+    await ruleEngine.handleEvent({
+      resource: 'task',
+      trigger,
+      tenantId: req.tenantId || task.tenantId,
+      task,
+      user: task.assignedTo || task.createdBy || req.user,
+    });
+  } catch (error) {
+    console.error('[RuleEngine] Task event failed:', error.message);
   }
 }
 
@@ -176,6 +191,8 @@ export const createTask = asyncHandler(async (req, res) => {
   emitToRole('admin', 'task_created', { task });
   emitToRole('admin', 'taskCreated', { task });
 
+  await evaluateTaskRules(task, req, 'task');
+
   void refreshRecommendationsForScope({
     tenantId: req.tenantId || undefined,
     userIds: [task.assignedTo?._id?.toString?.(), task.createdBy?._id?.toString?.()].filter(Boolean),
@@ -236,6 +253,8 @@ export const updateTask = asyncHandler(async (req, res) => {
   }
   emitToRole('admin', 'task_updated', { task });
   emitToRole('admin', 'taskUpdated', { task });
+
+  await evaluateTaskRules(task, req, 'task');
 
   return res.json(new ApiResponse(200, { task }, 'Task updated'));
 });
@@ -343,6 +362,8 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   }
   emitToRole('admin', 'task_updated', { task });
   emitToRole('admin', 'taskUpdated', { task });
+
+  await evaluateTaskRules(task, req, 'task');
 
   const actorName = getDisplayName(req.user);
 

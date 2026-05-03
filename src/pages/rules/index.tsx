@@ -25,6 +25,15 @@ const operatorOptions: { value: RuleOperator; label: string }[] = [
   { value: "neq", label: "not equals" },
 ];
 
+const redirectTargetOptions = [
+  { value: "/tasks", label: "Tasks page" },
+  { value: "/dashboard", label: "Dashboard" },
+  { value: "/tasks/{taskId}", label: "Specific task (dynamic)" },
+  { value: "/finance", label: "Finance page" },
+  { value: "/profile", label: "Profile page" },
+  { value: "/notifications", label: "Notifications page" },
+] as const;
+
 const emptyForm: Rule = {
   name: "",
   description: "",
@@ -38,8 +47,10 @@ const emptyForm: Rule = {
     severity: "warning",
     title: "",
     message: "",
+    redirectTarget: "/tasks",
     actionUrl: "/tasks",
   },
+  redirectTarget: "/tasks",
   isActive: true,
   cooldownMinutes: 60,
 };
@@ -66,11 +77,13 @@ export default function RuleEnginePage() {
   }
 
   function editRule(rule: Rule) {
+    const redirectTarget = rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl || emptyForm.redirectTarget;
     setForm({
       ...emptyForm,
       ...rule,
       conditions: rule.conditions?.length ? rule.conditions : emptyForm.conditions,
-      action: { ...emptyForm.action, ...rule.action },
+      redirectTarget,
+      action: { ...emptyForm.action, ...rule.action, redirectTarget, actionUrl: redirectTarget },
       roles: rule.roles?.length ? rule.roles : [],
     });
   }
@@ -206,7 +219,21 @@ export default function RuleEnginePage() {
                   </select>
                 </Field>
                 <Field label="Resource">
-                  <select value={form.resource} onChange={(event) => setForm({ ...form, resource: event.target.value as Rule["resource"] })} className="form-input">
+                  <select
+                    value={form.resource}
+                    onChange={(event) => {
+                      const resource = event.target.value as Rule["resource"];
+                      setForm({
+                        ...form,
+                        resource,
+                        action: {
+                          ...form.action,
+                          target: resource === "finance" && form.action.target === "assignedUser" ? "creator" : form.action.target,
+                        },
+                      });
+                    }}
+                    className="form-input"
+                  >
                     <option value="task">Task</option>
                     <option value="finance">Finance</option>
                     <option value="stagiaire">Stagiaire</option>
@@ -242,18 +269,40 @@ export default function RuleEnginePage() {
                   THEN action
                 </p>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <select value={form.action.target} onChange={(event) => setForm({ ...form, action: { ...form.action, target: event.target.value as Rule["action"]["target"] } })} className="form-input">
-                    <option value="assignedUser">Assigned user</option>
-                    <option value="creator">Creator</option>
-                    <option value="tenantAdmins">Tenant admins</option>
-                    <option value="currentUser">Current user</option>
-                  </select>
-                  <select value={form.action.severity} onChange={(event) => setForm({ ...form, action: { ...form.action, severity: event.target.value as Rule["action"]["severity"] } })} className="form-input">
-                    <option value="info">Info</option>
-                    <option value="warning">Warning</option>
-                    <option value="danger">Danger</option>
-                  </select>
-                  <input value={form.action.actionUrl || ""} onChange={(event) => setForm({ ...form, action: { ...form.action, actionUrl: event.target.value } })} className="form-input" placeholder="/tasks" />
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-emerald-800">Notification target</span>
+                    <select value={form.action.target} onChange={(event) => setForm({ ...form, action: { ...form.action, target: event.target.value as Rule["action"]["target"] } })} className="form-input">
+                      <option value="assignedUser">Assigned user</option>
+                      <option value="creator">Creator</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-emerald-800">Severity</span>
+                    <select value={form.action.severity} onChange={(event) => setForm({ ...form, action: { ...form.action, severity: event.target.value as Rule["action"]["severity"] } })} className="form-input">
+                      <option value="info">Info</option>
+                      <option value="warning">Warning</option>
+                      <option value="danger">Danger</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-emerald-800">Redirect target</span>
+                    <select
+                      value={form.redirectTarget || form.action.redirectTarget || form.action.actionUrl || "/tasks"}
+                      onChange={(event) => {
+                        const redirectTarget = event.target.value;
+                        setForm({
+                          ...form,
+                          redirectTarget,
+                          action: { ...form.action, redirectTarget, actionUrl: redirectTarget },
+                        });
+                      }}
+                      className="form-input"
+                    >
+                      {redirectTargetOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label} → {option.value}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
                 <div className="mt-3 grid gap-3">
                   <input value={form.action.title} onChange={(event) => setForm({ ...form, action: { ...form.action, title: event.target.value } })} className="form-input" placeholder="Notification title" />

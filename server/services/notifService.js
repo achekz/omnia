@@ -1,7 +1,17 @@
 import Notification from '../models/Notification.js';
 import { emitToUser } from '../config/socket.js';
 
-export const create = async (userId, tenantId, { type, title, message, source, actionUrl, metadata }) => {
+function resolveRedirectTarget(target, metadata = {}) {
+  const rawTarget = target || '/notifications';
+  return String(rawTarget)
+    .replaceAll('{taskId}', metadata.taskId || '')
+    .replaceAll('{recordId}', metadata.recordId || '')
+    .replaceAll('{userId}', metadata.userId || '');
+}
+
+export const create = async (userId, tenantId, { type, title, message, source, redirectTarget, actionUrl, metadata }) => {
+  const resolvedRedirectTarget = resolveRedirectTarget(redirectTarget || actionUrl, metadata);
+
   const notif = await Notification.create({
     userId,
     tenantId,
@@ -9,7 +19,8 @@ export const create = async (userId, tenantId, { type, title, message, source, a
     title,
     message,
     source: source || 'system',
-    actionUrl,
+    redirectTarget: resolvedRedirectTarget,
+    actionUrl: resolvedRedirectTarget,
     metadata,
   });
 
@@ -21,6 +32,7 @@ export const create = async (userId, tenantId, { type, title, message, source, a
       title: notif.title,
       message: notif.message,
       source: notif.source,
+      redirectTarget: notif.redirectTarget,
       actionUrl: notif.actionUrl,
       metadata: notif.metadata,
       isRead: false,

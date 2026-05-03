@@ -118,17 +118,7 @@ apiClient.interceptors.response.use(
   },
 );
 
-const fallbackNotifications: Notification[] = [
-  {
-    id: "welcome-notification",
-    type: "info",
-    title: "Welcome to Omni AI",
-    message: "Your workspace is ready. Start by exploring your dashboard modules.",
-    isRead: false,
-    source: "system",
-    createdAt: new Date().toISOString(),
-  },
-];
+const fallbackNotifications: Notification[] = [];
 
 const fallbackTasks: Task[] = [
   {
@@ -267,27 +257,7 @@ const fallbackAnalyticsScore: AnalyticsScore = {
   history: [],
 };
 
-const fallbackRules: Rule[] = [
-  {
-    id: "default-delay-rule",
-    name: "Task delay alert",
-    description: "IF task delay > 2 days THEN notify assigned user",
-    trigger: "scheduled",
-    resource: "task",
-    roles: ["employee", "stagiaire"],
-    conditions: [{ metric: "task.delayDays", operator: "gt", value: 2 }],
-    action: {
-      type: "notify",
-      target: "assignedUser",
-      severity: "warning",
-      title: "Task delay alert",
-      message: "A task assigned to you is delayed by more than 2 days.",
-      actionUrl: "/tasks",
-    },
-    isActive: true,
-    cooldownMinutes: 720,
-  },
-];
+const fallbackRules: Rule[] = [];
 
 function unwrapData<T>(payload: unknown, fallback: T): T {
   if (payload && typeof payload === "object") {
@@ -783,6 +753,12 @@ export function useSaveRule() {
     mutationFn: async (rule: Partial<Rule>) => {
       const payload = {
         ...rule,
+        redirectTarget: rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl,
+        action: {
+          ...rule.action,
+          redirectTarget: rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl,
+          actionUrl: rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl,
+        },
         conditions: rule.conditions?.map((condition) => ({
           ...condition,
           value: typeof condition.value === "string" && !Number.isNaN(Number(condition.value)) ? Number(condition.value) : condition.value,

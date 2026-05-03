@@ -33,6 +33,8 @@ const notificationSchema = new Schema(
       default: 'system',
     },
 
+    redirectTarget: String,
+
     actionUrl: String,
 
     metadata: Schema.Types.Mixed,

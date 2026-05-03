@@ -36,6 +36,23 @@ function isInCooldown(rule) {
   return Date.now() < nextAllowedAt;
 }
 
+function getObjectId(value) {
+  return value?._id || value || null;
+}
+
+function buildRedirectTarget(rule, context) {
+  const rawTarget = rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl || defaultRedirectForResource(rule.resource);
+  return String(rawTarget)
+    .replaceAll('{taskId}', context.task?._id?.toString?.() || '')
+    .replaceAll('{recordId}', context.record?._id?.toString?.() || '')
+    .replaceAll('{userId}', context.user?._id?.toString?.() || '');
+}
+
+function defaultRedirectForResource(resource) {
+  if (resource === 'finance') return '/finance';
+  return '/tasks';
+}
+
 async function getTenantAdmins(tenantId) {
   if (!tenantId) return [];
   return User.find({
@@ -53,12 +70,14 @@ async function resolveActionTargets(rule, context) {
     return admins.map((admin) => admin._id);
   }
 
-  if (target === 'assignedUser' && context.task?.assignedTo) {
-    return [context.task.assignedTo._id || context.task.assignedTo];
+  if (target === 'assignedUser') {
+    const assignedUser = getObjectId(context.task?.assignedTo);
+    return assignedUser ? [assignedUser] : [];
   }
 
-  if (target === 'creator' && context.task?.createdBy) {
-    return [context.task.createdBy._id || context.task.createdBy];
+  if (target === 'creator') {
+    const creator = getObjectId(context.task?.createdBy) || getObjectId(context.record?.createdBy);
+    return creator ? [creator] : [];
   }
 
   if (context.user?._id) {
@@ -70,6 +89,8 @@ async function resolveActionTargets(rule, context) {
 
 async function notify(rule, context) {
   const targetIds = await resolveActionTargets(rule, context);
+  const redirectTarget = buildRedirectTarget(rule, context);
+
   await Promise.all(
     targetIds.map((userId) =>
       notifService.create(userId, context.tenantId, {
@@ -77,11 +98,14 @@ async function notify(rule, context) {
         title: rule.action.title,
         message: rule.action.message,
         source: 'rule_engine',
-        actionUrl: rule.action.actionUrl,
+        redirectTarget,
+        actionUrl: redirectTarget,
         metadata: {
           ruleId: rule._id.toString(),
           resource: rule.resource,
           taskId: context.task?._id?.toString?.(),
+          recordId: context.record?._id?.toString?.(),
+          redirectTarget,
         },
       }),
     ),
@@ -90,12 +114,13 @@ async function notify(rule, context) {
 
 async function metricValue(rule, condition, context) {
   if (condition.metric === 'task.delayDays') {
+    if (Number.isFinite(Number(context.task?.delayDays))) return Number(context.task.delayDays);
     if (!context.task?.dueDate) return 0;
     return context.task.dueDate < new Date() ? daysBetween(context.task.dueDate) : 0;
   }
 
   if (condition.metric === 'task.priorityScore') {
-    return priorityScores[context.task?.priority] || 0;
+    return Number(context.task?.priorityScore || priorityScores[context.task?.priority] || 0);
   }
 
   if (condition.metric === 'task.status') {
@@ -111,10 +136,10 @@ async function metricValue(rule, condition, context) {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
 
-    const records = await FinancialRecord.find({
-      tenantId: context.tenantId,
-      date: { $gte: start },
-    }).select('type amount');
+    const financeFilter = { date: { $gte: start } };
+    if (context.tenantId) financeFilter.tenantId = context.tenantId;
+
+    const records = await FinancialRecord.find(financeFilter).select('type amount');
 
     const income = records.filter((record) => record.type === 'income').reduce((sum, record) => sum + record.amount, 0);
     const expense = records.filter((record) => record.type === 'expense').reduce((sum, record) => sum + record.amount, 0);
@@ -189,6 +214,17 @@ class RuleEngine {
       ],
     });
 
+    await Promise.all([
+      Rule.updateMany(
+        { tenantId: { $exists: false }, name: 'Task delay alert' },
+        { $set: { redirectTarget: '/tasks/{taskId}', 'action.redirectTarget': '/tasks/{taskId}', 'action.actionUrl': '/tasks/{taskId}' } },
+      ),
+      Rule.updateMany(
+        { tenantId: { $exists: false }, name: 'High expense anomaly guard' },
+        { $set: { redirectTarget: '/finance', 'action.redirectTarget': '/finance', 'action.actionUrl': '/finance' } },
+      ),
+    ]);
+
     const defaultRules = [
       {
         name: 'Task delay alert',
@@ -203,8 +239,10 @@ class RuleEngine {
           severity: 'warning',
           title: 'Task delay alert',
           message: 'A task assigned to you is delayed by more than 2 days.',
-          actionUrl: '/tasks',
+          redirectTarget: '/tasks/{taskId}',
+          actionUrl: '/tasks/{taskId}',
         },
+        redirectTarget: '/tasks/{taskId}',
         cooldownMinutes: 720,
       },
       {
@@ -220,8 +258,10 @@ class RuleEngine {
           severity: 'danger',
           title: 'Budget alert',
           message: 'Monthly expenses exceeded the configured safety threshold.',
-          actionUrl: '/budget',
+          redirectTarget: '/finance',
+          actionUrl: '/finance',
         },
+        redirectTarget: '/finance',
         cooldownMinutes: 720,
       },
     ];
@@ -262,6 +302,42 @@ class RuleEngine {
     }
 
     console.log(`[RuleEngine] executed trigger=${trigger}, rules=${rules.length}, triggered=${triggeredCount}`);
+    return { rulesEvaluated: rules.length, triggeredCount };
+  }
+
+  async handleEvent({ resource, trigger, tenantId, task, record, user } = {}) {
+    await this.ensureDefaultRules();
+
+    const resourceFilter = resource === 'task'
+      ? { resource: { $in: ['task', 'stagiaire'] } }
+      : { resource };
+
+    const filter = {
+      ...resourceFilter,
+      isActive: true,
+      trigger: { $in: [trigger || resource, 'scheduled'] },
+      ...(tenantId ? { $or: [{ tenantId }, { tenantId: { $exists: false } }] } : {}),
+    };
+
+    const rules = await Rule.find(filter);
+    let triggeredCount = 0;
+    const context = {
+      task,
+      record,
+      user,
+      tenantId: tenantId || task?.tenantId || record?.tenantId,
+    };
+
+    for (const rule of rules) {
+      if (await matchesRule(rule, context)) {
+        await notify(rule, context);
+        rule.lastTriggeredAt = new Date();
+        triggeredCount += 1;
+        await rule.save();
+      }
+    }
+
+    console.log(`[RuleEngine] event resource=${resource}, trigger=${trigger || resource}, rules=${rules.length}, triggered=${triggeredCount}`);
     return { rulesEvaluated: rules.length, triggeredCount };
   }
 }

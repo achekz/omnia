@@ -5,6 +5,13 @@ const mlClient = axios.create({
   timeout: 8000,
 });
 
+function mlUnavailable(error) {
+  const unavailable = new Error(`ML service unavailable: ${error.message}`);
+  unavailable.code = "ML_SERVICE_UNAVAILABLE";
+  unavailable.statusCode = 503;
+  return unavailable;
+}
+
 // -------- RISK --------
 export const predict = async (features) => {
   try {
@@ -20,18 +27,7 @@ export const predict = async (features) => {
 
     return data;
   } catch (error) {
-    console.error("ML ERROR:", error.message);
-
-    const overdue = Number(features.overdue_count || 0);
-    const completed = Number(features.tasks_completed_last_7d || 0);
-
-    const riskScore = Math.max(0, Math.min(1, 0.25 + overdue * 0.18 - completed * 0.03));
-
-    return {
-      risk_score: riskScore,
-      risk_level: riskScore >= 0.7 ? "high" : riskScore >= 0.4 ? "medium" : "low",
-      fallback: true,
-    };
+    throw mlUnavailable(error);
   }
 };
 
@@ -43,8 +39,8 @@ export const recommend = async (features) => {
     });
 
     return data;
-  } catch {
-    return { recommendations: [], fallback: true };
+  } catch (error) {
+    throw mlUnavailable(error);
   }
 };
 
@@ -56,11 +52,7 @@ export const detectAnomaly = async (values) => {
     });
 
     return data;
-  } catch {
-    return {
-      is_anomaly: false,
-      anomaly_score: 0,
-      fallback: true,
-    };
+  } catch (error) {
+    throw mlUnavailable(error);
   }
 };

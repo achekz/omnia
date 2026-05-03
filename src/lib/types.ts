@@ -144,6 +144,7 @@ export interface Notification {
   message: string;
   isRead: boolean;
   source?: string;
+  redirectTarget?: string;
   actionUrl?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
@@ -292,6 +293,7 @@ export interface RuleAction {
   severity: "info" | "warning" | "danger";
   title: string;
   message: string;
+  redirectTarget?: string;
   actionUrl?: string;
 }
 
@@ -305,6 +307,7 @@ export interface Rule {
   roles?: string[];
   conditions: RuleCondition[];
   action: RuleAction;
+  redirectTarget?: string;
   isActive?: boolean;
   cooldownMinutes?: number;
   lastTriggeredAt?: string;

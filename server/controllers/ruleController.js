@@ -13,7 +13,7 @@ export const listRules = asyncHandler(async (req, res) => {
 });
 
 export const createRule = asyncHandler(async (req, res) => {
-  const { name, description, trigger, resource, roles, conditions, action, cooldownMinutes, isActive } = req.body;
+  const { name, description, trigger, resource, roles, conditions, action, redirectTarget, cooldownMinutes, isActive } = req.body;
 
   const rule = await Rule.create({
     tenantId: req.tenantId,
@@ -23,7 +23,12 @@ export const createRule = asyncHandler(async (req, res) => {
     resource,
     roles,
     conditions,
-    action,
+    action: {
+      ...action,
+      redirectTarget: redirectTarget || action?.redirectTarget || action?.actionUrl,
+      actionUrl: redirectTarget || action?.redirectTarget || action?.actionUrl,
+    },
+    redirectTarget: redirectTarget || action?.redirectTarget || action?.actionUrl,
     cooldownMinutes,
     isActive,
     createdBy: req.user._id,
@@ -36,10 +41,18 @@ export const updateRule = asyncHandler(async (req, res) => {
   const rule = await Rule.findOne({ _id: req.params.id, ...scopedFilter(req) });
   if (!rule) throw new ApiError(404, 'Rule not found');
 
-  const editable = ['name', 'description', 'trigger', 'resource', 'roles', 'conditions', 'action', 'cooldownMinutes', 'isActive'];
+  const editable = ['name', 'description', 'trigger', 'resource', 'roles', 'conditions', 'action', 'redirectTarget', 'cooldownMinutes', 'isActive'];
   editable.forEach((field) => {
     if (req.body[field] !== undefined) rule[field] = req.body[field];
   });
+
+  if (req.body.redirectTarget !== undefined) {
+    rule.action = {
+      ...(rule.action?.toObject?.() || rule.action || {}),
+      redirectTarget: req.body.redirectTarget,
+      actionUrl: req.body.redirectTarget,
+    };
+  }
 
   await rule.save();
   res.json(new ApiResponse(200, { rule }, 'Rule updated'));

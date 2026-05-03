@@ -22,6 +22,8 @@ import AIDashboard from "./pages/ai";
 import PresencePage from "./pages/presence";
 import MyTasksPage from "./pages/tasks/my-tasks";
 import SettingsPage from "./pages/settings";
+import BudgetPage from "./pages/budget/budget";
+import NotificationsPage from "./pages/notifications";
 import RuleEnginePage from "./pages/rules";
 import MyPerformancePage from "./pages/performance/my-performance";
 import AdminUsersPage from "./pages/admin/users";
@@ -136,7 +138,11 @@ const routes: AppRoute[] = [
   { path: "/ai", component: AIDashboard, protected: true },
   { path: "/presence", component: PresencePage, protected: true },
   { path: "/tasks", component: MyTasksPage, protected: true },
+  { path: "/tasks/:id", component: MyTasksPage, protected: true },
   { path: "/settings", component: SettingsPage, protected: true },
+  { path: "/profile", component: SettingsPage, protected: true },
+  { path: "/finance", component: BudgetPage, protected: true },
+  { path: "/notifications", component: NotificationsPage, protected: true },
   { path: "/performance", component: MyPerformancePage, protected: true },
   { path: "/rh/employes", component: RHEmployeesPage, protected: true },
 

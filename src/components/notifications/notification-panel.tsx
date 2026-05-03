@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { AlertTriangle, Bell, Bot, CheckCheck, Circle, Coins, Loader2, Trash2, X } from "lucide-react";
 import {
   useClearReadNotifications,
@@ -35,6 +36,7 @@ export function getNotificationCategory(notification: Notification): Notificatio
 
 export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [activeFilter, setActiveFilter] = useState<NotificationCategory>("all");
+  const [, setLocation] = useLocation();
   const { data: notifications = [], isFetching, isError } = useGetNotifications({
     query: { enabled: isOpen, refetchInterval: 30000 },
   });
@@ -42,6 +44,20 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const markAllRead = useMarkAllNotificationsRead();
   const clearRead = useClearReadNotifications();
   const updateTaskStatus = useUpdateTaskStatus();
+
+  function handleNotificationOpen(notification: Notification) {
+    const id = notification._id || notification.id;
+    const target = resolveNotificationTarget(notification);
+
+    if (id && !notification.isRead) {
+      markRead.mutate(id);
+    }
+
+    if (target) {
+      setLocation(target);
+      onClose();
+    }
+  }
 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const filteredNotifications = useMemo(
@@ -133,6 +149,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                   key={notification._id ?? notification.id}
                   notification={notification}
                   onMarkRead={(id) => markRead.mutate(id)}
+                  onOpen={handleNotificationOpen}
                   onTaskAction={(id, status) => updateTaskStatus.mutate({ id, status })}
                   isUpdating={markRead.isPending}
                   isTaskUpdating={updateTaskStatus.isPending}
@@ -149,12 +166,14 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 function NotificationCard({
   notification,
   onMarkRead,
+  onOpen,
   onTaskAction,
   isUpdating,
   isTaskUpdating,
 }: {
   notification: Notification;
   onMarkRead: (id: string) => void;
+  onOpen: (notification: Notification) => void;
   onTaskAction: (taskId: string, status: TaskStatus) => void;
   isUpdating: boolean;
   isTaskUpdating: boolean;
@@ -176,8 +195,10 @@ function NotificationCard({
 
   return (
     <article
+      onClick={() => onOpen(notification)}
       className={cn(
         "rounded-3xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        resolveNotificationTarget(notification) ? "cursor-pointer" : "",
         notification.isRead ? "border-slate-200 bg-white opacity-75" : "border-violet-200 bg-violet-50/30",
       )}
     >
@@ -199,7 +220,8 @@ function NotificationCard({
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   onTaskAction(taskId, "in_progress");
                   if (id) onMarkRead(id);
                 }}
@@ -210,7 +232,8 @@ function NotificationCard({
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   onTaskAction(taskId, "declined");
                   if (id) onMarkRead(id);
                 }}
@@ -228,7 +251,10 @@ function NotificationCard({
             {!notification.isRead && id && (
               <button
                 type="button"
-                onClick={() => onMarkRead(id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMarkRead(id);
+                }}
                 disabled={isUpdating}
                 className="text-xs font-bold text-violet-700 transition hover:text-violet-900 disabled:opacity-50"
               >
@@ -240,6 +266,18 @@ function NotificationCard({
       </div>
     </article>
   );
+}
+
+function resolveNotificationTarget(notification: Notification) {
+  const metadata = notification.metadata || {};
+  const rawTarget = notification.redirectTarget || notification.actionUrl || "";
+
+  if (!rawTarget) return "";
+
+  return String(rawTarget)
+    .split("{taskId}").join(typeof metadata.taskId === "string" ? metadata.taskId : "")
+    .split("{recordId}").join(typeof metadata.recordId === "string" ? metadata.recordId : "")
+    .split("{userId}").join(typeof metadata.userId === "string" ? metadata.userId : "");
 }
 
 function NotificationSkeleton() {

@@ -3,7 +3,6 @@ import MLPrediction from '../models/MLPrediction.js';
 import * as notifService from '../services/notifService.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { predictPerformance } from '../services/aiService.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 import Recommendation from '../models/Recommendation.js';
 import * as mlService from '../services/mlService.js';
@@ -14,6 +13,13 @@ function normalizeRiskScore(score) {
   return numericScore > 1
     ? Math.max(0, Math.min(1, numericScore / 100))
     : Math.max(0, Math.min(1, numericScore));
+}
+
+function throwIfMlUnavailable(error) {
+  if (error?.code === 'ML_SERVICE_UNAVAILABLE') {
+    throw new ApiError(503, 'ML service is unavailable. ML predictions are disabled until the real ML service is online.');
+  }
+  throw error;
 }
 
 // POST /api/ml/predict
@@ -35,22 +41,18 @@ export const predict = asyncHandler(async (req, res) => {
     overdue_count: logs.reduce((a, l) => a + (l.overdueCount || 0), 0),
   };
 
-  const mlPrediction = await mlService.predict(features);
-
-  const fallbackResult = await predictPerformance({
-    users: [{ user: req.user, tasks: [], performanceLogs: logs }],
-    features,
-  });
-
-  const fallbackPrediction =
-    fallbackResult.predictions?.[0] || fallbackResult;
+  let mlPrediction;
+  try {
+    mlPrediction = await mlService.predict(features);
+  } catch (error) {
+    throwIfMlUnavailable(error);
+  }
 
   const riskScore = normalizeRiskScore(
-    mlPrediction.risk ?? fallbackPrediction.risk_score ?? 0
+    mlPrediction.risk ?? mlPrediction.risk_score ?? 0
   );
 
   const prediction = {
-    ...fallbackPrediction,
     ...mlPrediction,
     risk_score: riskScore,
     risk_level:
@@ -154,7 +156,12 @@ export const anomaly = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'values array required');
   }
 
-  const result = await mlService.detectAnomaly(values);
+  let result;
+  try {
+    result = await mlService.detectAnomaly(values);
+  } catch (error) {
+    throwIfMlUnavailable(error);
+  }
 
   const saved = await MLPrediction.create({
     userId: req.user._id,

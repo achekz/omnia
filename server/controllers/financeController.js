@@ -4,6 +4,7 @@ import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
+import { ruleEngine } from '../services/ruleEngine.js';
 
 function buildFinanceFilter(req, extra = {}) {
   const filter = { ...extra };
@@ -63,6 +64,20 @@ function escapeCsv(value) {
   return /[;"\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+async function evaluateFinanceRules(record, req) {
+  try {
+    await ruleEngine.handleEvent({
+      resource: 'finance',
+      trigger: 'finance',
+      tenantId: req.tenantId || record.tenantId,
+      record,
+      user: req.user,
+    });
+  } catch (error) {
+    console.error('[RuleEngine] Finance event failed:', error.message);
+  }
+}
+
 // GET /api/finance/records
 export const getRecords = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, type, category, startDate, endDate } = req.query;
@@ -97,8 +112,18 @@ export const createRecord = asyncHandler(async (req, res) => {
   if (amount > 1000) {
     const allAmounts = await FinancialRecord.find(buildFinanceFilter(req)).select('amount');
     const values = allAmounts.map(r => r.amount);
-    const result = await mlService.detectAnomaly(values);
-    if (result.is_anomaly) {
+    let result = null;
+    try {
+      result = await mlService.detectAnomaly(values);
+    } catch (error) {
+      if (error?.code === 'ML_SERVICE_UNAVAILABLE') {
+        console.warn('[Finance ML] Anomaly detection disabled because the real ML service is unavailable.');
+      } else {
+        throw error;
+      }
+    }
+
+    if (result?.is_anomaly) {
       record.isAnomaly = true;
       record.anomalyScore = result.anomaly_score;
       record.flaggedAt = new Date();
@@ -108,10 +133,14 @@ export const createRecord = asyncHandler(async (req, res) => {
         title: '🚨 Financial Anomaly',
         message: `Record of ${amount} flagged as anomaly.`,
         source: 'ml',
+        redirectTarget: '/finance',
         actionUrl: '/finance',
+        metadata: { recordId: record._id.toString(), amount },
       });
     }
   }
+
+  await evaluateFinanceRules(record, req);
 
   return res.status(201).json(new ApiResponse(201, { record }, 'Record created'));
 });
