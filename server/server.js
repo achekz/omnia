@@ -195,7 +195,7 @@ async function startServer() {
   }
 
   if (dbResult.connected && process.env.AUTO_REPAIR_AUTH_ACCOUNTS !== 'false') {
-    await resetAuthSystem({ connect: false, close: false });
+    await resetAuthSystem({ connect: false, close: false, silent: true });
   }
 
   startMongoReconnectLoop({
@@ -209,7 +209,7 @@ async function startServer() {
       });
 
       if (process.env.AUTO_REPAIR_AUTH_ACCOUNTS !== 'false') {
-        await resetAuthSystem({ connect: false, close: false });
+        await resetAuthSystem({ connect: false, close: false, silent: true });
       }
     },
   });

@@ -17,6 +17,17 @@ function requireEnv(name) {
   return value;
 }
 
+function createLogger(silent) {
+  return {
+    log: (...args) => {
+      if (!silent) console.log(...args);
+    },
+    error: (...args) => {
+      if (!silent) console.error(...args);
+    },
+  };
+}
+
 function getRecoveryAccounts() {
   return [
     {
@@ -53,7 +64,8 @@ function sameKey(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-export async function repairUserIndexes() {
+export async function repairUserIndexes({ silent = false } = {}) {
+  const logger = createLogger(silent);
   const indexes = await User.collection.indexes();
 
   for (const index of indexes) {
@@ -66,7 +78,7 @@ export async function repairUserIndexes() {
     }
 
     await User.collection.dropIndex(index.name);
-    console.log(`Dropped invalid unique index: ${index.name}`);
+    logger.log(`Dropped invalid unique index: ${index.name}`);
   }
 
   await User.collection.createIndex({ email: 1 }, { unique: true, name: "email_1" });
@@ -74,7 +86,8 @@ export async function repairUserIndexes() {
   await User.collection.createIndex({ profileType: 1 }, { name: "profileType_1" });
 }
 
-export async function enforceSingleAdmin() {
+export async function enforceSingleAdmin({ silent = false } = {}) {
+  const logger = createLogger(silent);
   const admins = await User.find({ role: "admin" }).sort({ createdAt: 1, _id: 1 }).select("_id email");
 
   if (admins.length <= 1) {
@@ -87,7 +100,7 @@ export async function enforceSingleAdmin() {
     { $set: { role: "employee", profileType: "employee", refreshToken: null } },
   );
 
-  console.log(`Demoted ${extraAdmins.length} extra admin account(s).`);
+  logger.log(`Demoted ${extraAdmins.length} extra admin account(s).`);
 }
 
 function buildSnapshot(user) {
@@ -146,7 +159,8 @@ export async function recreateAccount(account) {
   };
 }
 
-export async function repairAttendanceRecords() {
+export async function repairAttendanceRecords({ silent = false } = {}) {
+  const logger = createLogger(silent);
   const users = await User.find({}).select("_id name firstName lastName email role profileType").lean();
   const userIds = new Set(users.map((user) => String(user._id)));
   const usersByEmail = new Map(users.map((user) => [String(user.email).toLowerCase(), user]));
@@ -209,11 +223,13 @@ export async function repairAttendanceRecords() {
   }
 
   if (repaired > 0) {
-    console.log(`Attendance records repaired: ${repaired}`);
+    logger.log(`Attendance records repaired: ${repaired}`);
   }
 }
 
-export async function resetAuthSystem({ connect = true, close = true } = {}) {
+export async function resetAuthSystem({ connect = true, close = true, silent = false } = {}) {
+  const logger = createLogger(silent);
+
   try {
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI is missing");
@@ -224,37 +240,37 @@ export async function resetAuthSystem({ connect = true, close = true } = {}) {
     }
 
     if (connect && mongoose.connection.readyState !== 1) {
-      console.log("Connecting to MongoDB...");
+      logger.log("Connecting to MongoDB...");
       await mongoose.connect(process.env.MONGO_URI);
-      console.log("Connected\n");
+      logger.log("Connected\n");
     }
 
-    await repairUserIndexes();
-    await enforceSingleAdmin();
+    await repairUserIndexes({ silent });
+    await enforceSingleAdmin({ silent });
 
     if (process.env.RESET_ALL_USERS === "true") {
       const result = await User.deleteMany({ role: { $ne: "admin" } });
-      console.log(`Deleted ${result.deletedCount} non-admin user(s).`);
+      logger.log(`Deleted ${result.deletedCount} non-admin user(s).`);
     }
 
     const accounts = getRecoveryAccounts();
 
     for (const account of accounts) {
       const result = await recreateAccount(account);
-      console.log(`Account ready: ${result.email}`);
-      console.log(`  Role: ${result.role}`);
-      console.log(`  ProfileType: ${result.profileType}`);
-      console.log(`  Password OK: ${result.passwordMatches}`);
-      console.log(`  JWT OK: ${result.tokenValid}`);
-      console.log("");
+      logger.log(`Account ready: ${result.email}`);
+      logger.log(`  Role: ${result.role}`);
+      logger.log(`  ProfileType: ${result.profileType}`);
+      logger.log(`  Password OK: ${result.passwordMatches}`);
+      logger.log(`  JWT OK: ${result.tokenValid}`);
+      logger.log("");
     }
 
-    await repairAttendanceRecords();
+    await repairAttendanceRecords({ silent });
 
-    console.log("Auth reset complete.");
+    logger.log("Auth reset complete.");
     return { ok: true };
   } catch (error) {
-    console.error("Auth reset failed:", error.message);
+    logger.error("Auth reset failed:", error.message);
     if (connect) {
       process.exitCode = 1;
     }
