@@ -151,13 +151,14 @@ export const createTask = asyncHandler(async (req, res) => {
       throw new ApiError(400, 'Assigned user is required');
     }
 
-    const assignedUserFilter = { _id: assignedTo, role: { $in: ASSIGNABLE_ROLES } };
-    if (req.tenantId) assignedUserFilter.tenantId = req.tenantId;
-
-    const assignedUser = await User.findOne(assignedUserFilter).select('_id email name firstName lastName');
+    const assignedUser = await User.findOne({ _id: assignedTo }).select('_id email name firstName lastName role');
     if (!assignedUser) {
-      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+      throw new ApiError(404, 'Assigned user not found');
     }
+    const normalizedAssignedRole = normalizeRole(assignedUser.role, 'employee');
+    if (!ASSIGNABLE_ROLES.includes(normalizedAssignedRole)) {
+      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+  }
 
     taskData.assignedTo = assignedUser._id;
   }
@@ -228,13 +229,16 @@ export const updateTask = asyncHandler(async (req, res) => {
     'lateReason',
   ];
   if (req.body.assignedTo !== undefined) {
-    const assignedUserFilter = { _id: req.body.assignedTo, role: { $in: ASSIGNABLE_ROLES } };
-    if (req.tenantId) assignedUserFilter.tenantId = req.tenantId;
-    const assignedUser = await User.findOne(assignedUserFilter).select('_id email name firstName lastName');
-    if (!assignedUser) {
-      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
-    }
+  const assignedUser = await User.findOne({ _id: req.body.assignedTo })
+    .select('_id email name firstName lastName role');
+  if (!assignedUser) {
+    throw new ApiError(404, 'Assigned user not found');
   }
+  const normalizedAssignedRole = normalizeRole(assignedUser.role, 'employee');
+  if (!ASSIGNABLE_ROLES.includes(normalizedAssignedRole)) {
+    throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+  }
+}
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
   await populateTask(task);
