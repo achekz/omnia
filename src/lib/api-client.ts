@@ -455,26 +455,15 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (data: CreateTaskInput) => {
-      try {
-        const response = await apiClient.post("/tasks", data);
-        return unwrapEntity<Task>(response.data, "task", {
-          id: crypto.randomUUID(),
-          title: data.title,
-          status: data.status ?? "todo",
-          description: data.description,
-          priority: data.priority ?? "medium",
-          dueDate: data.dueDate,
-        });
-      } catch {
-        return {
-          id: crypto.randomUUID(),
-          title: data.title,
-          status: data.status ?? "todo",
-          description: data.description,
-          priority: data.priority ?? "medium",
-          dueDate: data.dueDate,
-        } satisfies Task;
-      }
+      const response = await apiClient.post("/tasks", data);
+      return unwrapEntity<Task>(response.data, "task", {
+        id: crypto.randomUUID(),
+        title: data.title,
+        status: data.status ?? "todo",
+        description: data.description,
+        priority: data.priority ?? "medium",
+        dueDate: data.dueDate,
+      });
     },
     onSuccess: (createdTask) => {
       queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) => [createdTask, ...current]);
@@ -489,14 +478,8 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async ({ id, data }: UpdateTaskInput) => {
-      try {
-        const response = await apiClient.put(`/tasks/${id}`, data);
-        return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "todo", ...data });
-      } catch {
-        const currentTasks = queryClient.getQueryData<Task[]>(["tasks"]) ?? fallbackTasks;
-        const existingTask = currentTasks.find((task) => task._id === id || task.id === id);
-        return { ...existingTask, ...data, id } as Task;
-      }
+      const response = await apiClient.put(`/tasks/${id}`, data);
+      return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "todo", ...data });
     },
     onSuccess: (updatedTask) => {
       queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) =>
@@ -506,6 +489,9 @@ export function useUpdateTask() {
           return taskId === updatedId ? { ...task, ...updatedTask } : task;
         }),
       );
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -514,8 +500,8 @@ export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Task["status"] }) => {
-      const response = await apiClient.patch(`/tasks/${id}/status`, { status });
+    mutationFn: async ({ id, status, declineReason, lateReason }: { id: string; status: Task["status"]; declineReason?: string; lateReason?: string }) => {
+      const response = await apiClient.patch(`/tasks/${id}/status`, { status, declineReason, lateReason });
       return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status });
     },
     onSuccess: () => {
@@ -524,6 +510,23 @@ export function useUpdateTaskStatus() {
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+    },
+  });
+}
+
+export function useAddTaskComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) => {
+      const response = await apiClient.post(`/tasks/${id}/comments`, { message });
+      return unwrapEntity<Task>(response.data, "task", {} as Task);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -610,6 +613,36 @@ export function useGetAdminUsers(options?: QueryHookOptions) {
     },
     enabled: options?.query?.enabled ?? true,
     initialData: [],
+  });
+}
+
+export function useDeleteAdminUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.delete(`/admin/users/${id}`);
+      return unwrapData(response.data, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+  });
+}
+
+export function useGetAdminUserTaskDetails(id?: string, options?: QueryHookOptions) {
+  return useQuery<{ user: User | null; tasks: Task[] }>({
+    queryKey: ["admin-user-task-details", id],
+    queryFn: async () => {
+      if (!id) return { user: null, tasks: [] };
+      const response = await apiClient.get(`/admin/users/${id}/tasks`);
+      return unwrapData(response.data, { user: null, tasks: [] });
+    },
+    enabled: Boolean(id) && (options?.query?.enabled ?? true),
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: { user: null, tasks: [] },
   });
 }
 

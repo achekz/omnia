@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   acceptTask,
+  addTaskComment,
   createTask,
   deleteTask,
   getTaskStats,
@@ -180,5 +181,6 @@ router.delete('/:id', deleteTask);
  *         description: Status updated
  */
 router.patch('/:id/status', updateTaskStatus);
+router.post('/:id/comments', addTaskComment);
 
 export default router;

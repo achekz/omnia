@@ -25,6 +25,7 @@ import SettingsPage from "./pages/settings";
 import RuleEnginePage from "./pages/rules";
 import MyPerformancePage from "./pages/performance/my-performance";
 import AdminUsersPage from "./pages/admin/users";
+import AdminUserTaskDetailsPage from "./pages/admin/user-task-details";
 import AdminPresencesPage from "./pages/admin/presences";
 import AdminTasksPage from "./pages/admin/tasks";
 import RHEmployeesPage from "./pages/rh/employes";
@@ -125,6 +126,7 @@ const routes: AppRoute[] = [
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
+  { path: "/admin/users/:id/tasks", component: AdminUserTaskDetailsPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },
   { path: "/admin/tasks", component: AdminTasksPage, protected: true, roles: ["admin"] },
 

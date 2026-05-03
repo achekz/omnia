@@ -23,6 +23,20 @@ router.get(
 );
 
 router.get(
+  '/users/:id/tasks',
+  protect,
+  authorize('ADMIN'),
+  adminController.getUserTaskDetails
+);
+
+router.delete(
+  '/users/:id',
+  protect,
+  authorize('ADMIN'),
+  adminController.deleteUserAccount
+);
+
+router.get(
   '/presences',
   protect,
   authorize('ADMIN'),

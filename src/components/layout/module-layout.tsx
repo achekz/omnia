@@ -105,7 +105,6 @@ const MODULES: NavModule[] = [
       { id: "admin-tasks", label: "Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/admin/tasks" },
       { id: "rules", label: "Rule Engine", icon: <ShieldCheck className="w-4 h-4" />, path: "/admin/rules" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
-      { id: "settings", label: "Settings", icon: <FileText className="w-4 h-4" />, path: "/settings" },
     ],
   },
   {

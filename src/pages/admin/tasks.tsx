@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { CheckCircle2, ClipboardList, Clock, PauseCircle, PlayCircle, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, ClipboardList, Clock, PauseCircle, Pencil, PlayCircle, Plus, Save, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useCreateTask, useGetAdminTasks, useGetAdminUsers } from "@/lib/api-client";
+import { useCreateTask, useGetAdminTasks, useGetAdminUsers, useUpdateTask } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import type { TaskStatus, User } from "@/lib/types";
+import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function getUserName(user: Partial<User> | string | undefined) {
@@ -25,8 +25,10 @@ export default function AdminTasksPage() {
   const [assignedTo, setAssignedTo] = useState("");
   const [startTime, setStartTime] = useState("");
   const [estimatedDuration, setEstimatedDuration] = useState(60);
+  const [editingTaskId, setEditingTaskId] = useState("");
   const { toast } = useToast();
   const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
   const { data: users = [] } = useGetAdminUsers();
   const { data: tasks = [], isLoading } = useGetAdminTasks({ query: { refetchInterval: 30000 } });
 
@@ -41,7 +43,7 @@ export default function AdminTasksPage() {
     }
 
     try {
-      await createTask.mutateAsync({
+      const payload = {
         title,
         description,
         assignedTo,
@@ -49,16 +51,47 @@ export default function AdminTasksPage() {
         estimatedDuration,
         estimatedDurationMinutes: estimatedDuration,
         estimatedMinutes: estimatedDuration,
-      });
+      };
+
+      if (editingTaskId) {
+        await updateTask.mutateAsync({ id: editingTaskId, data: payload as Partial<Task> });
+      } else {
+        await createTask.mutateAsync(payload);
+      }
+
       setTitle("");
       setDescription("");
       setAssignedTo("");
       setStartTime("");
       setEstimatedDuration(60);
-      toast({ title: "Task assigned", description: "The user was notified in real time." });
+      setEditingTaskId("");
+      toast({
+        title: editingTaskId ? "Task updated" : "Task assigned",
+        description: editingTaskId ? "The task was updated and the user was notified." : "The user was notified in real time and by email.",
+      });
     } catch (error: any) {
       toast({ title: "Task creation failed", description: error?.response?.data?.message || "Could not create task.", variant: "destructive" });
     }
+  };
+
+  const startEdit = (task: Task) => {
+    const taskId = task._id || task.id || "";
+    setEditingTaskId(taskId);
+    setTitle(task.title || "");
+    setDescription(task.description || "");
+    setAssignedTo(typeof task.assignedTo === "object" ? task.assignedTo?._id || task.assignedTo?.id || "" : String(task.assignedTo || ""));
+    setStartTime(task.startTime ? new Date(task.startTime).toISOString().slice(0, 16) : "");
+    setEstimatedDuration(task.estimatedMinutes || task.estimatedDurationMinutes || 60);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setEditingTaskId("");
+    setTitle("");
+    setDescription("");
+    setAssignedTo("");
+    setStartTime("");
+    setEstimatedDuration(60);
   };
 
   return (
@@ -75,6 +108,11 @@ export default function AdminTasksPage() {
         </div>
 
         <form onSubmit={submit} className="mb-6 grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-5">
+          {editingTaskId && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 lg:col-span-5">
+              Editing task. Save changes or cancel to create a new task.
+            </div>
+          )}
           <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={3} placeholder="Title" className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-2" />
           <select value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)} required className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900">
             <option value="">Assign to</option>
@@ -87,10 +125,15 @@ export default function AdminTasksPage() {
           <input type="datetime-local" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900" />
           <input type="number" min={1} max={1440} value={estimatedDuration} onChange={(event) => setEstimatedDuration(Number(event.target.value))} className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900" />
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" className="min-h-20 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-4" />
-          <button disabled={createTask.isPending} className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50">
-            <Plus className="h-4 w-4" />
-            Create
+          <button disabled={createTask.isPending || updateTask.isPending} className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50">
+            {editingTaskId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {editingTaskId ? "Save" : "Create"}
           </button>
+          {editingTaskId && (
+            <button type="button" onClick={cancelEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 lg:col-start-5">
+              Cancel edit
+            </button>
+          )}
         </form>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -105,12 +148,13 @@ export default function AdminTasksPage() {
                 <th className="px-5 py-4">Finished</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Result</th>
+                <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {isLoading ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={8}>Loading tasks...</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>Loading tasks...</td>
                 </tr>
               ) : tasks.length ? (
                 tasks.map((task) => {
@@ -151,12 +195,24 @@ export default function AdminTasksPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(task)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-xs font-bold text-violet-600 transition hover:bg-violet-50"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={8}>No tasks found.</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>No tasks found.</td>
                 </tr>
               )}
             </tbody>

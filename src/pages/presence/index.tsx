@@ -19,6 +19,10 @@ function getDateKey(date: Date) {
 }
 
 function getCheckInPreview(now: Date) {
+  if (now.getDay() === 0) {
+    return { allowed: false, color: "red", status: "Sunday rest day", requiresReason: false, delay: 0 };
+  }
+
   const minutes = now.getHours() * 60 + now.getMinutes();
 
   if (minutes < 8 * 60 || minutes >= 18 * 60) {
@@ -37,6 +41,10 @@ function getCheckInPreview(now: Date) {
 }
 
 function getCheckOutPreview(now: Date) {
+  if (now.getDay() === 0) {
+    return { color: "red", status: "Sunday rest day", requiresReason: false };
+  }
+
   const minutes = now.getHours() * 60 + now.getMinutes();
 
   if (minutes < 16 * 60) {
@@ -67,6 +75,7 @@ export default function PresencePage() {
   const month = currentMonth.getMonth() + 1;
   const year = currentMonth.getFullYear();
   const todayKey = getDateKey(now);
+  const isSunday = now.getDay() === 0;
 
   const { data, isLoading } = useGetMyAttendance(month, year);
   const sendCode = useSendAttendanceCode();
@@ -109,6 +118,11 @@ export default function PresencePage() {
   const requestCode = async (selectedAction: AttendanceAction) => {
     setAction(selectedAction);
     const preview = selectedAction === "check-in" ? getCheckInPreview(new Date()) : getCheckOutPreview(new Date());
+
+    if (new Date().getDay() === 0) {
+      toast({ title: "Rest day", description: "Presence cannot be marked on Sunday. You can still view your tasks.", variant: "destructive" });
+      return;
+    }
 
     if ("allowed" in preview && !preview.allowed) {
       toast({ title: "Attendance disabled", description: "Check-in is allowed only from 08:00 to 17:59.", variant: "destructive" });
@@ -184,7 +198,7 @@ export default function PresencePage() {
               {calendarDays.map(({ date, key }) => {
                 const isToday = key === todayKey;
                 const record = recordsByDate.get(key);
-                const isClickable = isToday;
+                const isClickable = isToday && !isSunday;
 
                 return (
                   <button
@@ -218,7 +232,7 @@ export default function PresencePage() {
             </div>
           </section>
 
-          <AttendancePanel record={todayRecord} loading={isLoading} onOpen={openTodayModal} />
+          <AttendancePanel record={todayRecord} loading={isLoading} onOpen={openTodayModal} isSunday={isSunday} />
         </div>
       </div>
 
@@ -292,7 +306,7 @@ export default function PresencePage() {
   );
 }
 
-function AttendancePanel({ record, loading, onOpen }: { record?: Attendance | null; loading: boolean; onOpen: () => void }) {
+function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Attendance | null; loading: boolean; onOpen: () => void; isSunday: boolean }) {
   return (
     <aside className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-5 flex items-center gap-3">
@@ -321,7 +335,13 @@ function AttendancePanel({ record, loading, onOpen }: { record?: Attendance | nu
         <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">No attendance marked today.</div>
       )}
 
-      <button onClick={onOpen} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700">
+      {isSunday && (
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+          Sunday is a rest day. You can open your account and prepare tomorrow's tasks, but presence is disabled.
+        </div>
+      )}
+
+      <button disabled={isSunday} onClick={onOpen} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
         {record?.checkIn && !record.checkOut ? <LogOut className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
         {record?.checkIn && !record.checkOut ? "Check-out" : "Mark Presence"}
       </button>

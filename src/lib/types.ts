@@ -101,9 +101,16 @@ export interface Task {
   acceptedAt?: string;
   declinedAt?: string;
   declineReason?: string;
+  lateReason?: string;
   completedBy?: Partial<User> | string;
   completedAt?: string;
   isDelayed?: boolean;
+  comments?: Array<{
+    _id?: string;
+    userId?: Partial<User> | string;
+    message: string;
+    createdAt?: string;
+  }>;
   createdAt?: string;
 }
 

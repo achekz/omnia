@@ -1,9 +1,28 @@
-import { Users } from "lucide-react";
+import { Eye, Trash2, Users } from "lucide-react";
+import { useLocation } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useGetAdminUsers } from "@/lib/api-client";
+import { useDeleteAdminUser, useGetAdminUsers } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminUsersPage() {
   const { data: users = [], isLoading } = useGetAdminUsers();
+  const deleteUser = useDeleteAdminUser();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const visibleUsers = users.filter((user) => user.role !== "admin");
+
+  const handleDelete = async (id?: string, label?: string) => {
+    if (!id) return;
+    const confirmed = window.confirm(`Delete ${label || "this account"} and all related local/database records?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteUser.mutateAsync(id);
+      toast({ title: "Account deleted", description: "The user and related records were removed." });
+    } catch (error: any) {
+      toast({ title: "Delete failed", description: error?.response?.data?.message || "Could not delete this account.", variant: "destructive" });
+    }
+  };
 
   return (
     <ModuleLayout activeItem="users">
@@ -27,26 +46,48 @@ export default function AdminUsersPage() {
                 <th className="px-5 py-4">Email</th>
                 <th className="px-5 py-4">Role</th>
                 <th className="px-5 py-4">Created at</th>
+                <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {isLoading ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={5}>Loading users...</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>Loading users...</td>
                 </tr>
-              ) : users.length ? (
-                users.map((user) => (
+              ) : visibleUsers.length ? (
+                visibleUsers.map((user) => (
                   <tr key={user._id || user.id} className="text-gray-700 dark:text-gray-200">
                     <td className="px-5 py-4 font-semibold">{user.firstName}</td>
                     <td className="px-5 py-4 font-semibold">{user.lastName}</td>
                     <td className="px-5 py-4">{user.email}</td>
                     <td className="px-5 py-4 capitalize">{user.role}</td>
                     <td className="px-5 py-4">{user.createdAt ? new Date(user.createdAt).toLocaleString() : "-"}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setLocation(`/admin/users/${user._id || user.id}/tasks`)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deleteUser.isPending}
+                          onClick={() => void handleDelete(user._id || user.id, user.name || user.email)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={5}>No users found.</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>No users found.</td>
                 </tr>
               )}
             </tbody>

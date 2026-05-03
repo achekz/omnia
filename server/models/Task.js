@@ -26,6 +26,7 @@ const taskSchema = new Schema(
     acceptedAt: { type: Date },
     declinedAt: { type: Date },
     declineReason: { type: String, trim: true },
+    lateReason: { type: String, trim: true },
     completedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     isDelayed: { type: Boolean, default: false },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -37,6 +38,13 @@ const taskSchema = new Schema(
     estimatedMinutes: { type: Number },
     estimatedDurationMinutes: { type: Number },
     actualMinutes: { type: Number },
+    comments: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        message: { type: String, required: true, trim: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

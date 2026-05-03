@@ -1,9 +1,10 @@
 import { CheckCircle2, Clock, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
+import { useAddTaskComment, useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
 import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 type TaskFilter = "all" | TaskStatus;
 
@@ -32,13 +33,36 @@ export default function MyTasks() {
   const [filter, setFilter] = useState<TaskFilter>("all");
   const { data: tasks = [], isLoading } = useGetTasks({ query: { refetchInterval: 15000 } });
   const updateTaskStatus = useUpdateTaskStatus();
+  const { toast } = useToast();
 
   const filteredTasks = tasks.filter((task) => (filter === "all" ? true : task.status === filter));
 
   const updateStatus = (task: Task, status: TaskStatus) => {
     const id = task._id || task.id;
     if (!id) return;
-    updateTaskStatus.mutate({ id, status });
+
+    const payload: { id: string; status: TaskStatus; declineReason?: string; lateReason?: string } = { id, status };
+
+    if (status === "declined") {
+      const reason = window.prompt("Pourquoi cette tâche est en retard / Plus tard ?");
+      if (!reason?.trim()) {
+        toast({ title: "Reason required", description: "You must write the reason before marking this task late.", variant: "destructive" });
+        return;
+      }
+      payload.declineReason = reason.trim();
+    }
+
+    const isLateCompletion = status === "done" && (task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()));
+    if (isLateCompletion) {
+      const reason = window.prompt("Pourquoi cette tâche a été terminée en retard ?");
+      if (!reason?.trim()) {
+        toast({ title: "Reason required", description: "You must write why the task was delayed.", variant: "destructive" });
+        return;
+      }
+      payload.lateReason = reason.trim();
+    }
+
+    updateTaskStatus.mutate(payload);
   };
 
   return (
@@ -114,6 +138,14 @@ function TaskCard({
 }) {
   const meta = statusMeta[task.status] || statusMeta.todo;
   const needsDecision = task.status === "todo" || task.status === "overdue";
+  const [comment, setComment] = useState("");
+  const addComment = useAddTaskComment();
+  const id = task._id || task.id;
+
+  const submitComment = () => {
+    if (!id || !comment.trim()) return;
+    addComment.mutate({ id, message: comment.trim() }, { onSuccess: () => setComment("") });
+  };
 
   return (
     <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -129,6 +161,11 @@ function TaskCard({
       </div>
 
       {task.description && <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-gray-600">{task.description}</p>}
+      {(task.declineReason || task.lateReason) && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          <span className="font-bold">Reason:</span> {task.lateReason || task.declineReason}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2 text-xs text-gray-500">
         {task.startTime && (
@@ -179,6 +216,38 @@ function TaskCard({
           Terminer
         </button>
       )}
+
+      <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
+        <p className="mb-2 text-xs font-bold uppercase text-gray-400">Comments</p>
+        {task.comments?.length ? (
+          <div className="mb-3 space-y-2">
+            {task.comments.slice(-3).map((item, index) => (
+              <div key={item._id || `${item.createdAt}-${index}`} className="rounded-lg bg-white p-2 text-xs text-gray-600">
+                <p className="font-semibold text-gray-950">{getUserName(item.userId as Partial<User>)}</p>
+                <p>{item.message}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mb-3 text-xs text-gray-500">No comments yet.</p>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Add comment"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+          />
+          <button
+            type="button"
+            onClick={submitComment}
+            disabled={addComment.isPending || !comment.trim()}
+            className="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+          >
+            Send
+          </button>
+        </div>
+      </div>
     </article>
   );
 }

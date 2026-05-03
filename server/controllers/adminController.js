@@ -9,7 +9,7 @@ import Task from '../models/Task.js';
 import Presence from '../models/Presence.js';
 import PerformanceLog from '../models/PerformanceLog.js';
 import Recommendation from '../models/Recommendation.js';
-import { ApiResponse } from '../utils/ApiResponse.js';
+import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { normalizeRole } from '../utils/roleNormalization.js';
 import * as mlService from '../services/mlService.js';
@@ -319,13 +319,70 @@ export const optimizeSystemRules = asyncHandler(async (req, res) => {
 export const getAllUsers = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const role = normalizeRoleFilter(req.query.role);
-  const filter = role ? { ...scopeFilter, role } : scopeFilter;
+  const filter = role ? { ...scopeFilter, role } : { ...scopeFilter, role: { $ne: 'admin' } };
 
   const users = await User.find(filter)
     .select('-password -refreshToken')
     .sort({ createdAt: -1 });
 
   res.json(new ApiResponse(200, { users }, 'Users retrieved'));
+});
+
+export const getUserTaskDetails = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } })
+    .select('-password -refreshToken');
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, 'User not found'));
+  }
+
+  const tasks = await Task.find({ ...scopeFilter, assignedTo: user._id })
+    .populate('assignedTo', 'name firstName lastName email role profileType')
+    .populate('createdBy', 'name firstName lastName email role profileType')
+    .populate('completedBy', 'name firstName lastName email role profileType')
+    .populate('comments.userId', 'name firstName lastName email role profileType')
+    .sort({ createdAt: -1 });
+
+  res.json(new ApiResponse(200, { user, tasks }, 'User task details retrieved'));
+});
+
+export const deleteUserAccount = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const user = await User.findOne({ _id: req.params.id, ...scopeFilter }).select('_id role tenantId email');
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, 'User not found'));
+  }
+
+  if (normalizeRole(user.role, 'employee') === 'admin') {
+    throw new ApiError(400, 'Admin account cannot be deleted');
+  }
+
+  const userId = user._id;
+
+  const [tasks, attendance, activityLogs, performanceLogs, mlPredictions, notifications] = await Promise.all([
+    Task.deleteMany({ ...scopeFilter, $or: [{ assignedTo: userId }, { createdBy: userId }, { completedBy: userId }] }),
+    Attendance.deleteMany({ ...scopeFilter, userId }),
+    ActivityLog.deleteMany({ ...scopeFilter, userId }),
+    PerformanceLog.deleteMany({ ...scopeFilter, userId }),
+    MLPrediction.deleteMany({ ...scopeFilter, userId }),
+    Notification.deleteMany({ ...scopeFilter, userId }),
+  ]);
+
+  await user.deleteOne();
+
+  res.json(new ApiResponse(200, {
+    deletedUserId: userId,
+    deleted: {
+      tasks: tasks.deletedCount || 0,
+      attendance: attendance.deletedCount || 0,
+      activityLogs: activityLogs.deletedCount || 0,
+      performanceLogs: performanceLogs.deletedCount || 0,
+      mlPredictions: mlPredictions.deletedCount || 0,
+      notifications: notifications.deletedCount || 0,
+    },
+  }, 'User account deleted'));
 });
 
 export const getAllPresences = asyncHandler(async (req, res) => {
@@ -345,6 +402,7 @@ export const getAllTasks = asyncHandler(async (req, res) => {
   const tasks = await Task.find(scopeFilter)
     .populate('assignedTo', 'name firstName lastName email role profileType')
     .populate('createdBy', 'name firstName lastName email role profileType')
+    .populate('comments.userId', 'name firstName lastName email role profileType')
     .sort({ createdAt: -1 })
     .limit(500);
 
@@ -422,6 +480,8 @@ export const getAIInsights = asyncHandler(async (req, res) => {
 export default {
   getAdminDashboard,
   getAllUsers,
+  getUserTaskDetails,
+  deleteUserAccount,
   getAllPresences,
   getAllTasks,
   getAllTenants,

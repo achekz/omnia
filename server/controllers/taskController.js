@@ -9,6 +9,7 @@ import { emitToRole, emitToUser } from '../config/socket.js';
 import * as notifService from '../services/notifService.js';
 import { isEmployeeLikeRole, normalizeRole } from '../utils/roleNormalization.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
+import { sendAlert } from '../services/emailService.js';
 
 const ASSIGNABLE_ROLES = ['employee', 'stagiaire', 'comptable'];
 const ADMIN_ROLES = ['company_admin', 'cabinet_admin', 'manager', 'admin'];
@@ -24,7 +25,43 @@ async function populateTask(task) {
     { path: 'assignedTo', select: 'name firstName lastName email avatar role profileType' },
     { path: 'createdBy', select: 'name firstName lastName email avatar role profileType' },
     { path: 'completedBy', select: 'name firstName lastName email avatar role profileType' },
+    { path: 'comments.userId', select: 'name firstName lastName email role profileType' },
   ]);
+}
+
+function getTaskDay(task) {
+  const date = task.startTime || task.plannedStartAt || task.dueDate || task.createdAt || new Date();
+  return new Date(date).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+async function sendTaskAssignmentEmail(task, assignedUser) {
+  if (!assignedUser?.email) return;
+
+  try {
+    const taskDay = getTaskDay(task);
+    await sendAlert(
+      assignedUser.email,
+      `New OmniAI task for ${taskDay}`,
+      `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:14px">
+          <h2 style="margin:0 0 12px;color:#111827">New task assigned by admin</h2>
+          <p style="margin:0 0 16px;color:#4b5563">You have a new task scheduled for <strong>${taskDay}</strong>.</p>
+          <div style="background:#f9fafb;border-radius:12px;padding:16px">
+            <p style="margin:0 0 8px;font-weight:700;color:#111827">${task.title}</p>
+            <p style="margin:0;color:#4b5563">${task.description || 'No description provided.'}</p>
+          </div>
+          <p style="margin:16px 0 0;color:#6b7280">Open OmniAI to confirm, complete, or comment on this task.</p>
+        </div>
+      `,
+    );
+  } catch (error) {
+    console.error('[Task Email] Failed to send task assignment email:', error.message);
+  }
 }
 
 // GET /api/tasks
@@ -48,6 +85,7 @@ export const getTasks = asyncHandler(async (req, res) => {
       .populate('assignedTo', 'name firstName lastName email avatar role profileType')
       .populate('createdBy', 'name firstName lastName email avatar role profileType')
       .populate('completedBy', 'name firstName lastName email avatar role profileType')
+      .populate('comments.userId', 'name firstName lastName email role profileType')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -101,7 +139,7 @@ export const createTask = asyncHandler(async (req, res) => {
     const assignedUserFilter = { _id: assignedTo, role: { $in: ASSIGNABLE_ROLES } };
     if (req.tenantId) assignedUserFilter.tenantId = req.tenantId;
 
-    const assignedUser = await User.findOne(assignedUserFilter).select('_id');
+    const assignedUser = await User.findOne(assignedUserFilter).select('_id email name firstName lastName');
     if (!assignedUser) {
       throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
     }
@@ -127,11 +165,12 @@ export const createTask = asyncHandler(async (req, res) => {
     await notifService.create(task.assignedTo._id, req.tenantId, {
       type: 'info',
       title: 'New task assigned',
-      message: `A new task "${task.title}" was assigned to you. Confirm it or choose Plus tard.`,
+      message: `A new task "${task.title}" was assigned to you for ${getTaskDay(task)}. Confirm it or choose Plus tard.`,
       source: 'user',
       actionUrl: '/tasks',
-      metadata: { taskId: task._id.toString(), taskTitle: task.title, taskStatus: 'todo', actionRequired: true },
+      metadata: { taskId: task._id.toString(), taskTitle: task.title, taskStatus: 'todo', taskDay: getTaskDay(task), actionRequired: true },
     });
+    void sendTaskAssignmentEmail(task, task.assignedTo);
   }
 
   emitToRole('admin', 'task_created', { task });
@@ -169,7 +208,16 @@ export const updateTask = asyncHandler(async (req, res) => {
     'plannedStartAt',
     'endTime',
     'actualMinutes',
+    'lateReason',
   ];
+  if (req.body.assignedTo !== undefined) {
+    const assignedUserFilter = { _id: req.body.assignedTo, role: { $in: ASSIGNABLE_ROLES } };
+    if (req.tenantId) assignedUserFilter.tenantId = req.tenantId;
+    const assignedUser = await User.findOne(assignedUserFilter).select('_id email name firstName lastName');
+    if (!assignedUser) {
+      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+    }
+  }
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
   await populateTask(task);
@@ -177,6 +225,14 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
+    await notifService.create(task.assignedTo._id, req.tenantId, {
+      type: 'info',
+      title: 'Task updated',
+      message: `"${task.title}" was updated by admin.`,
+      source: 'user',
+      actionUrl: '/tasks',
+      metadata: { taskId: task._id.toString(), taskStatus: task.status },
+    });
   }
   emitToRole('admin', 'task_updated', { task });
   emitToRole('admin', 'taskUpdated', { task });
@@ -200,7 +256,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 
 // PATCH /api/tasks/:id/status
 export const updateTaskStatus = asyncHandler(async (req, res) => {
-  const { status, declineReason } = req.body;
+  const { status, declineReason, lateReason } = req.body;
   if (!status) throw new ApiError(400, 'status is required');
   if (!TASK_STATUSES.includes(status)) {
     throw new ApiError(400, 'Invalid task status');
@@ -221,6 +277,20 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Assigned users can only confirm, complete, or decline tasks');
   }
 
+  if (status === 'declined' && isAssignedUser && !String(declineReason || '').trim()) {
+    throw new ApiError(400, 'Reason is required when marking a task late or choosing Plus tard');
+  }
+
+  const isLateCompletion = status === 'done' && (
+    task.status === 'overdue' ||
+    task.isDelayed ||
+    (task.dueDate && task.dueDate < new Date())
+  );
+
+  if (isLateCompletion && isAssignedUser && !String(lateReason || '').trim()) {
+    throw new ApiError(400, 'Reason is required when completing a delayed task');
+  }
+
   task.status = status;
   const now = new Date(Date.now());
 
@@ -233,7 +303,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 
   if (status === 'declined') {
     task.declinedAt = now;
-    task.declineReason = String(declineReason || 'Plus tard').trim();
+    task.declineReason = String(declineReason || '').trim();
     task.completedAt = undefined;
     task.actualFinishedAt = undefined;
   }
@@ -245,6 +315,9 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     task.completedAt = finishedAt;
     task.actualFinishedAt = finishedAt;
     task.completedBy = req.user._id;
+    if (String(lateReason || '').trim()) {
+      task.lateReason = String(lateReason).trim();
+    }
     if (task.actualStartedAt) {
       task.actualMinutes = Math.max(1, Math.round((finishedAt.getTime() - task.actualStartedAt.getTime()) / 60000));
     }
@@ -342,6 +415,43 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   });
 
   return res.json(new ApiResponse(200, { task }, 'Status updated'));
+});
+
+// POST /api/tasks/:id/comments
+export const addTaskComment = asyncHandler(async (req, res) => {
+  const message = String(req.body?.message || '').trim();
+  if (!message) {
+    throw new ApiError(400, 'Comment is required');
+  }
+
+  const task = await Task.findById(req.params.id);
+  if (!task) throw new ApiError(404, 'Task not found');
+
+  const isAssignedUser = task.assignedTo?.toString() === req.user._id.toString();
+  const isCreator = task.createdBy?.toString() === req.user._id.toString();
+  const isAdmin = normalizeRole(req.user.role) === 'admin';
+
+  if (!isAssignedUser && !isCreator && !isAdmin) {
+    throw new ApiError(403, 'Not authorized to comment on this task');
+  }
+
+  task.comments.push({ userId: req.user._id, message });
+  await task.save();
+  await populateTask(task);
+
+  const targetUserId = isAdmin ? task.assignedTo?._id || task.assignedTo : task.createdBy;
+  if (targetUserId) {
+    await notifService.create(targetUserId, req.tenantId, {
+      type: 'info',
+      title: 'Task comment added',
+      message: `${getDisplayName(req.user)} commented on "${task.title}".`,
+      source: 'user',
+      actionUrl: isAdmin ? '/tasks' : '/admin/tasks',
+      metadata: { taskId: task._id.toString() },
+    });
+  }
+
+  return res.json(new ApiResponse(200, { task }, 'Comment added'));
 });
 
 // PATCH /api/tasks/:id/accept

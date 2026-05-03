@@ -22,6 +22,12 @@ function getDateParts(now = new Date(Date.now())) {
   };
 }
 
+function ensureWorkingDay(now = new Date(Date.now())) {
+  if (now.getDay() === 0) {
+    throw new ApiError(400, "Attendance is disabled on Sunday because it is a rest day");
+  }
+}
+
 function minutesSinceMidnight(date) {
   return date.getHours() * 60 + date.getMinutes();
 }
@@ -148,6 +154,7 @@ export const sendAttendanceCode = asyncHandler(async (req, res) => {
   const { action = "check-in", reason = "" } = req.body;
   const now = new Date(Date.now());
   const { dateKey } = getDateParts(now);
+  ensureWorkingDay(now);
 
   if (!USER_ROLES.includes(String(req.user.role).toLowerCase())) {
     throw new ApiError(403, "Role not allowed to mark attendance");
@@ -198,6 +205,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
   const { action = "check-in", code, reason = "" } = req.body;
   const now = new Date(Date.now());
   const { dayStart, dateKey } = getDateParts(now);
+  ensureWorkingDay(now);
 
   if (!code) {
     throw new ApiError(400, "Verification code is required");

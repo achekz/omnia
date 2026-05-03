@@ -8,24 +8,16 @@ import {
   Gauge,
   Loader2,
   Network,
-  Play,
-  Power,
   Radar,
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
   UserCheck,
   UserX,
   Users,
-  Zap,
 } from "lucide-react";
-import apiClient, {
-  useGetRules,
-  useRunRules,
-  useSaveRule,
-} from "@/lib/api-client";
+import apiClient, { useGetRules } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { cn } from "@/lib/utils";
@@ -116,8 +108,6 @@ const defaultDashboard: AdminDashboardPayload = {
 export default function AdminDashboard() {
   const { toast } = useToast();
   const { data: rules = [] } = useGetRules();
-  const saveRule = useSaveRule();
-  const runRules = useRunRules();
   const [dashboard, setDashboard] = useState<AdminDashboardPayload>(defaultDashboard);
   const [loading, setLoading] = useState(true);
   const [runningAction, setRunningAction] = useState<"behavior" | "anomalies" | "rules" | "risks" | null>(null);
@@ -143,22 +133,6 @@ export default function AdminDashboard() {
   }
 
   const intel = useMemo(() => buildAdminIntel(dashboard, rules), [dashboard, rules]);
-
-  async function toggleRule(rule: Rule) {
-    try {
-      await saveRule.mutateAsync({ ...rule, isActive: rule.isActive === false });
-      toast({
-        title: rule.isActive === false ? "Rule enabled" : "Rule disabled",
-        description: `${rule.name} has been updated.`,
-      });
-    } catch {
-      toast({
-        title: "Rule update failed",
-        description: "Unable to change this automation rule right now.",
-        variant: "destructive",
-      });
-    }
-  }
 
   async function runAdminAction(action: "behavior" | "anomalies" | "rules" | "risks") {
     try {
@@ -236,8 +210,6 @@ export default function AdminDashboard() {
             <SystemInsight intel={intel} rules={rules} />
             <UserOverview intel={intel} dashboard={dashboard} />
           </div>
-
-          <RuleEnginePanel rules={rules} isSaving={saveRule.isPending} isRunning={runRules.isPending || runningAction === "rules"} onToggle={toggleRule} onRun={() => void runAdminAction("rules")} />
         </div>
       </div>
     </ModuleLayout>
@@ -390,91 +362,6 @@ function UserOverview({ dashboard, intel }: { dashboard: AdminDashboardPayload; 
             </a>
           );
         })}
-      </div>
-    </section>
-  );
-}
-
-function RuleEnginePanel({
-  rules,
-  isSaving,
-  isRunning,
-  onToggle,
-  onRun,
-}: {
-  rules: Rule[];
-  isSaving: boolean;
-  isRunning: boolean;
-  onToggle: (rule: Rule) => void;
-  onRun: () => void;
-}) {
-  const activeRules = rules.filter((rule) => rule.isActive !== false);
-  const triggeredAlerts = rules.filter((rule) => rule.lastTriggeredAt || rule.action?.severity === "danger").length;
-
-  return (
-    <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-xl shadow-slate-950/30">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-orange-300">Rule Engine Panel</p>
-          <h2 className="mt-2 text-2xl font-bold text-white">Automation command layer</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            Enable, disable, and inspect the operational impact of automation rules without leaving the admin dashboard.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onRun}
-          disabled={isRunning}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-orange-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-orange-400 disabled:opacity-60"
-        >
-          {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          Run engine
-        </button>
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
-        <RuleMetric label="Active rules" value={activeRules.length} icon={<Zap className="h-4 w-4" />} />
-        <RuleMetric label="Triggered alerts" value={triggeredAlerts} icon={<AlertTriangle className="h-4 w-4" />} alert={triggeredAlerts > 0} />
-        <RuleMetric label="Total rules" value={rules.length} icon={<SlidersHorizontal className="h-4 w-4" />} />
-      </div>
-
-      <div className="mt-5 grid gap-3 xl:grid-cols-2">
-        {rules.map((rule) => (
-          <div key={rule._id || rule.id || rule.name} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-bold text-white">{rule.name}</h3>
-                  <span className={cn("rounded-md px-2 py-1 text-xs font-bold uppercase", rule.isActive === false ? "bg-slate-700 text-slate-300" : "bg-emerald-400/10 text-emerald-200")}>
-                    {rule.isActive === false ? "Disabled" : "Active"}
-                  </span>
-                  <span className="rounded-md bg-cyan-400/10 px-2 py-1 text-xs font-bold uppercase text-cyan-200">{rule.resource}</span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{rule.description || "Automation rule monitoring system behavior."}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => onToggle(rule)}
-                disabled={isSaving}
-                className={cn(
-                  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition",
-                  rule.isActive === false ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20",
-                )}
-                title={rule.isActive === false ? "Enable rule" : "Disable rule"}
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
-              </button>
-            </div>
-            <div className="mt-4 rounded-md border border-slate-800 bg-slate-950 p-3 text-sm text-slate-300">
-              <p>
-                <span className="font-bold text-slate-100">IF</span> {rule.conditions?.[0]?.metric} {rule.conditions?.[0]?.operator} {String(rule.conditions?.[0]?.value)}
-              </p>
-              <p className="mt-1">
-                <span className="font-bold text-slate-100">THEN</span> notify {rule.action?.target} with {rule.action?.severity} impact
-              </p>
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );
@@ -661,16 +548,6 @@ function OverviewStat({ icon, label, value, tone }: { icon: ReactNode; label: st
     <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
       <div className={cn("mb-2 flex h-8 w-8 items-center justify-center rounded-md", tones[tone])}>{icon}</div>
       <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-white">{value}</p>
-    </div>
-  );
-}
-
-function RuleMetric({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
-  return (
-    <div className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
-      <div className={cn("mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md", alert ? "bg-orange-500/10 text-orange-200" : "bg-cyan-500/10 text-cyan-200")}>{icon}</div>
-      <p className="text-sm font-semibold text-slate-400">{label}</p>
       <p className="mt-1 text-2xl font-bold text-white">{value}</p>
     </div>
   );
