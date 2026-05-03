@@ -130,7 +130,7 @@ function deriveEmployeeSignal(args: {
   riskScore: number;
   riskLevel: RiskLevel;
   currentScore?: number;
-  weeklyActivity?: Array<{ value?: number; activeMinutes?: number; studyHours?: number; tasksCompleted?: number }>;
+  weeklyActivity?: Array<{ value?: number; activeMinutes?: number; tasksCompleted?: number }>;
   recommendationTexts: string[];
 }): EmployeeSignal {
   const totalTasks = args.tasks.length || 1;

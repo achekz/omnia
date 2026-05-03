@@ -223,7 +223,6 @@ export interface AnalyticsActivityPoint {
   score?: number;
   tasksCompleted?: number;
   activeMinutes?: number;
-  studyHours?: number;
 }
 
 export interface AnalyticsScore {
@@ -235,7 +234,6 @@ export interface AnalyticsScore {
     score?: number;
     tasksCompleted?: number;
     activeMinutes?: number;
-    studyHours?: number;
   }>;
 }
 
@@ -278,8 +276,7 @@ export type RuleMetric =
   | "task.status"
   | "finance.expensesThisMonth"
   | "finance.balanceThisMonth"
-  | "finance.recordAmount"
-  | "stagiaire.examDueDays";
+  | "finance.recordAmount";
 
 export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "in" | "contains";
 

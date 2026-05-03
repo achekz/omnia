@@ -16,7 +16,6 @@ export const getActivity = asyncHandler(async (req, res) => {
     score: l.score,
     tasksCompleted: l.tasksCompleted,
     activeMinutes: l.activeMinutes,
-    studyHours: l.studyHours,
   }));
 
   return res.json(new ApiResponse(200, { activity: formatted }));
@@ -56,14 +55,13 @@ export const getTeamAnalytics = asyncHandler(async (req, res) => {
 
 // POST /api/analytics/log
 export const logActivity = asyncHandler(async (req, res) => {
-  const { tasksCompleted, activeMinutes, loginEvent, studyHours, budgetSpent } = req.body;
+  const { tasksCompleted, activeMinutes, loginEvent, budgetSpent } = req.body;
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
   const update = { $setOnInsert: { tenantId: req.tenantId } };
   if (tasksCompleted) update.$inc = { ...(update.$inc || {}), tasksCompleted };
   if (activeMinutes) update.$inc = { ...(update.$inc || {}), activeMinutes };
   if (loginEvent) update.$inc = { ...(update.$inc || {}), loginCount: 1 };
-  if (studyHours !== undefined) update.$set = { studyHours };
   if (budgetSpent !== undefined) update.$set = { ...update.$set, budgetSpent };
 
   const log = await ActivityLog.findOneAndUpdate(

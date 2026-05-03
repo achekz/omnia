@@ -91,9 +91,9 @@ const run = async () => {
       profileType: 'employee',
     });
 
-    const student = await User.create({
+    const stagiaire = await User.create({
       name: 'Demo Stagiaire',
-      email: 'student@demo.com',
+      email: 'stagiaire@demo.com',
       password: 'demo123',
       role: 'stagiaire',
       profileType: 'stagiaire',
@@ -131,28 +131,28 @@ const run = async () => {
       });
     }
 
-    // ── SEED TASKS FOR STUDENT ──
+    // ── SEED TASKS FOR STAGIAIRE ──
     await Task.create({
-      title: 'Mathematics Final Exam Prep',
+      title: 'Préparer le rapport de stage',
       status: 'in_progress',
-      priority: 'critical',
-      assignedTo: student._id,
-      createdBy: student._id,
-      tags: ['exam'],
+      priority: 'high',
+      assignedTo: stagiaire._id,
+      createdBy: stagiaire._id,
+      tags: ['stage', 'rapport'],
       dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
     });
 
     for (let i = 0; i < 7; i++) {
       await Task.create({
-        title: `Study session ${i + 1}`,
+        title: `Tâche de stage ${i + 1}`,
         status: 'todo',
-        assignedTo: student._id,
-        createdBy: student._id,
+        assignedTo: stagiaire._id,
+        createdBy: stagiaire._id,
       });
     }
 
     // ── SEED ACTIVITY LOGS ──
-    const users = [companyAdmin, manager, emp1, emp2, emp3, cabinetAdmin, soloEmp, student];
+    const users = [companyAdmin, manager, emp1, emp2, emp3, cabinetAdmin, soloEmp, stagiaire];
     for (const u of users) {
       for (let i = 0; i < 30; i++) {
         const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
@@ -164,17 +164,9 @@ const run = async () => {
           activeMinutes: Math.floor(Math.random() * 180),
           loginCount: 1,
           score: Math.floor(Math.random() * 60) + 30, // 30-90
-          studyHours: u.profileType === 'stagiaire' ? Math.random() * 4 : undefined,
         });
       }
     }
-    // Update student's current month budget to trigger alert
-    const firstOfMonth = new Date(); firstOfMonth.setDate(1); firstOfMonth.setHours(0,0,0,0);
-    await ActivityLog.findOneAndUpdate(
-      { userId: student._id, date: firstOfMonth },
-      { budgetSpent: 420 },
-      { upsert: true }
-    );
 
     // ── SEED FINANCIAL RECORDS (CABINET) ──
     for (let i = 0; i < 30; i++) {

@@ -12,7 +12,7 @@ const createDemoAccounts = async () => {
     console.log('🔄 Creating demo accounts with proper password hashing...\n');
 
     // Clear existing test accounts
-    const testEmails = ['company@demo.com', 'manager@techcorp.com', 'employee@demo.com', 'cabinet@demo.com', 'emp.solo@gmail.com', 'student@demo.com'];
+    const testEmails = ['company@demo.com', 'manager@techcorp.com', 'employee@demo.com', 'cabinet@demo.com', 'emp.solo@gmail.com', 'student@demo.com', 'stagiaire@demo.com'];
     await User.deleteMany({ email: { $in: testEmails } });
     console.log('✅ Cleared old test accounts\n');
 
@@ -106,13 +106,13 @@ const createDemoAccounts = async () => {
 
     await User.create({
       name: 'Demo Stagiaire',
-      email: 'student@demo.com',
+      email: 'stagiaire@demo.com',
       password: 'demo123',
       role: 'stagiaire',
       profileType: 'stagiaire',
       isActive: true,
     });
-    console.log('✅ Created student@demo.com (password: demo123)');
+    console.log('✅ Created stagiaire@demo.com (password: demo123)');
 
     console.log('\n✅ All demo accounts created successfully!');
     console.log('\n📝 Test Credentials:');
@@ -121,7 +121,7 @@ const createDemoAccounts = async () => {
     console.log('─ employee@demo.com / demo123');
     console.log('─ cabinet@demo.com / demo123');
     console.log('─ emp.solo@gmail.com / demo123');
-    console.log('─ student@demo.com / demo123\n');
+    console.log('─ stagiaire@demo.com / demo123\n');
 
     process.exit(0);
   } catch (err) {

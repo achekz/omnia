@@ -26,7 +26,10 @@ async function normalizeModelRoles({ name, model }) {
   let updated = 0;
 
   for (const doc of docs) {
-    const role = normalizeRole(doc.role || doc.profileType, "employee");
+    const rawRole = String(doc.role || doc.profileType || "").trim().toLowerCase();
+    const role = ["student", "etudiant", "étudiant"].includes(rawRole)
+      ? "stagiaire"
+      : normalizeRole(doc.role || doc.profileType, "employee");
     const profileType = normalizeProfileType(doc.profileType || role, role);
 
     if (doc.role !== role || (doc.profileType !== undefined && doc.profileType !== profileType)) {
@@ -45,16 +48,24 @@ async function normalizeModelRoles({ name, model }) {
 async function normalizeRules() {
   const rules = await Rule.find({});
   let updated = 0;
+  let removed = 0;
 
   for (const rule of rules) {
+    const hasAcademicCondition = (rule.conditions || []).some((condition) =>
+      ["stagiaire.examDueDays", "student.examDueDays"].includes(condition.metric),
+    );
+
+    if (rule.resource === "student" || hasAcademicCondition || rule.name === "Exam revision reminder") {
+      await rule.deleteOne();
+      removed += 1;
+      continue;
+    }
+
     const nextResource = rule.resource === "student" ? "stagiaire" : rule.resource;
     const nextRoles = (rule.roles || []).map((role) => normalizeRole(role, role));
     const nextConditions = (rule.conditions || []).map((condition) => {
       const conditionObject = condition.toObject?.() || condition;
-      return {
-        ...conditionObject,
-        metric: condition.metric === "student.examDueDays" ? "stagiaire.examDueDays" : condition.metric,
-      };
+      return { ...conditionObject };
     });
     const changed =
       rule.resource !== nextResource ||
@@ -71,7 +82,7 @@ async function normalizeRules() {
     }
   }
 
-  console.log(`rules: ${updated} automation rule(s) normalized.`);
+  console.log(`rules: ${updated} automation rule(s) normalized, ${removed} academic rule(s) removed.`);
 }
 
 async function migrateRoles() {

@@ -28,7 +28,7 @@ const faqItems: FAQItem[] = [
     category: "Getting Started",
     question: "What are the different profile types?",
     answer:
-      "Student: For academic planning and budget tracking. Employee: For performance tracking and task management. Company: For team management and financial oversight. Cabinet: For professional service providers.",
+      "Stagiaire: For assigned tasks, presence and performance tracking. Employee: For performance tracking and task management. Company: For team management and financial oversight. Cabinet: For professional service providers.",
   },
   {
     category: "Features",

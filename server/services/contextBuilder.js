@@ -48,11 +48,13 @@ export async function getContext(user) {
 
     if (role === "stagiaire") {
       const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
+      const logs = await ActivityLog.find({ userId: user._id }).limit(5).catch(() => []);
 
       return {
         userType: "stagiaire",
         userRole: role,
-        studyTasks: tasks || [],
+        tasks: tasks || [],
+        activity: logs || [],
         timestamp: new Date(),
       };
     }

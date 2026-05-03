@@ -14,7 +14,6 @@ const metricOptions: { value: RuleMetric; label: string }[] = [
   { value: "finance.expensesThisMonth", label: "Monthly expenses" },
   { value: "finance.balanceThisMonth", label: "Monthly balance" },
   { value: "finance.recordAmount", label: "Transaction amount" },
-  { value: "stagiaire.examDueDays", label: "Exam due days" },
 ];
 
 const operatorOptions: { value: RuleOperator; label: string }[] = [
@@ -155,7 +154,7 @@ export default function RuleEnginePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">Automation</p>
             <h1 className="mt-2 text-3xl font-display font-bold text-gray-950">Rule Engine</h1>
             <p className="mt-2 max-w-2xl text-gray-500">
-              Create IF/THEN rules that trigger real-time notifications for task delays, budget alerts, ML risks and exam reminders.
+              Create IF/THEN rules that trigger real-time notifications for task delays, budget alerts and operational risks.
             </p>
           </div>
           <button

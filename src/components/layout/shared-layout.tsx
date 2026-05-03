@@ -57,6 +57,8 @@ export function SharedLayout({ children }: SharedLayoutProps) {
       case "stagiaire":
         return [
           { name: "Dashboard", path: "/stagiaire/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "My Tasks", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
+          { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
       default:
         return [];

@@ -116,7 +116,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-display font-bold text-gray-900 mb-4">Pour tous les profils</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Une interface adaptée à vos besoins spécifiques, que vous soyez un grand groupe ou un étudiant.</p>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Une interface adaptée à vos besoins spécifiques, que vous soyez une entreprise, un collaborateur ou un stagiaire.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

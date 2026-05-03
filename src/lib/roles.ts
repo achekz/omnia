@@ -16,9 +16,6 @@ export const ROLE_ALIASES: Record<string, UserRole> = {
   rh: "employee",
   hr: "employee",
   intern: "stagiaire",
-  student: "stagiaire",
-  etudiant: "stagiaire",
-  étudiant: "stagiaire",
   accountant: "comptable",
   accounting: "comptable",
 };
