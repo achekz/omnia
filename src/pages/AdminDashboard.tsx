@@ -1,10 +1,35 @@
-import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Users } from "lucide-react";
-import apiClient from "@/lib/api-client";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Activity,
+  AlertTriangle,
+  BrainCircuit,
+  CheckCircle2,
+  Eye,
+  Gauge,
+  Loader2,
+  Network,
+  Play,
+  Power,
+  Radar,
+  RefreshCw,
+  ShieldAlert,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  UserCheck,
+  UserX,
+  Users,
+  Zap,
+} from "lucide-react";
+import apiClient, {
+  useGetRules,
+  useRunRules,
+  useSaveRule,
+} from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleLayout } from "@/components/layout/module-layout";
-
-// ================= TYPES =================
+import { cn } from "@/lib/utils";
+import type { Rule } from "@/lib/types";
 
 interface AdminUser {
   _id: string;
@@ -17,50 +42,95 @@ interface AdminUser {
 interface AdminTask {
   _id: string;
   title: string;
-  status: "todo" | "in_progress" | "done" | "overdue";
+  status: "todo" | "in_progress" | "done" | "overdue" | "declined";
   priority: "low" | "medium" | "high" | "critical";
 }
 
 interface AdminStats {
   totalUsers: number;
   activeUsers: number;
+  activeSessions?: number;
   totalTasks: number;
   completedTasks: number;
+  alertsTriggered?: number;
+  anomaliesDetected?: number;
 }
 
 interface AdminDashboardPayload {
   stats: AdminStats;
   users: AdminUser[];
   tasks: AdminTask[];
+  aiMetrics?: {
+    alertsTriggered?: number;
+    anomaliesDetected?: number;
+    riskDistribution?: Record<RiskLevel, number>;
+    riskUsers?: Array<{
+      userId?: string;
+      riskLevel: RiskLevel;
+      riskScore: number;
+    }>;
+  };
 }
 
-// ================= COMPONENT =================
+type RiskLevel = "low" | "medium" | "high";
+type SystemHealth = "Good" | "Warning" | "Critical";
+
+interface RiskUser extends AdminUser {
+  riskLevel: RiskLevel;
+  riskScore: number;
+  signals: string[];
+}
+
+interface AdminIntel {
+  inactiveUsers: AdminUser[];
+  highRiskUsers: RiskUser[];
+  riskUsers: RiskUser[];
+  riskDistribution: Record<RiskLevel, number>;
+  alertsCount: number;
+  activeSessions: number;
+  anomaliesDetected: number;
+  systemHealth: SystemHealth;
+  nextAction: string;
+}
+
+const defaultDashboard: AdminDashboardPayload = {
+  stats: {
+    totalUsers: 0,
+    activeUsers: 0,
+    activeSessions: 0,
+    totalTasks: 0,
+    completedTasks: 0,
+    alertsTriggered: 0,
+    anomaliesDetected: 0,
+  },
+  users: [],
+  tasks: [],
+  aiMetrics: {
+    alertsTriggered: 0,
+    anomaliesDetected: 0,
+    riskDistribution: { low: 0, medium: 0, high: 0 },
+    riskUsers: [],
+  },
+};
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-
-  const [dashboard, setDashboard] = useState<AdminDashboardPayload>({
-    stats: {
-      totalUsers: 0,
-      activeUsers: 0,
-      totalTasks: 0,
-      completedTasks: 0,
-    },
-    users: [],
-    tasks: [],
-  });
-
+  const { data: rules = [] } = useGetRules();
+  const saveRule = useSaveRule();
+  const runRules = useRunRules();
+  const [dashboard, setDashboard] = useState<AdminDashboardPayload>(defaultDashboard);
   const [loading, setLoading] = useState(true);
+  const [runningAction, setRunningAction] = useState<"behavior" | "anomalies" | "rules" | "risks" | null>(null);
 
   useEffect(() => {
-    loadDashboard();
+    void loadDashboard();
   }, []);
 
   async function loadDashboard() {
     try {
       setLoading(true);
       const res = await apiClient.get("/admin/dashboard");
-      setDashboard(res.data.data);
+      setDashboard({ ...defaultDashboard, ...res.data.data });
     } catch {
       toast({
         title: "Error",
@@ -72,11 +142,74 @@ export default function AdminDashboard() {
     }
   }
 
+  const intel = useMemo(() => buildAdminIntel(dashboard, rules), [dashboard, rules]);
+
+  async function toggleRule(rule: Rule) {
+    try {
+      await saveRule.mutateAsync({ ...rule, isActive: rule.isActive === false });
+      toast({
+        title: rule.isActive === false ? "Rule enabled" : "Rule disabled",
+        description: `${rule.name} has been updated.`,
+      });
+    } catch {
+      toast({
+        title: "Rule update failed",
+        description: "Unable to change this automation rule right now.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function runAdminAction(action: "behavior" | "anomalies" | "rules" | "risks") {
+    try {
+      setRunningAction(action);
+      if (action === "behavior") {
+        await loadDashboard();
+        toast({ title: "System behavior refreshed", description: "Dashboard telemetry has been recalculated." });
+      }
+      if (action === "anomalies") {
+        const response = await apiClient.post("/admin/detect-global-anomalies");
+        await loadDashboard();
+        const anomalyScore = response.data?.data?.anomalyScore;
+        toast({
+          title: "Global anomaly detection executed",
+          description: anomalyScore !== undefined ? `Latest anomaly score: ${Number(anomalyScore).toFixed(2)}.` : "ML anomaly signals have been refreshed.",
+        });
+      }
+      if (action === "rules") {
+        const response = await apiClient.post("/admin/optimize-system-rules");
+        await loadDashboard();
+        const result = response.data?.data || {};
+        toast({
+          title: "Rule Engine optimized",
+          description: `${result.rulesEvaluated || 0} rules checked, ${result.triggeredCount || 0} alerts triggered.`,
+        });
+      }
+      if (action === "risks") {
+        const response = await apiClient.post("/admin/monitor-user-risks");
+        await loadDashboard();
+        const result = response.data?.data || {};
+        toast({
+          title: "User risks monitored",
+          description: `${result.usersEvaluated || 0} users evaluated, ${result.highRiskUsers || 0} high-risk users found.`,
+        });
+      }
+    } catch {
+      toast({
+        title: "Action failed",
+        description: "The control action could not be completed right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setRunningAction(null);
+    }
+  }
+
   if (loading) {
     return (
       <ModuleLayout activeItem="dashboard">
-        <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
+          <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       </ModuleLayout>
     );
@@ -84,29 +217,471 @@ export default function AdminDashboard() {
 
   return (
     <ModuleLayout activeItem="dashboard">
-      <div className="p-6 lg:p-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">System overview and operational metrics.</p>
-        </div>
+      <div className="min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5">
+          <AdminHero dashboard={dashboard} intel={intel} />
+          <AdminActions
+            isAnalyzing={runningAction === "behavior"}
+            isDetecting={runningAction === "anomalies"}
+            isOptimizing={runningAction === "rules"}
+            isMonitoring={runningAction === "risks"}
+            onAnalyze={() => void runAdminAction("behavior")}
+            onDetect={() => void runAdminAction("anomalies")}
+            onOptimize={() => void runAdminAction("rules")}
+            onMonitor={() => void runAdminAction("risks")}
+          />
+          <SystemMetrics dashboard={dashboard} intel={intel} />
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Users" value={dashboard.stats.totalUsers} icon={<Users className="h-5 w-5" />} />
-          <StatCard label="Active users" value={dashboard.stats.activeUsers} icon={<Users className="h-5 w-5" />} />
-          <StatCard label="Tasks" value={dashboard.stats.totalTasks} icon={<CheckCircle2 className="h-5 w-5" />} />
-          <StatCard label="Completed" value={dashboard.stats.completedTasks} icon={<CheckCircle2 className="h-5 w-5" />} />
+          <div className="grid gap-5 xl:grid-cols-[1.35fr_0.95fr]">
+            <SystemInsight intel={intel} rules={rules} />
+            <UserOverview intel={intel} dashboard={dashboard} />
+          </div>
+
+          <RuleEnginePanel rules={rules} isSaving={saveRule.isPending} isRunning={runRules.isPending || runningAction === "rules"} onToggle={toggleRule} onRun={() => void runAdminAction("rules")} />
         </div>
       </div>
     </ModuleLayout>
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: number; icon: JSX.Element }) {
+function AdminHero({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
+  const healthTone = {
+    Good: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+    Warning: "border-amber-400/40 bg-amber-400/10 text-amber-200",
+    Critical: "border-rose-400/40 bg-rose-400/10 text-rose-200",
+  }[intel.systemHealth];
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{icon}</div>
-      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
+    <section className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900 shadow-2xl shadow-slate-950/40">
+      <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="border-b border-slate-800 p-5 sm:p-6 lg:border-b-0 lg:border-r">
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cyan-200">
+              <Network className="h-3.5 w-3.5" />
+              OmniAI Admin Control Center
+            </span>
+            <span className={cn("inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-bold uppercase tracking-wide", healthTone)}>
+              <Gauge className="h-3.5 w-3.5" />
+              System {intel.systemHealth}
+            </span>
+          </div>
+          <div className="max-w-3xl">
+            <h1 className="text-3xl font-display font-bold tracking-normal text-white sm:text-4xl">AI System Control Center</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
+              Command users, automation rules, anomaly signals, and platform health from one operational surface.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <HeroSignal icon={<UserCheck className="h-4 w-4" />} label="Active users" value={dashboard.stats.activeUsers} />
+            <HeroSignal icon={<ShieldAlert className="h-4 w-4" />} label="Alerts" value={intel.alertsCount} alert={intel.alertsCount > 0} />
+            <HeroSignal icon={<BrainCircuit className="h-4 w-4" />} label="AI anomalies" value={intel.anomaliesDetected} alert={intel.anomaliesDetected > 2} />
+          </div>
+        </div>
+        <div className="flex flex-col justify-between p-5 sm:p-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Next admin action</p>
+            <div className="mt-3 rounded-md border border-amber-400/30 bg-amber-400/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+                <div>
+                  <p className="font-semibold text-amber-100">{intel.nextAction}</p>
+                  <p className="mt-1 text-sm text-amber-100/70">Generated from user activity, risk distribution, and rule pressure.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+            <MiniSignal label="Users" value={dashboard.stats.totalUsers} />
+            <MiniSignal label="Risk" value={intel.riskDistribution.high + intel.riskDistribution.medium} />
+            <MiniSignal label="Done" value={dashboard.stats.completedTasks} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SystemInsight({ intel, rules }: { intel: AdminIntel; rules: Rule[] }) {
+  const activeRules = rules.filter((rule) => rule.isActive !== false).length;
+  const riskTotal = Math.max(1, intel.riskDistribution.low + intel.riskDistribution.medium + intel.riskDistribution.high);
+
+  return (
+    <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-xl shadow-slate-950/30">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-cyan-300">AI System Insight</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Global AI status: supervised</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            OmniAI is watching task pressure, inactivity, rule triggers, and global anomaly signals across every profile.
+          </p>
+        </div>
+        <div className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+          {activeRules} active rule{activeRules === 1 ? "" : "s"} feeding alerts
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-300">Risk distribution</span>
+            <span className="text-xs font-bold uppercase text-slate-500">{intel.anomaliesDetected} anomalies</span>
+          </div>
+          <RiskBar label="Low" value={intel.riskDistribution.low} total={riskTotal} className="bg-emerald-400" />
+          <RiskBar label="Medium" value={intel.riskDistribution.medium} total={riskTotal} className="bg-amber-400" />
+          <RiskBar label="High" value={intel.riskDistribution.high} total={riskTotal} className="bg-rose-500" />
+        </div>
+
+        <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+          <div className="mb-4 flex items-center gap-2">
+            <BrainCircuit className="h-5 w-5 text-cyan-300" />
+            <h3 className="font-bold text-white">Explanation</h3>
+          </div>
+          <p className="text-sm leading-6 text-slate-400">
+            {intel.highRiskUsers.length
+              ? `${intel.highRiskUsers.map((user) => user.name || user.email).slice(0, 3).join(", ")} require attention because they combine inactivity, high-priority work, or overdue signals.`
+              : "No high-risk users are currently visible. The system trend is stable, with risk concentrated in routine operational monitoring."}
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <InsightChip label="Trend" value={intel.alertsCount > 4 ? "Alert pressure rising" : "Controlled"} tone={intel.alertsCount > 4 ? "amber" : "emerald"} />
+            <InsightChip label="Users at risk" value={intel.riskUsers.length} tone={intel.riskUsers.length ? "amber" : "emerald"} />
+            <InsightChip label="AI confidence" value="88%" tone="cyan" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UserOverview({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
+  return (
+    <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-xl shadow-slate-950/30">
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">User Overview</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Population control</h2>
+        </div>
+        <a href="/admin/users" className="inline-flex items-center gap-2 rounded-md border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800">
+          <Eye className="h-4 w-4" />
+          Details
+        </a>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <OverviewStat icon={<UserCheck className="h-4 w-4" />} label="Active" value={dashboard.stats.activeUsers} tone="emerald" />
+        <OverviewStat icon={<UserX className="h-4 w-4" />} label="Inactive" value={intel.inactiveUsers.length} tone="slate" />
+        <OverviewStat icon={<ShieldAlert className="h-4 w-4" />} label="High risk" value={intel.highRiskUsers.length} tone="rose" />
+      </div>
+      <div className="mt-5 space-y-3">
+        {(intel.riskUsers.length ? intel.riskUsers : dashboard.users.slice(0, 3)).map((user) => {
+          const riskUser = isRiskUser(user) ? user : null;
+
+          return (
+            <a
+              key={user._id || user.email}
+              href="/admin/users"
+              className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-950/60 p-3 transition hover:border-cyan-400/40 hover:bg-slate-900"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-100">{user.name || user.email}</p>
+                <p className="truncate text-xs text-slate-500">{user.role} · {user.email}</p>
+              </div>
+              <span className={cn("ml-3 rounded-md px-2 py-1 text-xs font-bold uppercase", riskUser ? riskTone(riskUser.riskLevel) : "bg-emerald-400/10 text-emerald-200")}>
+                {riskUser ? riskUser.riskLevel : user.isActive ? "active" : "inactive"}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function RuleEnginePanel({
+  rules,
+  isSaving,
+  isRunning,
+  onToggle,
+  onRun,
+}: {
+  rules: Rule[];
+  isSaving: boolean;
+  isRunning: boolean;
+  onToggle: (rule: Rule) => void;
+  onRun: () => void;
+}) {
+  const activeRules = rules.filter((rule) => rule.isActive !== false);
+  const triggeredAlerts = rules.filter((rule) => rule.lastTriggeredAt || rule.action?.severity === "danger").length;
+
+  return (
+    <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-xl shadow-slate-950/30">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-orange-300">Rule Engine Panel</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Automation command layer</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Enable, disable, and inspect the operational impact of automation rules without leaving the admin dashboard.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={isRunning}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-orange-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-orange-400 disabled:opacity-60"
+        >
+          {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          Run engine
+        </button>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <RuleMetric label="Active rules" value={activeRules.length} icon={<Zap className="h-4 w-4" />} />
+        <RuleMetric label="Triggered alerts" value={triggeredAlerts} icon={<AlertTriangle className="h-4 w-4" />} alert={triggeredAlerts > 0} />
+        <RuleMetric label="Total rules" value={rules.length} icon={<SlidersHorizontal className="h-4 w-4" />} />
+      </div>
+
+      <div className="mt-5 grid gap-3 xl:grid-cols-2">
+        {rules.map((rule) => (
+          <div key={rule._id || rule.id || rule.name} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-bold text-white">{rule.name}</h3>
+                  <span className={cn("rounded-md px-2 py-1 text-xs font-bold uppercase", rule.isActive === false ? "bg-slate-700 text-slate-300" : "bg-emerald-400/10 text-emerald-200")}>
+                    {rule.isActive === false ? "Disabled" : "Active"}
+                  </span>
+                  <span className="rounded-md bg-cyan-400/10 px-2 py-1 text-xs font-bold uppercase text-cyan-200">{rule.resource}</span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{rule.description || "Automation rule monitoring system behavior."}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onToggle(rule)}
+                disabled={isSaving}
+                className={cn(
+                  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition",
+                  rule.isActive === false ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20",
+                )}
+                title={rule.isActive === false ? "Enable rule" : "Disable rule"}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="mt-4 rounded-md border border-slate-800 bg-slate-950 p-3 text-sm text-slate-300">
+              <p>
+                <span className="font-bold text-slate-100">IF</span> {rule.conditions?.[0]?.metric} {rule.conditions?.[0]?.operator} {String(rule.conditions?.[0]?.value)}
+              </p>
+              <p className="mt-1">
+                <span className="font-bold text-slate-100">THEN</span> notify {rule.action?.target} with {rule.action?.severity} impact
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AdminActions({
+  isAnalyzing,
+  isDetecting,
+  isOptimizing,
+  isMonitoring,
+  onAnalyze,
+  onDetect,
+  onOptimize,
+  onMonitor,
+}: {
+  isAnalyzing: boolean;
+  isDetecting: boolean;
+  isOptimizing: boolean;
+  isMonitoring: boolean;
+  onAnalyze: () => void;
+  onDetect: () => void;
+  onOptimize: () => void;
+  onMonitor: () => void;
+}) {
+  return (
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <ActionButton icon={<RefreshCw className="h-4 w-4" />} label="Analyze system behavior" busy={isAnalyzing} onClick={onAnalyze} />
+      <ActionButton icon={<Radar className="h-4 w-4" />} label="Detect global anomalies" busy={isDetecting} onClick={onDetect} tone="rose" />
+      <ActionButton icon={<Sparkles className="h-4 w-4" />} label="Optimize system rules" busy={isOptimizing} onClick={onOptimize} tone="orange" />
+      <ActionButton icon={<ShieldCheck className="h-4 w-4" />} label="Monitor user risks" busy={isMonitoring} onClick={onMonitor} tone="cyan" />
+    </section>
+  );
+}
+
+function SystemMetrics({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
+  return (
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <MetricCard icon={<Users className="h-5 w-5" />} label="Total users" value={dashboard.stats.totalUsers} />
+      <MetricCard icon={<Activity className="h-5 w-5" />} label="Active sessions" value={intel.activeSessions} />
+      <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Tasks completed" value={dashboard.stats.completedTasks} />
+      <MetricCard icon={<AlertTriangle className="h-5 w-5" />} label="Alerts triggered" value={intel.alertsCount} alert={intel.alertsCount > 0} />
+    </section>
+  );
+}
+
+function buildAdminIntel(dashboard: AdminDashboardPayload, rules: Rule[]): AdminIntel {
+  const inactiveUsers = dashboard.users.filter((user) => !user.isActive);
+  const metricRiskDistribution = dashboard.aiMetrics?.riskDistribution || { low: 0, medium: 0, high: 0 };
+  const riskDistribution: Record<RiskLevel, number> = {
+    low: metricRiskDistribution.low || 0,
+    medium: metricRiskDistribution.medium || 0,
+    high: metricRiskDistribution.high || 0,
+  };
+  const riskUsers = (dashboard.aiMetrics?.riskUsers || [])
+    .filter((riskUser) => riskUser.riskLevel !== "low")
+    .map((riskUser) => {
+      const matchedUser = dashboard.users.find((user) => user._id === riskUser.userId) || {
+        _id: riskUser.userId || crypto.randomUUID(),
+        name: "Monitored user",
+        email: "risk-monitoring@omniai.local",
+        role: "user",
+        isActive: true,
+      };
+
+      return {
+        ...matchedUser,
+        riskLevel: riskUser.riskLevel,
+        riskScore: Math.round((riskUser.riskScore || 0) * 100),
+        signals: ["Latest ML prediction", `${riskUser.riskLevel} risk`, `Score ${Math.round((riskUser.riskScore || 0) * 100)}%`],
+      };
+    });
+
+  const activeRules = rules.filter((rule) => rule.isActive !== false);
+  const triggeredAlerts = rules.filter((rule) => rule.lastTriggeredAt || rule.action?.severity === "danger").length;
+  const alertsCount = dashboard.stats.alertsTriggered ?? dashboard.aiMetrics?.alertsTriggered ?? triggeredAlerts;
+  const anomaliesDetected = dashboard.stats.anomaliesDetected ?? dashboard.aiMetrics?.anomaliesDetected ?? 0;
+  const systemHealth: SystemHealth = anomaliesDetected >= 8 || riskDistribution.high >= 3 ? "Critical" : anomaliesDetected >= 3 || riskDistribution.medium >= 2 ? "Warning" : "Good";
+  const nextAction =
+    riskDistribution.high > 0
+      ? "Review anomaly alerts"
+      : inactiveUsers.length > 0
+        ? "Check inactive users"
+        : activeRules.length < Math.max(1, rules.length)
+          ? "Update rule configuration"
+          : "Monitor user risks";
+
+  return {
+    inactiveUsers,
+    highRiskUsers: riskUsers.filter((user) => user.riskLevel === "high"),
+    riskUsers,
+    riskDistribution,
+    alertsCount,
+    activeSessions: Math.max(0, dashboard.stats.activeSessions ?? 0),
+    anomaliesDetected,
+    systemHealth,
+    nextAction,
+  };
+}
+
+function ActionButton({ icon, label, busy, onClick, tone = "slate" }: { icon: ReactNode; label: string; busy: boolean; onClick: () => void; tone?: "slate" | "rose" | "orange" | "cyan" }) {
+  const tones = {
+    slate: "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
+    rose: "border-rose-400/30 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20",
+    orange: "border-orange-400/30 bg-orange-500/10 text-orange-100 hover:bg-orange-500/20",
+    cyan: "border-cyan-400/30 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20",
+  };
+
+  return (
+    <button type="button" onClick={onClick} disabled={busy} className={cn("inline-flex items-center justify-center gap-2 rounded-md border px-4 py-3 text-sm font-bold transition disabled:opacity-60", tones[tone])}>
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+      {label}
+    </button>
+  );
+}
+
+function MetricCard({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-md", alert ? "bg-rose-500/10 text-rose-200" : "bg-cyan-500/10 text-cyan-200")}>{icon}</div>
+      <p className="text-sm font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 text-3xl font-bold text-white">{value}</p>
     </div>
   );
+}
+
+function HeroSignal({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
+      <div className={cn("mb-2 flex items-center gap-2 text-xs font-bold uppercase", alert ? "text-orange-300" : "text-slate-400")}>
+        {icon}
+        {label}
+      </div>
+      <p className="text-2xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function MiniSignal({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
+      <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
+      <p className="mt-1 text-xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function RiskBar({ label, value, total, className }: { label: string; value: number; total: number; className: string }) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="mb-2 flex items-center justify-between text-sm">
+        <span className="font-semibold text-slate-300">{label}</span>
+        <span className="text-slate-500">{value}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+        <div className={cn("h-full rounded-full", className)} style={{ width: `${Math.round((value / total) * 100)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function InsightChip({ label, value, tone }: { label: string; value: ReactNode; tone: "emerald" | "amber" | "cyan" }) {
+  const tones = {
+    emerald: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+    amber: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+    cyan: "border-cyan-400/30 bg-cyan-400/10 text-cyan-200",
+  };
+
+  return (
+    <div className={cn("rounded-md border p-3", tones[tone])}>
+      <p className="text-xs font-bold uppercase opacity-70">{label}</p>
+      <p className="mt-1 font-bold">{value}</p>
+    </div>
+  );
+}
+
+function OverviewStat({ icon, label, value, tone }: { icon: ReactNode; label: string; value: number; tone: "emerald" | "slate" | "rose" }) {
+  const tones = {
+    emerald: "bg-emerald-400/10 text-emerald-200",
+    slate: "bg-slate-800 text-slate-300",
+    rose: "bg-rose-500/10 text-rose-200",
+  };
+
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
+      <div className={cn("mb-2 flex h-8 w-8 items-center justify-center rounded-md", tones[tone])}>{icon}</div>
+      <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function RuleMetric({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
+      <div className={cn("mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md", alert ? "bg-orange-500/10 text-orange-200" : "bg-cyan-500/10 text-cyan-200")}>{icon}</div>
+      <p className="text-sm font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function riskTone(level: RiskLevel) {
+  if (level === "high") return "bg-rose-500/10 text-rose-200";
+  if (level === "medium") return "bg-amber-400/10 text-amber-200";
+  return "bg-emerald-400/10 text-emerald-200";
+}
+
+function isRiskUser(user: AdminUser | RiskUser): user is RiskUser {
+  return "riskLevel" in user;
 }

@@ -72,4 +72,25 @@ router.get(
   adminController.getAIInsights
 );
 
+router.post(
+  '/detect-global-anomalies',
+  protect,
+  authorize('ADMIN'),
+  adminController.detectGlobalAnomalies
+);
+
+router.post(
+  '/monitor-user-risks',
+  protect,
+  authorize('ADMIN'),
+  adminController.monitorUserRisks
+);
+
+router.post(
+  '/optimize-system-rules',
+  protect,
+  authorize('ADMIN'),
+  adminController.optimizeSystemRules
+);
+
 export default router;

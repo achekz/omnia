@@ -21,7 +21,6 @@ const filters: { id: NotificationCategory; label: string }[] = [
   { id: "all", label: "All" },
   { id: "ml", label: "ML alerts" },
   { id: "tasks", label: "Tasks" },
-  { id: "finance", label: "Finance" },
 ];
 
 export function getNotificationCategory(notification: Notification): NotificationCategory {
@@ -76,7 +75,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             </button>
           </div>
 
-          <div className="mt-5 grid grid-cols-4 gap-2 rounded-2xl bg-white p-1 shadow-sm">
+          <div className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-white p-1 shadow-sm">
             {filters.map((filter) => (
               <button
                 key={filter.id}

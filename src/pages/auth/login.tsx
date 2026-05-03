@@ -67,6 +67,9 @@ export default function Login() {
         refreshToken: string;
       };
 
+      localStorage.setItem("token", payload.accessToken);
+      localStorage.setItem("refreshToken", payload.refreshToken);
+      localStorage.setItem("user", JSON.stringify(payload.user));
       localStorage.setItem("omni_ai_token", payload.accessToken);
       localStorage.setItem("omni_ai_refreshToken", payload.refreshToken);
       localStorage.setItem("omni_ai_user", JSON.stringify(payload.user));
