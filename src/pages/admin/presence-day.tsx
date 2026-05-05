@@ -16,6 +16,11 @@ function getUser(record: Attendance): Partial<User> {
 }
 
 function statusLabel(status: string) {
+  if (status === "all") return "Tous";
+  if (status === "present") return "Présent";
+  if (status === "absent") return "Absent";
+  if (status === "late") return "En retard";
+  if (status === "very_late") return "Très en retard";
   return status.replace("_", " ");
 }
 
@@ -46,9 +51,9 @@ export default function AdminPresenceDayPage() {
     });
   }, [data.records, search]);
   const chartData = [
-    { label: "Present", value: data.stats.totalPresent, fill: "#059669" },
+    { label: "Présents", value: data.stats.totalPresent, fill: "#059669" },
     { label: "Absent", value: data.stats.totalAbsent, fill: "#dc2626" },
-    { label: "Late", value: data.stats.totalLate, fill: "#f97316" },
+    { label: "Retards", value: data.stats.totalLate, fill: "#f97316" },
   ];
 
   return (
@@ -58,7 +63,7 @@ export default function AdminPresenceDayPage() {
           <div>
             <Link href="/admin/presences" className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100">
               <ArrowLeft className="h-4 w-4" />
-              Calendar
+              Calendrier
             </Link>
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -66,7 +71,7 @@ export default function AdminPresenceDayPage() {
               </div>
               <div>
                 <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">{date}</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Detailed attendance by user, role, and status.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Présences détaillées par utilisateur, rôle et statut.</p>
               </div>
             </div>
           </div>
@@ -77,16 +82,16 @@ export default function AdminPresenceDayPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-              placeholder="Search users or reasons"
+              placeholder="Rechercher un utilisateur ou une raison"
             />
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-4">
-          <Stat icon={<Users className="h-4 w-4" />} label="Present" value={data.stats.totalPresent} tone="emerald" />
+          <Stat icon={<Users className="h-4 w-4" />} label="Présents" value={data.stats.totalPresent} tone="emerald" />
           <Stat icon={<UserX className="h-4 w-4" />} label="Absent" value={data.stats.totalAbsent} tone="rose" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Late" value={data.stats.totalLate} tone="orange" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Avg delay" value={`${data.stats.avgDelay} min`} tone="gray" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="En retard" value={data.stats.totalLate} tone="orange" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Retard moyen" value={`${data.stats.avgDelay} min`} tone="gray" />
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -94,7 +99,7 @@ export default function AdminPresenceDayPage() {
             <div className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-2">
                 {roles.map((option) => (
-                  <FilterButton key={option} active={role === option} label={option} onClick={() => setRole(option)} />
+                  <FilterButton key={option} active={role === option} label={roleLabel(option)} onClick={() => setRole(option)} />
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
@@ -108,18 +113,18 @@ export default function AdminPresenceDayPage() {
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800">
                   <tr>
-                    <th className="px-5 py-4">Name</th>
-                    <th className="px-5 py-4">Role</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4">Check-in</th>
-                    <th className="px-5 py-4">Check-out</th>
-                    <th className="px-5 py-4">Delay</th>
-                    <th className="px-5 py-4">Reason</th>
+                    <th className="px-5 py-4">Nom</th>
+                    <th className="px-5 py-4">Rôle</th>
+                    <th className="px-5 py-4">Statut</th>
+                    <th className="px-5 py-4">Entrée</th>
+                    <th className="px-5 py-4">Sortie</th>
+                    <th className="px-5 py-4">Retard</th>
+                    <th className="px-5 py-4">Raison</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {isLoading ? (
-                    <tr><td className="px-5 py-8 text-center text-gray-500" colSpan={7}>Loading presences...</td></tr>
+                    <tr><td className="px-5 py-8 text-center text-gray-500" colSpan={7}>Chargement des présences...</td></tr>
                   ) : records.length ? (
                     records.map((record) => {
                       const user = getUser(record);
@@ -139,7 +144,7 @@ export default function AdminPresenceDayPage() {
                       );
                     })
                   ) : (
-                    <tr><td className="px-5 py-8 text-center text-gray-500" colSpan={7}>No records match these filters.</td></tr>
+                    <tr><td className="px-5 py-8 text-center text-gray-500" colSpan={7}>Aucun enregistrement ne correspond à ces filtres.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -147,7 +152,7 @@ export default function AdminPresenceDayPage() {
           </div>
 
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <h2 className="text-base font-bold text-gray-950 dark:text-gray-100">Day split</h2>
+            <h2 className="text-base font-bold text-gray-950 dark:text-gray-100">Répartition du jour</h2>
             <div className="mt-4 h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -197,4 +202,11 @@ function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; va
       <p className="mt-1 text-2xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
     </div>
   );
+}
+
+function roleLabel(role: string) {
+  if (role === "all") return "Tous";
+  if (role === "employee") return "Employé";
+  if (role === "comptable") return "Comptable";
+  return "Stagiaire";
 }

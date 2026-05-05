@@ -13,14 +13,14 @@ export default function AdminUsersPage() {
 
   const handleDelete = async (id?: string, label?: string) => {
     if (!id) return;
-    const confirmed = window.confirm(`Delete ${label || "this account"} and all related local/database records?`);
+    const confirmed = window.confirm(`Supprimer ${label || "ce compte"} et tous les enregistrements liés ?`);
     if (!confirmed) return;
 
     try {
       await deleteUser.mutateAsync(id);
-      toast({ title: "Account deleted", description: "The user and related records were removed." });
+      toast({ title: "Compte supprimé", description: "L'utilisateur et les enregistrements liés ont été supprimés." });
     } catch (error: any) {
-      toast({ title: "Delete failed", description: error?.response?.data?.message || "Could not delete this account.", variant: "destructive" });
+      toast({ title: "Suppression échouée", description: error?.response?.data?.message || "Impossible de supprimer ce compte.", variant: "destructive" });
     }
   };
 
@@ -32,8 +32,8 @@ export default function AdminUsersPage() {
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Users</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">All workspace accounts.</p>
+            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Utilisateurs</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Tous les comptes de l'espace de travail.</p>
           </div>
         </div>
 
@@ -41,18 +41,18 @@ export default function AdminUsersPage() {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800">
               <tr>
-                <th className="px-5 py-4">First name</th>
-                <th className="px-5 py-4">Last name</th>
+                <th className="px-5 py-4">Prénom</th>
+                <th className="px-5 py-4">Nom</th>
                 <th className="px-5 py-4">Email</th>
-                <th className="px-5 py-4">Role</th>
-                <th className="px-5 py-4">Created at</th>
+                <th className="px-5 py-4">Rôle</th>
+                <th className="px-5 py-4">Créé le</th>
                 <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {isLoading ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>Loading users...</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>Chargement des utilisateurs...</td>
                 </tr>
               ) : visibleUsers.length ? (
                 visibleUsers.map((user) => (
@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
                           className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-50"
                         >
                           <Eye className="h-4 w-4" />
-                          Details
+                          Détails
                         </button>
                         <button
                           type="button"
@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
                           className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Delete
+                          Supprimer
                         </button>
                       </div>
                     </td>
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
                 ))
               ) : (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>No users found.</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={6}>Aucun utilisateur trouvé.</td>
                 </tr>
               )}
             </tbody>

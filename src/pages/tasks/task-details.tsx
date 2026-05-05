@@ -7,10 +7,10 @@ import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
-  todo: { label: "Pending", tone: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
-  overdue: { label: "Delayed", tone: "bg-red-100 text-red-700", icon: <Clock className="h-4 w-4" /> },
-  in_progress: { label: "In Progress", tone: "bg-orange-100 text-orange-700", icon: <PlayCircle className="h-4 w-4" /> },
-  done: { label: "Completed", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
+  todo: { label: "En attente", tone: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
+  overdue: { label: "En retard", tone: "bg-red-100 text-red-700", icon: <Clock className="h-4 w-4" /> },
+  in_progress: { label: "En cours", tone: "bg-orange-100 text-orange-700", icon: <PlayCircle className="h-4 w-4" /> },
+  done: { label: "Terminée", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
   declined: { label: "Plus tard", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-4 w-4" /> },
 };
 
@@ -43,7 +43,7 @@ export default function TaskDetailsPage() {
     if (!taskId) return;
     reschedule.mutate(
       { id: taskId, status: "in_progress" },
-      { onSuccess: () => toast({ title: "Task rescheduled", description: "The task is now planned for today." }) },
+      { onSuccess: () => toast({ title: "Tâche replanifiée", description: "La tâche est maintenant planifiée pour aujourd'hui." }) },
     );
   };
 
@@ -52,24 +52,24 @@ export default function TaskDetailsPage() {
       <div className="mx-auto max-w-5xl space-y-6 p-6 lg:p-8">
         <Link href="/tasks" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
-          Back to tasks
+          Retour aux tâches
         </Link>
 
         {isLoading ? (
-          <div className="rounded-lg border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">Loading task...</div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">Chargement de la tâche...</div>
         ) : !task ? (
-          <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-10 text-center text-slate-400">Task not found.</div>
+          <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-10 text-center text-slate-400">Tâche introuvable.</div>
         ) : (
           <>
             <section className="rounded-lg border border-slate-800 bg-slate-900 p-6 shadow-xl shadow-slate-950/30">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h1 className="font-display text-3xl font-bold text-white">{task.title}</h1>
-                  <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">{task.description || "No description provided."}</p>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">{task.description || "Aucune description fournie."}</p>
                 </div>
                 <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold", delayed && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
                   {delayed && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
-                  {delayed && task.status !== "done" ? "Delayed" : meta.label}
+                  {delayed && task.status !== "done" ? "En retard" : meta.label}
                 </span>
               </div>
             </section>
@@ -80,7 +80,7 @@ export default function TaskDetailsPage() {
                   <div className="flex gap-3">
                     <Sparkles className="mt-0.5 h-5 w-5" />
                     <div>
-                      <p className="font-bold">AI recommendation</p>
+                      <p className="font-bold">Recommandation IA</p>
                       <p className="mt-1 text-sm">{task.aiRecommendation?.recommendation || "Cette tâche est en retard, replanifier aujourd’hui."}</p>
                     </div>
                   </div>
@@ -98,8 +98,8 @@ export default function TaskDetailsPage() {
             ) : null}
 
             <section className="grid gap-4 md:grid-cols-2">
-              <Info label="Assigned to" value={getUserName(task.assignedTo as Partial<User>)} />
-              <Info label="Created by" value={getUserName(task.createdBy as Partial<User>)} />
+              <Info label="Assignée à" value={getUserName(task.assignedTo as Partial<User>)} />
+              <Info label="Créée par" value={getUserName(task.createdBy as Partial<User>)} />
               <Info label="Date création" value={formatDate(task.createdAt)} />
               <Info label="Date début" value={formatDate(task.startTime || task.plannedStartAt)} />
               <Info label="Date fin" value={formatDate(task.endTime || task.dueDate)} />
@@ -112,7 +112,7 @@ export default function TaskDetailsPage() {
 
             {(task.declineReason || task.lateReason) && (
               <section className="rounded-lg border border-amber-400/30 bg-slate-900 p-5">
-                <p className="text-sm font-bold text-white">Reason</p>
+                <p className="text-sm font-bold text-white">Raison</p>
                 <p className="mt-2 text-sm text-slate-300">{task.lateReason || task.declineReason}</p>
               </section>
             )}

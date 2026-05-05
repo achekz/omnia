@@ -49,7 +49,7 @@ interface AppRoute {
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-      <div className="text-sm font-medium">Loading...</div>
+      <div className="text-sm font-medium">Chargement...</div>
     </div>
   );
 }

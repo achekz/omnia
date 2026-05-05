@@ -28,8 +28,8 @@ function getTaskDurationSeconds(task: Task, now: number) {
 }
 
 function getUserName(user?: Partial<User> | string) {
-  if (!user || typeof user === "string") return "User";
-  return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "User";
+  if (!user || typeof user === "string") return "Utilisateur";
+  return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Utilisateur";
 }
 
 export default function AdminUserTaskDetailsPage() {
@@ -64,9 +64,9 @@ export default function AdminUserTaskDetailsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">
-                {isLoading ? "Loading account..." : getUserName(data.user || undefined)}
+                {isLoading ? "Chargement du compte..." : getUserName(data.user || undefined)}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{data.user?.email || "Task execution details"}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{data.user?.email || "Détails d'exécution des tâches"}</p>
             </div>
           </div>
           <button
@@ -75,19 +75,19 @@ export default function AdminUserTaskDetailsPage() {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to users
+            Retour aux utilisateurs
           </button>
         </div>
 
         <div className="mb-6 grid gap-4 md:grid-cols-4">
-          <SummaryCard label="Total tasks" value={summary.total} />
-          <SummaryCard label="Pending" value={summary.pending} />
-          <SummaryCard label="In progress" value={summary.active} />
-          <SummaryCard label="Done" value={summary.done} />
+          <SummaryCard label="Total des tâches" value={summary.total} />
+          <SummaryCard label="En attente" value={summary.pending} />
+          <SummaryCard label="En cours" value={summary.active} />
+          <SummaryCard label="Terminées" value={summary.done} />
         </div>
 
         {isLoading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-900">Loading tasks...</div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-900">Chargement des tâches...</div>
         ) : data.tasks.length ? (
           <div className="grid gap-4">
             {data.tasks.map((task) => (
@@ -97,7 +97,7 @@ export default function AdminUserTaskDetailsPage() {
         ) : (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:bg-gray-900">
             <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="font-semibold text-gray-950 dark:text-gray-100">No tasks assigned to this account</p>
+            <p className="font-semibold text-gray-950 dark:text-gray-100">Aucune tâche assignée à ce compte</p>
           </div>
         )}
       </div>
@@ -127,9 +127,9 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
     try {
       await addComment.mutateAsync({ id, message: comment });
       setComment("");
-      toast({ title: "Comment added", description: "The task comment was saved." });
+      toast({ title: "Commentaire ajouté", description: "Le commentaire de la tâche a été enregistré." });
     } catch (error: any) {
-      toast({ title: "Comment failed", description: error?.response?.data?.message || "Could not save comment.", variant: "destructive" });
+      toast({ title: "Commentaire échoué", description: error?.response?.data?.message || "Impossible d'enregistrer le commentaire.", variant: "destructive" });
     }
   };
 
@@ -140,7 +140,7 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold text-gray-950 dark:text-gray-100">{task.title}</h2>
             <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold uppercase", task.status === "done" ? "bg-emerald-100 text-emerald-700" : task.status === "in_progress" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700")}>
-              {task.status.replace("_", " ")}
+              {translateTaskStatus(task.status)}
             </span>
           </div>
           {task.description && <p className="mt-2 text-sm leading-6 text-gray-500">{task.description}</p>}
@@ -148,22 +148,22 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
         <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-700">
           <div className="flex items-center gap-2 text-xs font-bold uppercase">
             <Timer className="h-4 w-4" />
-            Worked time
+            Temps travaillé
           </div>
           <p className="mt-1 text-lg font-bold">{duration}</p>
         </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <Info label="Started" value={task.actualStartedAt || task.acceptedAt ? new Date(task.actualStartedAt || task.acceptedAt || "").toLocaleString() : "-"} />
-        <Info label="Finished" value={task.actualFinishedAt || task.completedAt ? new Date(task.actualFinishedAt || task.completedAt || "").toLocaleString() : "-"} />
-        <Info label="Late reason" value={task.lateReason || task.declineReason || "-"} />
+        <Info label="Démarrée" value={task.actualStartedAt || task.acceptedAt ? new Date(task.actualStartedAt || task.acceptedAt || "").toLocaleString() : "-"} />
+        <Info label="Terminée" value={task.actualFinishedAt || task.completedAt ? new Date(task.actualFinishedAt || task.completedAt || "").toLocaleString() : "-"} />
+        <Info label="Raison du retard" value={task.lateReason || task.declineReason || "-"} />
       </div>
 
       <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
         <div className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-950 dark:text-gray-100">
           <MessageSquare className="h-4 w-4" />
-          Comments
+          Commentaires
         </div>
         <div className="space-y-2">
           {task.comments?.length ? (
@@ -175,7 +175,7 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No comments yet.</p>
+            <p className="text-sm text-gray-500">Aucun commentaire pour le moment.</p>
           )}
         </div>
 
@@ -183,11 +183,11 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
           <input
             value={comment}
             onChange={(event) => setComment(event.target.value)}
-            placeholder="Write a comment for this task"
+            placeholder="Écrire un commentaire pour cette tâche"
             className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900"
           />
           <button disabled={addComment.isPending || !comment.trim()} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50">
-            Add comment
+            Ajouter
           </button>
         </form>
       </div>
@@ -205,4 +205,12 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="font-semibold text-gray-900 dark:text-gray-100">{value}</p>
     </div>
   );
+}
+
+function translateTaskStatus(status: Task["status"]) {
+  if (status === "done") return "Terminée";
+  if (status === "in_progress") return "En cours";
+  if (status === "overdue") return "En retard";
+  if (status === "declined") return "Plus tard";
+  return "En attente";
 }

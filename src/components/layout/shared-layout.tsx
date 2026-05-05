@@ -45,20 +45,20 @@ export function SharedLayout({ children }: SharedLayoutProps) {
     switch (normalizeRole(user.profileType || user.role)) {
       case "comptable":
         return [
-          { name: "Dashboard", path: "/comptable/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
+          { name: "Tableau de bord", path: "/comptable/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "Analyses IA", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
       case "employee":
         return [
-          { name: "Dashboard", path: "/dashboard/employee", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { name: "My Tasks", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
-          { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
+          { name: "Tableau de bord", path: "/dashboard/employee", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "Mes tâches", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
+          { name: "Analyses IA", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
       case "stagiaire":
         return [
-          { name: "Dashboard", path: "/stagiaire/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { name: "My Tasks", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
-          { name: "AI Insights", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
+          { name: "Tableau de bord", path: "/stagiaire/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { name: "Mes tâches", path: "/tasks", icon: <CheckSquare className="w-5 h-5" /> },
+          { name: "Analyses IA", path: "/ai", icon: <BrainCircuit className="w-5 h-5" /> },
         ];
       default:
         return [];
@@ -129,7 +129,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
               <Menu className="w-6 h-6" />
             </button>
             <BackButton />
-            <h1 className="font-display text-xl font-bold text-gray-900 hidden sm:block">Welcome back, {user.name.split(" ")[0]} 👋</h1>
+            <h1 className="font-display text-xl font-bold text-gray-900 hidden sm:block">Bon retour, {user.name.split(" ")[0]}</h1>
           </div>
 
           <div className="flex items-center gap-3">

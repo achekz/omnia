@@ -19,9 +19,9 @@ interface NotificationPanelProps {
 }
 
 const filters: { id: NotificationCategory; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "ml", label: "ML alerts" },
-  { id: "tasks", label: "Tasks" },
+  { id: "all", label: "Toutes" },
+  { id: "ml", label: "Alertes ML" },
+  { id: "tasks", label: "Tâches" },
 ];
 
 export function getNotificationCategory(notification: Notification): NotificationCategory {
@@ -81,12 +81,12 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             <div>
               <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
                 <Bell className="h-3.5 w-3.5" />
-                Notification history
+                Historique des notifications
               </div>
-              <h2 className="text-xl font-bold text-slate-950">Alerts center</h2>
-              <p className="text-sm text-slate-500">{unreadCount} unread alert{unreadCount === 1 ? "" : "s"} synced from MongoDB.</p>
+              <h2 className="text-xl font-bold text-slate-950">Centre d'alertes</h2>
+              <p className="text-sm text-slate-500">{unreadCount} alerte{unreadCount > 1 ? "s" : ""} non lue{unreadCount > 1 ? "s" : ""} synchronisée{unreadCount > 1 ? "s" : ""} depuis MongoDB.</p>
             </div>
-            <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700" title="Close">
+            <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700" title="Fermer">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -115,14 +115,14 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               {markAllRead.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
-              Mark all read
+              Tout marquer comme lu
             </button>
             <button
               type="button"
               onClick={() => clearRead.mutate()}
               disabled={clearRead.isPending}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
-              title="Clear read notifications"
+              title="Effacer les notifications lues"
             >
               {clearRead.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             </button>
@@ -134,13 +134,13 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             <NotificationSkeleton />
           ) : isError ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-              Unable to load notifications. Please retry in a moment.
+              Impossible de charger les notifications. Réessayez dans un instant.
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 p-8 text-center">
               <Bell className="mb-3 h-10 w-10 text-slate-300" />
-              <p className="font-semibold text-slate-900">No notifications here</p>
-              <p className="mt-1 text-sm text-slate-500">New ML, task and finance alerts will appear in this history.</p>
+              <p className="font-semibold text-slate-900">Aucune notification ici</p>
+              <p className="mt-1 text-sm text-slate-500">Les nouvelles alertes ML, tâches et finance apparaîtront dans cet historique.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -187,10 +187,10 @@ function NotificationCard({
     !notification.isRead &&
     (notification.metadata?.actionRequired === true || String(notification.title).toLowerCase().includes("assigned"));
   const categoryMeta = {
-    ml: { label: "ML alert", icon: <Bot className="h-4 w-4" />, tone: "bg-violet-50 text-violet-700 border-violet-100" },
-    tasks: { label: "Task", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
+    ml: { label: "Alerte ML", icon: <Bot className="h-4 w-4" />, tone: "bg-violet-50 text-violet-700 border-violet-100" },
+    tasks: { label: "Tâche", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
     finance: { label: "Finance", icon: <Coins className="h-4 w-4" />, tone: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-    all: { label: "System", icon: <Bell className="h-4 w-4" />, tone: "bg-slate-50 text-slate-700 border-slate-100" },
+    all: { label: "Système", icon: <Bell className="h-4 w-4" />, tone: "bg-slate-50 text-slate-700 border-slate-100" },
   }[category];
 
   return (
@@ -246,7 +246,7 @@ function NotificationCard({
           )}
           <div className="mt-3 flex items-center justify-between gap-3">
             <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", notification.isRead ? "bg-slate-100 text-slate-500" : "bg-violet-100 text-violet-700")}>
-              {notification.isRead ? "Read" : "Unread"}
+              {notification.isRead ? "Lu" : "Non lu"}
             </span>
             {!notification.isRead && id && (
               <button
@@ -258,7 +258,7 @@ function NotificationCard({
                 disabled={isUpdating}
                 className="text-xs font-bold text-violet-700 transition hover:text-violet-900 disabled:opacity-50"
               >
-                Mark as read
+                Marquer comme lu
               </button>
             )}
           </div>
@@ -303,8 +303,8 @@ function severityTone(type: Notification["type"]) {
 }
 
 function formatNotificationDate(value?: string) {
-  if (!value) return "Now";
+  if (!value) return "Maintenant";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Now";
-  return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (Number.isNaN(date.getTime())) return "Maintenant";
+  return date.toLocaleString("fr-FR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }

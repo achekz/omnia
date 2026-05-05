@@ -10,19 +10,19 @@ import { useToast } from "@/hooks/use-toast";
 type TaskFilter = "all" | TaskStatus;
 
 const filters: { value: TaskFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "todo", label: "Pending" },
-  { value: "in_progress", label: "In progress" },
-  { value: "overdue", label: "Delayed" },
-  { value: "done", label: "Completed" },
+  { value: "all", label: "Toutes" },
+  { value: "todo", label: "En attente" },
+  { value: "in_progress", label: "En cours" },
+  { value: "overdue", label: "En retard" },
+  { value: "done", label: "Terminées" },
   { value: "declined", label: "Plus tard" },
 ];
 
 const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
-  todo: { label: "Pending", tone: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
-  overdue: { label: "Delayed", tone: "bg-red-100 text-red-700", icon: <Clock className="h-4 w-4" /> },
-  in_progress: { label: "In Progress", tone: "bg-orange-100 text-orange-700", icon: <PlayCircle className="h-4 w-4" /> },
-  done: { label: "Completed", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
+  todo: { label: "En attente", tone: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
+  overdue: { label: "En retard", tone: "bg-red-100 text-red-700", icon: <Clock className="h-4 w-4" /> },
+  in_progress: { label: "En cours", tone: "bg-orange-100 text-orange-700", icon: <PlayCircle className="h-4 w-4" /> },
+  done: { label: "Terminée", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
   declined: { label: "Plus tard", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-4 w-4" /> },
 };
 
@@ -55,7 +55,7 @@ export default function MyTasks() {
     if (status === "declined") {
       const reason = window.prompt("Pourquoi cette tâche est en retard / Plus tard ?");
       if (!reason?.trim()) {
-        toast({ title: "Reason required", description: "You must write the reason before choosing Plus tard.", variant: "destructive" });
+        toast({ title: "Raison obligatoire", description: "Vous devez écrire la raison avant de choisir Plus tard.", variant: "destructive" });
         return;
       }
       payload.declineReason = reason.trim();
@@ -65,7 +65,7 @@ export default function MyTasks() {
     if (isLateCompletion) {
       const reason = window.prompt("Pourquoi cette tâche a été terminée en retard ?");
       if (!reason?.trim()) {
-        toast({ title: "Reason required", description: "You must write why the task was delayed.", variant: "destructive" });
+        toast({ title: "Raison obligatoire", description: "Vous devez expliquer pourquoi la tâche est en retard.", variant: "destructive" });
         return;
       }
       payload.lateReason = reason.trim();
@@ -79,7 +79,7 @@ export default function MyTasks() {
     if (!id) return;
     rescheduleTask.mutate(
       { id, status: "in_progress" },
-      { onSuccess: () => toast({ title: "Task rescheduled", description: "The task is planned for today." }) },
+      { onSuccess: () => toast({ title: "Tâche replanifiée", description: "La tâche est planifiée pour aujourd'hui." }) },
     );
   };
 
@@ -92,8 +92,8 @@ export default function MyTasks() {
               <ListChecks className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="font-display text-3xl font-bold text-gray-100">My Tasks</h2>
-              <p className="text-sm text-gray-400">Only tasks assigned to your account are shown here.</p>
+              <h2 className="font-display text-3xl font-bold text-gray-100">Mes tâches</h2>
+              <p className="text-sm text-gray-400">Seules les tâches assignées à votre compte sont affichées ici.</p>
             </div>
           </div>
 
@@ -118,18 +118,18 @@ export default function MyTasks() {
           <table className="w-full min-w-[1080px] text-left text-sm">
             <thead className="bg-slate-950/70 text-xs font-bold uppercase text-slate-400">
               <tr>
-                <th className="px-5 py-4">Task name</th>
-                <th className="px-5 py-4">Created by</th>
-                <th className="px-5 py-4">Start</th>
-                <th className="px-5 py-4">End</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4">AI recommendation</th>
+                <th className="px-5 py-4">Nom de la tâche</th>
+                <th className="px-5 py-4">Créée par</th>
+                <th className="px-5 py-4">Début</th>
+                <th className="px-5 py-4">Fin</th>
+                <th className="px-5 py-4">Statut</th>
+                <th className="px-5 py-4">Recommandation IA</th>
                 <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {isLoading ? (
-                <tr><td className="px-5 py-8 text-center text-slate-400" colSpan={7}>Loading tasks...</td></tr>
+                <tr><td className="px-5 py-8 text-center text-slate-400" colSpan={7}>Chargement des tâches...</td></tr>
               ) : tasks.length ? (
                 tasks.map((task) => {
                   const id = getTaskId(task);
@@ -140,7 +140,7 @@ export default function MyTasks() {
                     <tr key={id} className="text-slate-200 transition hover:bg-slate-800/50">
                       <td className="px-5 py-4">
                         <Link href={`/tasks/${id}`} className="text-base font-bold text-white hover:text-emerald-300">{task.title}</Link>
-                        <p className="mt-1 line-clamp-1 text-xs text-slate-400">{task.description || "No description"}</p>
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-400">{task.description || "Aucune description"}</p>
                       </td>
                       <td className="px-5 py-4">{getUserName(task.createdBy as Partial<User>)}</td>
                       <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
@@ -148,31 +148,31 @@ export default function MyTasks() {
                       <td className="px-5 py-4">
                         <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", delayed && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
                           {delayed && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
-                          {delayed && task.status !== "done" ? "Delayed" : meta.label}
+                          {delayed && task.status !== "done" ? "En retard" : meta.label}
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         {delayed && task.status !== "done" ? (
                           <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Replanifier aujourd’hui</span>
                         ) : (
-                          <span className="text-xs text-slate-500">No urgent action</span>
+                          <span className="text-xs text-slate-500">Aucune action urgente</span>
                         )}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
                           <Link href={`/tasks/${id}`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">
                             <Eye className="h-4 w-4" />
-                            Details
+                            Détails
                           </Link>
                           {delayed && task.status !== "done" && (
                             <button type="button" onClick={() => rescheduleToday(task)} disabled={rescheduleTask.isPending} className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50">
                               <CalendarClock className="h-4 w-4" />
-                              Today
+                              Aujourd'hui
                             </button>
                           )}
                           {(task.status === "todo" || task.status === "overdue") && (
                             <>
-                              <button type="button" onClick={() => updateStatus(task, "in_progress")} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start</button>
+                              <button type="button" onClick={() => updateStatus(task, "in_progress")} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Démarrer</button>
                               <button type="button" onClick={() => updateStatus(task, "declined")} disabled={updateTaskStatus.isPending} className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
                                 <PauseCircle className="h-4 w-4" />
                                 Plus tard
@@ -180,7 +180,7 @@ export default function MyTasks() {
                             </>
                           )}
                           {task.status === "in_progress" && (
-                            <button type="button" onClick={() => updateStatus(task, "done")} disabled={updateTaskStatus.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Complete</button>
+                            <button type="button" onClick={() => updateStatus(task, "done")} disabled={updateTaskStatus.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Terminer</button>
                           )}
                         </div>
                       </td>
@@ -188,7 +188,7 @@ export default function MyTasks() {
                   );
                 })
               ) : (
-                <tr><td className="px-5 py-10 text-center text-slate-400" colSpan={7}>No tasks found.</td></tr>
+                <tr><td className="px-5 py-10 text-center text-slate-400" colSpan={7}>Aucune tâche trouvée.</td></tr>
               )}
             </tbody>
           </table>

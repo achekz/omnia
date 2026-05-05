@@ -13,15 +13,29 @@ function getUserName(user: Partial<User> | string | undefined) {
 }
 
 const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
-  todo: { label: "Pending", tone: "bg-amber-100 text-amber-700", icon: <Clock className="h-3 w-3" /> },
-  overdue: { label: "Pending late", tone: "bg-rose-100 text-rose-700", icon: <Clock className="h-3 w-3" /> },
-  in_progress: { label: "Confirmed / In progress", tone: "bg-sky-100 text-sky-700", icon: <PlayCircle className="h-3 w-3" /> },
-  done: { label: "Completed", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-3 w-3" /> },
-  declined: { label: "Cancelled", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-3 w-3" /> },
+  todo: { label: "En attente", tone: "bg-amber-100 text-amber-700", icon: <Clock className="h-3 w-3" /> },
+  overdue: { label: "En retard", tone: "bg-rose-100 text-rose-700", icon: <Clock className="h-3 w-3" /> },
+  in_progress: { label: "Confirmée / En cours", tone: "bg-sky-100 text-sky-700", icon: <PlayCircle className="h-3 w-3" /> },
+  done: { label: "Terminée", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-3 w-3" /> },
+  declined: { label: "Annulée", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-3 w-3" /> },
 };
 
 const roleFilters = ["all", "employee", "stagiaire", "comptable"] as const;
 const statusFilters = ["all", "todo", "in_progress", "overdue", "done", "declined"] as const;
+const roleFilterLabels: Record<(typeof roleFilters)[number], string> = {
+  all: "Tous",
+  employee: "Employé",
+  stagiaire: "Stagiaire",
+  comptable: "Comptable",
+};
+const statusFilterLabels: Record<(typeof statusFilters)[number], string> = {
+  all: "Tous",
+  todo: "En attente",
+  in_progress: "En cours",
+  overdue: "En retard",
+  done: "Terminées",
+  declined: "Annulées",
+};
 
 function getTaskId(task: Task) {
   return task._id || task.id || "";
@@ -53,7 +67,7 @@ export default function AdminTasksPage() {
     event.preventDefault();
 
     if (!assignedTo) {
-      toast({ title: "Assigned user required", description: "Choose an employee, stagiaire, or comptable.", variant: "destructive" });
+      toast({ title: "Utilisateur obligatoire", description: "Choisissez un employé, un stagiaire ou un comptable.", variant: "destructive" });
       return;
     }
 
@@ -81,11 +95,11 @@ export default function AdminTasksPage() {
       setEstimatedDuration(60);
       setEditingTaskId("");
       toast({
-        title: editingTaskId ? "Task updated" : "Task assigned",
-        description: editingTaskId ? "The task was updated and the user was notified." : "The user was notified in real time and by email.",
+        title: editingTaskId ? "Tâche mise à jour" : "Tâche assignée",
+        description: editingTaskId ? "La tâche a été mise à jour et l'utilisateur a été notifié." : "L'utilisateur a été notifié en temps réel et par email.",
       });
     } catch (error: any) {
-      toast({ title: "Task creation failed", description: error?.response?.data?.message || "Could not create task.", variant: "destructive" });
+      toast({ title: "Création de tâche échouée", description: error?.response?.data?.message || "Impossible de créer la tâche.", variant: "destructive" });
     }
   };
 
@@ -114,7 +128,7 @@ export default function AdminTasksPage() {
     if (!id) return;
     rescheduleTask.mutate(
       { id, status: "in_progress" },
-      { onSuccess: () => toast({ title: "Task rescheduled", description: "The task was moved to today." }) },
+      { onSuccess: () => toast({ title: "Tâche replanifiée", description: "La tâche a été déplacée à aujourd'hui." }) },
     );
   };
 
@@ -126,20 +140,20 @@ export default function AdminTasksPage() {
             <ClipboardList className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Task Management</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Assign tasks and track start, finish, and delay.</p>
+            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Gestion des tâches</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Assignez les tâches et suivez le début, la fin et les retards.</p>
           </div>
         </div>
 
         <form onSubmit={submit} className="mb-6 grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-5">
           {editingTaskId && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 lg:col-span-5">
-              Editing task. Save changes or cancel to create a new task.
+              Modification d'une tâche. Enregistrez les changements ou annulez pour créer une nouvelle tâche.
             </div>
           )}
-          <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={3} placeholder="Title" className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-2" />
+          <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={3} placeholder="Titre" className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-2" />
           <select value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)} required className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900">
-            <option value="">Assign to</option>
+            <option value="">Assigner à</option>
             {assignableUsers.map((user) => (
               <option key={user._id || user.id} value={user._id || user.id}>
                 {user.name} ({user.role})
@@ -151,11 +165,11 @@ export default function AdminTasksPage() {
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" className="min-h-20 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 lg:col-span-4" />
           <button disabled={createTask.isPending || updateTask.isPending} className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50">
             {editingTaskId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {editingTaskId ? "Save" : "Create"}
+            {editingTaskId ? "Enregistrer" : "Créer"}
           </button>
           {editingTaskId && (
             <button type="button" onClick={cancelEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 lg:col-start-5">
-              Cancel edit
+              Annuler
             </button>
           )}
         </form>
@@ -169,7 +183,7 @@ export default function AdminTasksPage() {
                 onClick={() => setRoleFilter(role)}
                 className={cn("rounded-md border px-3 py-2 text-xs font-bold capitalize", roleFilter === role ? "border-gray-950 bg-gray-950 text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50")}
               >
-                {role}
+                {roleFilterLabels[role]}
               </button>
             ))}
           </div>
@@ -181,7 +195,7 @@ export default function AdminTasksPage() {
                 onClick={() => setStatusFilter(status)}
                 className={cn("rounded-md border px-3 py-2 text-xs font-bold capitalize", statusFilter === status ? "border-violet-700 bg-violet-700 text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50")}
               >
-                {status.replace("_", " ")}
+                {statusFilterLabels[status]}
               </button>
             ))}
           </div>
@@ -191,21 +205,21 @@ export default function AdminTasksPage() {
           <table className="w-full min-w-[1120px] text-left text-sm">
             <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800">
               <tr>
-                <th className="px-5 py-4">Task</th>
-                <th className="px-5 py-4">Assigned to</th>
-                <th className="px-5 py-4">Start time</th>
-                <th className="px-5 py-4">Estimated</th>
-                <th className="px-5 py-4">Started</th>
-                <th className="px-5 py-4">Finished</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4">Result</th>
+                <th className="px-5 py-4">Tâche</th>
+                <th className="px-5 py-4">Assignée à</th>
+                <th className="px-5 py-4">Début prévu</th>
+                <th className="px-5 py-4">Durée estimée</th>
+                <th className="px-5 py-4">Démarrée</th>
+                <th className="px-5 py-4">Terminée</th>
+                <th className="px-5 py-4">Statut</th>
+                <th className="px-5 py-4">Résultat</th>
                 <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {isLoading ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>Loading tasks...</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>Chargement des tâches...</td>
                 </tr>
               ) : tasks.length ? (
                 tasks.map((task) => {
@@ -230,7 +244,7 @@ export default function AdminTasksPage() {
                       <td className="px-5 py-4">
                         <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", isDelayed(task) && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
                           {isDelayed(task) && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
-                          {isDelayed(task) && task.status !== "done" ? "Delayed" : meta.label}
+                          {isDelayed(task) && task.status !== "done" ? "En retard" : meta.label}
                         </span>
                       </td>
                       <td className="px-5 py-4">
@@ -242,7 +256,7 @@ export default function AdminTasksPage() {
                         ) : (
                           <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", task.isDelayed ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>
                             <Clock className="h-3 w-3" />
-                            {task.isDelayed ? "Delayed" : "On track"}
+                            {task.isDelayed ? "En retard" : "Dans les délais"}
                           </span>
                         )}
                       </td>
@@ -253,7 +267,7 @@ export default function AdminTasksPage() {
                             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 transition hover:bg-gray-50"
                           >
                             <Eye className="h-4 w-4" />
-                            Details
+                            Détails
                           </Link>
                           {isDelayed(task) && task.status !== "done" && (
                             <button
@@ -263,7 +277,7 @@ export default function AdminTasksPage() {
                               className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
                             >
                               <CalendarClock className="h-4 w-4" />
-                              Today
+                              Aujourd'hui
                             </button>
                           )}
                           <button
@@ -272,7 +286,7 @@ export default function AdminTasksPage() {
                             className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-xs font-bold text-violet-600 transition hover:bg-violet-50"
                           >
                             <Pencil className="h-4 w-4" />
-                            Edit
+                            Modifier
                           </button>
                         </div>
                       </td>
@@ -281,7 +295,7 @@ export default function AdminTasksPage() {
                 })
               ) : (
                 <tr>
-                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>No tasks found.</td>
+                  <td className="px-5 py-8 text-center text-gray-500" colSpan={9}>Aucune tâche trouvée.</td>
                 </tr>
               )}
             </tbody>
