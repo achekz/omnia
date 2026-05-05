@@ -22,6 +22,7 @@ import AIDashboard from "./pages/ai";
 import InsightOverviewPage from "./pages/insights/overview";
 import PresencePage from "./pages/presence";
 import MyTasksPage from "./pages/tasks/my-tasks";
+import TaskDetailsPage from "./pages/tasks/task-details";
 import SettingsPage from "./pages/settings";
 import BudgetPage from "./pages/budget/budget";
 import NotificationsPage from "./pages/notifications";
@@ -142,8 +143,8 @@ const routes: AppRoute[] = [
   { path: "/insights", component: InsightOverviewPage, protected: true, roles: ["admin", "comptable", "employee", "stagiaire"] },
   { path: "/ai-insights", component: InsightOverviewPage, protected: true, roles: ["admin", "comptable", "employee", "stagiaire"] },
   { path: "/presence", component: PresencePage, protected: true },
+  { path: "/tasks/:id", component: TaskDetailsPage, protected: true },
   { path: "/tasks", component: MyTasksPage, protected: true },
-  { path: "/tasks/:id", component: MyTasksPage, protected: true },
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/profile", component: SettingsPage, protected: true },
   { path: "/finance", component: BudgetPage, protected: true },

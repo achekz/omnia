@@ -40,6 +40,42 @@ function getTaskDay(task) {
   });
 }
 
+function userCanAccessTask(task, user) {
+  const normalizedRole = normalizeRole(user.role, user.role);
+  const isAdmin = ADMIN_ROLES.includes(normalizedRole);
+  const userId = user._id.toString();
+
+  return (
+    isAdmin ||
+    task.assignedTo?.toString?.() === userId ||
+    task.assignedTo?._id?.toString?.() === userId ||
+    task.createdBy?.toString?.() === userId ||
+    task.createdBy?._id?.toString?.() === userId
+  );
+}
+
+function buildTaskAiRecommendation(task) {
+  const isLate =
+    task.status === 'overdue' ||
+    task.isDelayed ||
+    (task.dueDate && task.dueDate < new Date()) ||
+    Number(task.delayDays || 0) > 0;
+
+  if (!isLate || task.status === 'done') {
+    return {
+      shouldRescheduleToday: false,
+      recommendation: 'No urgent reschedule needed. Continue current execution plan.',
+      priority: 'low',
+    };
+  }
+
+  return {
+    shouldRescheduleToday: true,
+    recommendation: 'Cette tâche est en retard, replanifier aujourd’hui.',
+    priority: task.status === 'overdue' || Number(task.delayDays || 0) >= 2 ? 'high' : 'medium',
+  };
+}
+
 async function sendTaskAssignmentEmail(task, assignedUser) {
   if (!assignedUser?.email) return;
 
@@ -81,7 +117,7 @@ async function evaluateTaskRules(task, req, trigger = 'task') {
 
 // GET /api/tasks
 export const getTasks = asyncHandler(async (req, res) => {
-  const { status, priority, assignedTo, page = 1, limit = 20 } = req.query;
+  const { status, priority, assignedTo, userId, role, page = 1, limit = 20 } = req.query;
   const filter = {};
 
   if (req.tenantId) filter.tenantId = req.tenantId;
@@ -90,8 +126,19 @@ export const getTasks = asyncHandler(async (req, res) => {
   }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
-  if (assignedTo && !isEmployeeLikeRole(req.user.role)) {
-    filter.assignedTo = assignedTo;
+  if ((assignedTo || userId) && !isEmployeeLikeRole(req.user.role)) {
+    filter.assignedTo = assignedTo || userId;
+  }
+  if (role && !isEmployeeLikeRole(req.user.role)) {
+    const normalizedRoleFilter = normalizeRole(role, role);
+    const usersWithRole = await User.find({
+      ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+      role: normalizedRoleFilter,
+    }).select('_id');
+    filter.$or = [
+      { assignedRole: normalizedRoleFilter },
+      { assignedTo: { $in: usersWithRole.map((user) => user._id) } },
+    ];
   }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -108,6 +155,25 @@ export const getTasks = asyncHandler(async (req, res) => {
   ]);
 
   return res.json(new ApiResponse(200, { tasks, total, page: parseInt(page), limit: parseInt(limit) }));
+});
+
+// GET /api/tasks/:id
+export const getTaskById = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id)
+    .populate('assignedTo', 'name firstName lastName email avatar role profileType')
+    .populate('createdBy', 'name firstName lastName email avatar role profileType')
+    .populate('completedBy', 'name firstName lastName email avatar role profileType')
+    .populate('comments.userId', 'name firstName lastName email role profileType');
+
+  if (!task) throw new ApiError(404, 'Task not found');
+  if (req.tenantId && task.tenantId?.toString?.() !== req.tenantId.toString()) {
+    throw new ApiError(404, 'Task not found');
+  }
+  if (!userCanAccessTask(task, req.user)) {
+    throw new ApiError(403, 'Not authorized to view this task');
+  }
+
+  return res.json(new ApiResponse(200, { task: { ...task.toObject(), aiRecommendation: buildTaskAiRecommendation(task) } }));
 });
 
 // POST /api/tasks
@@ -146,6 +212,7 @@ export const createTask = asyncHandler(async (req, res) => {
 
   if (isEmployeeLikeRole(req.user.role)) {
     taskData.assignedTo = req.user._id;
+    taskData.assignedRole = normalizeRole(req.user.role, 'employee');
   } else {
     if (!assignedTo) {
       throw new ApiError(400, 'Assigned user is required');
@@ -161,6 +228,7 @@ export const createTask = asyncHandler(async (req, res) => {
   }
 
     taskData.assignedTo = assignedUser._id;
+    taskData.assignedRole = normalizedAssignedRole;
   }
 
   const task = await Task.create(taskData);
@@ -238,6 +306,7 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (!ASSIGNABLE_ROLES.includes(normalizedAssignedRole)) {
     throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
   }
+  task.assignedRole = normalizedAssignedRole;
 }
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
@@ -440,6 +509,79 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   });
 
   return res.json(new ApiResponse(200, { task }, 'Status updated'));
+});
+
+// PUT /api/tasks/:id/reschedule
+export const rescheduleTaskToday = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) throw new ApiError(404, 'Task not found');
+
+  if (req.tenantId && task.tenantId?.toString?.() !== req.tenantId.toString()) {
+    throw new ApiError(404, 'Task not found');
+  }
+
+  const isAssignedUser = task.assignedTo?.toString() === req.user._id.toString();
+  const isCreator = task.createdBy?.toString() === req.user._id.toString();
+  const isAdmin = ADMIN_ROLES.includes(normalizeRole(req.user.role, req.user.role));
+  if (!isAssignedUser && !isCreator && !isAdmin) {
+    throw new ApiError(403, 'Not authorized to reschedule this task');
+  }
+
+  const now = new Date();
+  const plannedStartAt = req.body?.startTime ? new Date(req.body.startTime) : now;
+  const duration = Number(task.estimatedMinutes || task.estimatedDurationMinutes || req.body?.estimatedMinutes || 60) || 60;
+  const dueDate = new Date(plannedStartAt.getTime() + duration * 60 * 1000);
+
+  task.plannedStartAt = plannedStartAt;
+  task.startTime = plannedStartAt;
+  task.dueDate = dueDate;
+  task.endTime = dueDate;
+  task.status = req.body?.status === 'todo' ? 'todo' : 'in_progress';
+  task.acceptedAt = task.acceptedAt || now;
+  task.actualStartedAt = task.actualStartedAt || (task.status === 'in_progress' ? now : undefined);
+  task.declinedAt = undefined;
+  task.declineReason = undefined;
+  task.delayDays = 0;
+  task.isDelayed = false;
+  task.lateReason = String(req.body?.reason || 'AI suggested reschedule for today').trim();
+
+  await task.save();
+  await populateTask(task);
+
+  const aiRecommendation = buildTaskAiRecommendation(task);
+
+  if (task.assignedTo?._id) {
+    emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
+    emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
+    await notifService.create(task.assignedTo._id, req.tenantId, {
+      type: 'info',
+      title: 'Task rescheduled',
+      message: `"${task.title}" was rescheduled for today.`,
+      source: 'ai_rules',
+      actionUrl: `/tasks/${task._id}`,
+      metadata: { taskId: task._id.toString(), taskStatus: task.status, aiRecommendation },
+    });
+  }
+
+  emitToRole('admin', 'task_updated', { task });
+  emitToRole('admin', 'taskUpdated', { task });
+
+  await evaluateTaskRules(task, req, 'task');
+
+  await MLPrediction.create({
+    userId: task.assignedTo?._id || task.assignedTo || req.user._id,
+    tenantId: req.tenantId,
+    modelType: 'recommendation',
+    input: {
+      trigger: 'task-reschedule-today',
+      taskId: task._id.toString(),
+      previousLateSignal: true,
+    },
+    output: aiRecommendation,
+    recommendations: [aiRecommendation.recommendation],
+  });
+
+  return res.json(new ApiResponse(200, { task: { ...task.toObject(), aiRecommendation } }, 'Task rescheduled for today'));
 });
 
 // POST /api/tasks/:id/comments

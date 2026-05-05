@@ -86,6 +86,8 @@ export interface Task {
   priority?: TaskPriority;
   dueDate?: string;
   assignedTo?: Partial<User> | string;
+  assignedToId?: string | null;
+  assignedRole?: UserRole;
   createdBy?: Partial<User> | string;
   tags?: string[];
   estimatedMinutes?: number;
@@ -105,6 +107,11 @@ export interface Task {
   completedBy?: Partial<User> | string;
   completedAt?: string;
   isDelayed?: boolean;
+  aiRecommendation?: {
+    shouldRescheduleToday: boolean;
+    recommendation: string;
+    priority: "low" | "medium" | "high";
+  };
   comments?: Array<{
     _id?: string;
     userId?: Partial<User> | string;
@@ -387,6 +394,14 @@ export interface QueryHookOptions {
     enabled?: boolean;
     refetchInterval?: number;
   };
+}
+
+export interface TaskQueryParams {
+  status?: TaskStatus | "all";
+  role?: UserRole | "all";
+  userId?: string;
+  assignedTo?: string;
+  limit?: number;
 }
 
 export interface UpdateTaskInput {

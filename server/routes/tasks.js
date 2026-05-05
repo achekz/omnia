@@ -4,8 +4,10 @@ import {
   addTaskComment,
   createTask,
   deleteTask,
+  getTaskById,
   getTaskStats,
   getTasks,
+  rescheduleTaskToday,
   sendTaskLater,
   updateTask,
   updateTaskStatus,
@@ -74,6 +76,9 @@ router.get('/', getTasks);
 router.patch('/:id/accept', acceptTask);
 
 router.patch('/:id/later', sendTaskLater);
+
+router.get('/:id', getTaskById);
+router.put('/:id/reschedule', rescheduleTaskToday);
 
 /**
  * @swagger

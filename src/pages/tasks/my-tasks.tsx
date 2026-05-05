@@ -1,27 +1,29 @@
-import { CheckCircle2, Clock, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";
+import { useState } from "react";
+import { Link } from "wouter";
+import { CalendarClock, CheckCircle2, Clock, Eye, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useAddTaskComment, useGetTasks, useUpdateTaskStatus } from "@/lib/api-client";
+import { useGetTasks, useRescheduleTaskToday, useUpdateTaskStatus } from "@/lib/api-client";
 import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type TaskFilter = "all" | TaskStatus;
 
 const filters: { value: TaskFilter; label: string }[] = [
   { value: "all", label: "All" },
-  { value: "todo", label: "New" },
+  { value: "todo", label: "Pending" },
   { value: "in_progress", label: "In progress" },
-  { value: "done", label: "Done" },
-  { value: "declined", label: "Cancelled" },
+  { value: "overdue", label: "Delayed" },
+  { value: "done", label: "Completed" },
+  { value: "declined", label: "Plus tard" },
 ];
 
 const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.Element }> = {
-  todo: { label: "Waiting confirmation", tone: "bg-amber-50 text-amber-700 border-amber-100", icon: <Clock className="h-4 w-4" /> },
-  overdue: { label: "Waiting confirmation", tone: "bg-rose-50 text-rose-700 border-rose-100", icon: <Clock className="h-4 w-4" /> },
-  in_progress: { label: "In progress", tone: "bg-sky-50 text-sky-700 border-sky-100", icon: <PlayCircle className="h-4 w-4" /> },
-  done: { label: "Completed", tone: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: <CheckCircle2 className="h-4 w-4" /> },
-  declined: { label: "Cancelled", tone: "bg-rose-50 text-rose-700 border-rose-100", icon: <XCircle className="h-4 w-4" /> },
+  todo: { label: "Pending", tone: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
+  overdue: { label: "Delayed", tone: "bg-red-100 text-red-700", icon: <Clock className="h-4 w-4" /> },
+  in_progress: { label: "In Progress", tone: "bg-orange-100 text-orange-700", icon: <PlayCircle className="h-4 w-4" /> },
+  done: { label: "Completed", tone: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
+  declined: { label: "Plus tard", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-4 w-4" /> },
 };
 
 function getUserName(user: Partial<User> | string | undefined) {
@@ -29,16 +31,23 @@ function getUserName(user: Partial<User> | string | undefined) {
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Admin";
 }
 
+function getTaskId(task: Task) {
+  return task._id || task.id || "";
+}
+
+function isDelayed(task: Task) {
+  return task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()) || (task.delayDays || 0) > 0;
+}
+
 export default function MyTasks() {
   const [filter, setFilter] = useState<TaskFilter>("all");
-  const { data: tasks = [], isLoading } = useGetTasks({ query: { refetchInterval: 15000 } });
+  const { data: tasks = [], isLoading } = useGetTasks({ params: { status: filter, limit: 100 }, query: { refetchInterval: 15000 } });
   const updateTaskStatus = useUpdateTaskStatus();
+  const rescheduleTask = useRescheduleTaskToday();
   const { toast } = useToast();
 
-  const filteredTasks = tasks.filter((task) => (filter === "all" ? true : task.status === filter));
-
   const updateStatus = (task: Task, status: TaskStatus) => {
-    const id = task._id || task.id;
+    const id = getTaskId(task);
     if (!id) return;
 
     const payload: { id: string; status: TaskStatus; declineReason?: string; lateReason?: string } = { id, status };
@@ -46,13 +55,13 @@ export default function MyTasks() {
     if (status === "declined") {
       const reason = window.prompt("Pourquoi cette tâche est en retard / Plus tard ?");
       if (!reason?.trim()) {
-        toast({ title: "Reason required", description: "You must write the reason before marking this task late.", variant: "destructive" });
+        toast({ title: "Reason required", description: "You must write the reason before choosing Plus tard.", variant: "destructive" });
         return;
       }
       payload.declineReason = reason.trim();
     }
 
-    const isLateCompletion = status === "done" && (task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()));
+    const isLateCompletion = status === "done" && isDelayed(task);
     if (isLateCompletion) {
       const reason = window.prompt("Pourquoi cette tâche a été terminée en retard ?");
       if (!reason?.trim()) {
@@ -65,29 +74,38 @@ export default function MyTasks() {
     updateTaskStatus.mutate(payload);
   };
 
+  const rescheduleToday = (task: Task) => {
+    const id = getTaskId(task);
+    if (!id) return;
+    rescheduleTask.mutate(
+      { id, status: "in_progress" },
+      { onSuccess: () => toast({ title: "Task rescheduled", description: "The task is planned for today." }) },
+    );
+  };
+
   return (
     <ModuleLayout activeItem="tasks">
-      <div className="mx-auto max-w-6xl p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl p-6 lg:p-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <ListChecks className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-3xl font-display font-bold text-gray-950">My Tasks</h2>
-              <p className="text-sm text-gray-500">Confirm, postpone, and finish tasks assigned by admin.</p>
+              <h2 className="font-display text-3xl font-bold text-gray-100">My Tasks</h2>
+              <p className="text-sm text-gray-400">Only tasks assigned to your account are shown here.</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+          <div className="flex flex-wrap gap-2 rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-sm shadow-slate-950/30">
             {filters.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => setFilter(item.value)}
                 className={cn(
-                  "rounded-lg px-3 py-2 text-xs font-bold transition",
-                  filter === item.value ? "bg-gray-950 text-white" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+                  "rounded-md px-3 py-2 text-xs font-bold transition",
+                  filter === item.value ? "bg-white text-slate-950" : "text-slate-300 hover:bg-slate-800 hover:text-white",
                 )}
               >
                 {item.label}
@@ -96,158 +114,86 @@ export default function MyTasks() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500">Loading tasks...</div>
-        ) : filteredTasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
-            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="font-semibold text-gray-950">No tasks found</p>
-            <p className="mt-1 text-sm text-gray-500">New admin assignments will appear here.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task._id || task.id}
-                task={task}
-                isUpdating={updateTaskStatus.isPending}
-                onConfirm={() => updateStatus(task, "in_progress")}
-                onDecline={() => updateStatus(task, "declined")}
-                onComplete={() => updateStatus(task, "done")}
-              />
-            ))}
-          </div>
-        )}
+        <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900 shadow-xl shadow-slate-950/30">
+          <table className="w-full min-w-[1080px] text-left text-sm">
+            <thead className="bg-slate-950/70 text-xs font-bold uppercase text-slate-400">
+              <tr>
+                <th className="px-5 py-4">Task name</th>
+                <th className="px-5 py-4">Created by</th>
+                <th className="px-5 py-4">Start</th>
+                <th className="px-5 py-4">End</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">AI recommendation</th>
+                <th className="px-5 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {isLoading ? (
+                <tr><td className="px-5 py-8 text-center text-slate-400" colSpan={7}>Loading tasks...</td></tr>
+              ) : tasks.length ? (
+                tasks.map((task) => {
+                  const id = getTaskId(task);
+                  const meta = statusMeta[task.status] || statusMeta.todo;
+                  const delayed = isDelayed(task);
+
+                  return (
+                    <tr key={id} className="text-slate-200 transition hover:bg-slate-800/50">
+                      <td className="px-5 py-4">
+                        <Link href={`/tasks/${id}`} className="text-base font-bold text-white hover:text-emerald-300">{task.title}</Link>
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-400">{task.description || "No description"}</p>
+                      </td>
+                      <td className="px-5 py-4">{getUserName(task.createdBy as Partial<User>)}</td>
+                      <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
+                      <td className="px-5 py-4">{task.endTime || task.dueDate ? new Date(task.endTime || task.dueDate || "").toLocaleString() : "-"}</td>
+                      <td className="px-5 py-4">
+                        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", delayed && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
+                          {delayed && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
+                          {delayed && task.status !== "done" ? "Delayed" : meta.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {delayed && task.status !== "done" ? (
+                          <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Replanifier aujourd’hui</span>
+                        ) : (
+                          <span className="text-xs text-slate-500">No urgent action</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/tasks/${id}`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">
+                            <Eye className="h-4 w-4" />
+                            Details
+                          </Link>
+                          {delayed && task.status !== "done" && (
+                            <button type="button" onClick={() => rescheduleToday(task)} disabled={rescheduleTask.isPending} className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                              <CalendarClock className="h-4 w-4" />
+                              Today
+                            </button>
+                          )}
+                          {(task.status === "todo" || task.status === "overdue") && (
+                            <>
+                              <button type="button" onClick={() => updateStatus(task, "in_progress")} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start</button>
+                              <button type="button" onClick={() => updateStatus(task, "declined")} disabled={updateTaskStatus.isPending} className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                                <PauseCircle className="h-4 w-4" />
+                                Plus tard
+                              </button>
+                            </>
+                          )}
+                          {task.status === "in_progress" && (
+                            <button type="button" onClick={() => updateStatus(task, "done")} disabled={updateTaskStatus.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Complete</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr><td className="px-5 py-10 text-center text-slate-400" colSpan={7}>No tasks found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </ModuleLayout>
-  );
-}
-
-function TaskCard({
-  task,
-  isUpdating,
-  onConfirm,
-  onDecline,
-  onComplete,
-}: {
-  task: Task;
-  isUpdating: boolean;
-  onConfirm: () => void;
-  onDecline: () => void;
-  onComplete: () => void;
-}) {
-  const meta = statusMeta[task.status] || statusMeta.todo;
-  const needsDecision = task.status === "todo" || task.status === "overdue";
-  const [comment, setComment] = useState("");
-  const addComment = useAddTaskComment();
-  const id = task._id || task.id;
-
-  const submitComment = () => {
-    if (!id || !comment.trim()) return;
-    addComment.mutate({ id, message: comment.trim() }, { onSuccess: () => setComment("") });
-  };
-
-  return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold leading-tight text-gray-950">{task.title}</h3>
-          <p className="mt-1 text-xs font-semibold uppercase text-gray-400">Assigned by {getUserName(task.createdBy as Partial<User>)}</p>
-        </div>
-        <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold", meta.tone)}>
-          {meta.icon}
-          {meta.label}
-        </span>
-      </div>
-
-      {task.description && <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-gray-600">{task.description}</p>}
-      {(task.declineReason || task.lateReason) && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          <span className="font-bold">Reason:</span> {task.lateReason || task.declineReason}
-        </div>
-      )}
-
-      <div className="mb-4 flex flex-wrap gap-2 text-xs text-gray-500">
-        {task.startTime && (
-          <span className="rounded-full bg-gray-50 px-2.5 py-1 font-semibold">
-            Start: {new Date(task.startTime).toLocaleString()}
-          </span>
-        )}
-        {(task.estimatedMinutes || task.estimatedDurationMinutes) && (
-          <span className="rounded-full bg-gray-50 px-2.5 py-1 font-semibold">
-            {task.estimatedMinutes || task.estimatedDurationMinutes} min
-          </span>
-        )}
-        {task.acceptedAt && <span className="rounded-full bg-sky-50 px-2.5 py-1 font-semibold text-sky-700">Confirmed</span>}
-        {task.declinedAt && <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">Plus tard</span>}
-      </div>
-
-      {needsDecision && (
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isUpdating}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Confirmer
-          </button>
-          <button
-            type="button"
-            onClick={onDecline}
-            disabled={isUpdating}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-rose-700 disabled:opacity-50"
-          >
-            <PauseCircle className="h-4 w-4" />
-            Plus tard
-          </button>
-        </div>
-      )}
-
-      {task.status === "in_progress" && (
-        <button
-          type="button"
-          onClick={onComplete}
-          disabled={isUpdating}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          Terminer
-        </button>
-      )}
-
-      <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
-        <p className="mb-2 text-xs font-bold uppercase text-gray-400">Comments</p>
-        {task.comments?.length ? (
-          <div className="mb-3 space-y-2">
-            {task.comments.slice(-3).map((item, index) => (
-              <div key={item._id || `${item.createdAt}-${index}`} className="rounded-lg bg-white p-2 text-xs text-gray-600">
-                <p className="font-semibold text-gray-950">{getUserName(item.userId as Partial<User>)}</p>
-                <p>{item.message}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mb-3 text-xs text-gray-500">No comments yet.</p>
-        )}
-        <div className="flex gap-2">
-          <input
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Add comment"
-            className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
-          />
-          <button
-            type="button"
-            onClick={submitComment}
-            disabled={addComment.isPending || !comment.trim()}
-            className="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
-          >
-            Send
-          </button>
-        </div>
-      </div>
-    </article>
   );
 }

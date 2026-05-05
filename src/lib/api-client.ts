@@ -17,6 +17,7 @@ import type {
   QueryHookOptions,
   Rule,
   Task,
+  TaskQueryParams,
   TeamMemberSummary,
   UpdateTaskInput,
   User,
@@ -389,29 +390,40 @@ export function useGetDashboardStats() {
   });
 }
 
-export function useGetTasks(options?: QueryHookOptions) {
+function cleanTaskParams(params?: TaskQueryParams) {
+  const cleaned: Record<string, string | number> = {};
+  if (!params) return cleaned;
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "" && value !== "all") {
+      cleaned[key] = value as string | number;
+    }
+  });
+  return cleaned;
+}
+
+export function useGetTasks(options?: QueryHookOptions & { params?: TaskQueryParams }) {
   return useQuery<Task[]>({
-    queryKey: ["tasks"],
+    queryKey: ["tasks", options?.params || {}],
     queryFn: async () => {
       try {
-        const response = await apiClient.get("/tasks");
-        return unwrapCollection<Task>(response.data, "tasks", fallbackTasks);
+        const response = await apiClient.get("/tasks", { params: cleanTaskParams(options?.params) });
+        return unwrapCollection<Task>(response.data, "tasks", []);
       } catch {
-        return fallbackTasks;
+        return [];
       }
     },
     enabled: options?.query?.enabled ?? true,
     refetchInterval: options?.query?.refetchInterval,
-    initialData: fallbackTasks,
+    initialData: [],
   });
 }
 
-export function useGetAssignedTasks(options?: QueryHookOptions) {
+export function useGetAssignedTasks(options?: QueryHookOptions & { params?: TaskQueryParams }) {
   return useQuery<Task[]>({
-    queryKey: ["assigned-tasks"],
+    queryKey: ["assigned-tasks", options?.params || {}],
     queryFn: async () => {
       try {
-        const response = await apiClient.get("/tasks?limit=100");
+        const response = await apiClient.get("/tasks", { params: { limit: 100, ...cleanTaskParams(options?.params) } });
         return unwrapCollection<Task>(response.data, "tasks", []);
       } catch {
         return [];
@@ -483,6 +495,39 @@ export function useUpdateTaskStatus() {
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+    },
+  });
+}
+
+export function useGetTaskDetails(id?: string, options?: QueryHookOptions) {
+  return useQuery<Task | null>({
+    queryKey: ["task-details", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await apiClient.get(`/tasks/${id}`);
+      return unwrapEntity<Task | null>(response.data, "task", null);
+    },
+    enabled: Boolean(id) && (options?.query?.enabled ?? true),
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: null,
+  });
+}
+
+export function useRescheduleTaskToday() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status = "in_progress" }: { id: string; status?: "todo" | "in_progress" }) => {
+      const response = await apiClient.put(`/tasks/${id}/reschedule`, { status });
+      return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status });
+    },
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-details", task._id || task.id] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -678,11 +723,11 @@ export function useGetPresenceDay(date?: string, params?: { role?: string; statu
   });
 }
 
-export function useGetAdminTasks(options?: QueryHookOptions) {
+export function useGetAdminTasks(options?: QueryHookOptions & { params?: TaskQueryParams }) {
   return useQuery<Task[]>({
-    queryKey: ["admin-tasks"],
+    queryKey: ["admin-tasks", options?.params || {}],
     queryFn: async () => {
-      const response = await apiClient.get("/admin/tasks");
+      const response = await apiClient.get("/tasks", { params: { limit: 500, ...cleanTaskParams(options?.params) } });
       return unwrapCollection<Task>(response.data, "tasks", []);
     },
     enabled: options?.query?.enabled ?? true,

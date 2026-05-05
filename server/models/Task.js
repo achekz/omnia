@@ -30,6 +30,7 @@ const taskSchema = new Schema(
     completedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     isDelayed: { type: Boolean, default: false },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedRole: { type: String, enum: ['employee', 'stagiaire', 'comptable'], index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     tenantId: { type: Schema.Types.ObjectId, ref: 'Organization' },
     dueDate: { type: Date },
@@ -50,6 +51,14 @@ const taskSchema = new Schema(
 );
 
 taskSchema.index({ tenantId: 1, assignedTo: 1, status: 1 });
+taskSchema.index({ tenantId: 1, assignedRole: 1, status: 1 });
+
+taskSchema.virtual('assignedToId').get(function getAssignedToId() {
+  return this.assignedTo?._id?.toString?.() || this.assignedTo?.toString?.() || null;
+});
+
+taskSchema.set('toJSON', { virtuals: true });
+taskSchema.set('toObject', { virtuals: true });
 
 taskSchema.pre('save', function planAndScoreTask(next) {
   const basePriority = { low: 1, medium: 2, high: 3, critical: 4 }[this.priority] || 2;

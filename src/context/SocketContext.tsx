@@ -62,12 +62,14 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
       socketInstance.on('taskCreated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
 
@@ -75,12 +77,14 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
       socketInstance.on('taskUpdated', () => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
 
