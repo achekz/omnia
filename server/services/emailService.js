@@ -1,9 +1,10 @@
 import nodemailer from "nodemailer";
 
 const transporters = new Map();
+const DEFAULT_FROM_NAME = "OmniAI Platform";
 
 function getEmailCredentials() {
-  const user = process.env.EMAIL_USER;
+  const user = process.env.EMAIL_USER?.trim();
   const pass = process.env.EMAIL_PASS?.replace(/\s+/g, "");
 
   if (!user || !pass) {
@@ -15,6 +16,13 @@ function getEmailCredentials() {
   }
 
   return { user, pass };
+}
+
+function getSystemSender() {
+  const { user } = getEmailCredentials();
+  const fromName = process.env.EMAIL_FROM_NAME?.trim() || DEFAULT_FROM_NAME;
+
+  return `"${fromName}" <${user}>`;
 }
 
 function createTransporter(mode = "gmail-service") {
@@ -93,10 +101,10 @@ function shouldRetryWithAlternateMode(error) {
   ].some((pattern) => message.includes(pattern) || String(error?.code || "").toLowerCase().includes(pattern));
 }
 
-async function sendWithMode({ mode, to, subject, html, text, from }) {
+async function sendWithMode({ mode, to, subject, html, text }) {
   const smtpTransporter = getTransporter(mode);
   const info = await smtpTransporter.sendMail({
-    from,
+    from: getSystemSender(),
     to,
     subject,
     html,
@@ -130,8 +138,7 @@ function getTransportModesForError(error) {
 }
 
 async function sendEmail({ to, subject, html, text }) {
-  const { user } = getEmailCredentials();
-  const from = `"Omni AI" <${user}>`;
+  getEmailCredentials();
 
   if (!to) {
     const error = new Error("Recipient email is required.");
@@ -149,7 +156,6 @@ async function sendEmail({ to, subject, html, text }) {
       subject,
       html,
       text,
-      from,
     });
   } catch (error) {
     console.error(`[EMAIL] Failed to send "${subject}" to ${to}`);
@@ -176,7 +182,6 @@ async function sendEmail({ to, subject, html, text }) {
           subject,
           html,
           text,
-          from,
         });
       } catch (retryError) {
         console.error(`[EMAIL] Retry with ${mode} failed:`, {
@@ -247,18 +252,17 @@ export const sendEmailVerificationCode = async (email, code, firstName = "there"
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px;">
       <h2 style="margin: 0 0 16px; color: #111827;">Verify your email</h2>
-      <p style="margin: 0 0 16px; color: #4b5563;">Hi ${firstName}, use the code below to continue creating your Omni AI account.</p>
+      <p style="margin: 0 0 16px; color: #4b5563;">Hi ${firstName}, use the code below to continue creating your OmniAI account.</p>
       <div style="font-size: 32px; letter-spacing: 8px; font-weight: 700; text-align: center; padding: 16px; background: #f3f4f6; border-radius: 12px; color: #111827;">
         ${code}
       </div>
       <p style="margin: 16px 0 0; color: #6b7280;">This code expires in 5 minutes.</p>
-      <p style="margin: 16px 0 0; color: #6b7280;">Use a Gmail App Password for EMAIL_PASS. Regular Gmail passwords and less secure app access are not supported.</p>
     </div>
   `;
 
   return sendEmail({
     to: email,
-    subject: "Your Omni AI verification code",
+    subject: "Your OmniAI verification code",
     html: htmlContent,
   });
 };

@@ -8,7 +8,7 @@ const mlPredictionSchema = new Schema(
     tenantId: { type: Schema.Types.ObjectId },
     modelType: {
       type: String,
-      enum: ['prediction', 'recommendation', 'anomaly'],
+      enum: ['prediction', 'recommendation', 'anomaly', 'presence_delay', 'presence_anomaly', 'insight_analysis'],
     },
     input: { type: Schema.Types.Mixed },
     output: { type: Schema.Types.Mixed },

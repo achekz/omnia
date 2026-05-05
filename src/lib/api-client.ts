@@ -9,6 +9,7 @@ import type {
   FinanceReport,
   FinanceSummary,
   FinancialRecord,
+  InsightSnapshot,
   MlInsights,
   Notification,
   PresenceCalendarResponse,
@@ -746,6 +747,34 @@ export function useDetectAnomaly() {
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
       queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetInsightOverview(options?: QueryHookOptions) {
+  return useQuery<InsightSnapshot | null>({
+    queryKey: ["insight-overview"],
+    queryFn: async () => {
+      const response = await apiClient.get("/insights/overview");
+      return unwrapEntity<InsightSnapshot | null>(response.data, "snapshot", null);
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: null,
+  });
+}
+
+export function useGenerateInsightOverview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.post("/insights/generate", { trigger: "manual-ui" });
+      return unwrapEntity<InsightSnapshot>(response.data, "snapshot", {} as InsightSnapshot);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["insight-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
     },
   });
 }

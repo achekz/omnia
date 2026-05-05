@@ -232,6 +232,45 @@ export interface MlRecommendation {
   recommendations?: string[];
 }
 
+export interface InsightKpi {
+  key: string;
+  label: string;
+  value: number;
+  unit?: string;
+  trend?: "up" | "down" | "stable";
+  status?: "good" | "warning" | "critical" | "neutral";
+  description?: string;
+}
+
+export interface InsightAnalysisItem {
+  severity: "info" | "warning" | "critical";
+  title: string;
+  message: string;
+  metric?: string;
+}
+
+export interface InsightRecommendation {
+  title: string;
+  message: string;
+  priority: "low" | "medium" | "high";
+  source?: string;
+}
+
+export interface InsightSnapshot {
+  _id?: string;
+  tenantId?: string | null;
+  generatedBy?: string;
+  generatedForRole?: string;
+  windowStart: string;
+  windowEnd: string;
+  kpis: InsightKpi[];
+  analysis: InsightAnalysisItem[];
+  recommendations: InsightRecommendation[];
+  summary: string;
+  meta?: Record<string, unknown>;
+  createdAt?: string;
+}
+
 export interface MlInsights {
   latestPrediction?: {
     riskScore?: number;

@@ -87,7 +87,10 @@ const MODULES: NavModule[] = [
     textColor: "text-violet-600",
     activeSidebarStyle: "bg-violet-50 text-violet-600 font-semibold",
     allowedProfiles: ["company", "cabinet", "employee", "stagiaire", "admin"],
-    items: [{ id: "ai-home", label: "Assistant IA", icon: <Bot className="w-4 h-4" />, path: "/ai" }],
+    items: [
+      { id: "ai-home", label: "Assistant IA", icon: <Bot className="w-4 h-4" />, path: "/ai" },
+      { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
+    ],
   },
   {
     id: "admin-workspace",
@@ -104,6 +107,7 @@ const MODULES: NavModule[] = [
       { id: "admin-tasks", label: "Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/admin/tasks" },
       { id: "rules", label: "Rule Engine", icon: <ShieldCheck className="w-4 h-4" />, path: "/admin/rules" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
+      { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
     ],
   },
   {
@@ -129,6 +133,7 @@ const MODULES: NavModule[] = [
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
+      { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
@@ -144,6 +149,7 @@ const MODULES: NavModule[] = [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
+      { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
