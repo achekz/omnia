@@ -92,6 +92,14 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       socketInstance.on('attendance_marked', () => {
         queryClient.invalidateQueries({ queryKey: ['attendance'] });
         queryClient.invalidateQueries({ queryKey: ['admin-presences'] });
+        queryClient.invalidateQueries({ queryKey: ['presence-calendar'] });
+        queryClient.invalidateQueries({ queryKey: ['presence-day'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      });
+
+      socketInstance.on('presence_calendar_updated', () => {
+        queryClient.invalidateQueries({ queryKey: ['presence-calendar'] });
+        queryClient.invalidateQueries({ queryKey: ['presence-day'] });
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
       });
 

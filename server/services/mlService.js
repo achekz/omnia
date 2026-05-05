@@ -56,3 +56,21 @@ export const detectAnomaly = async (values) => {
     throw mlUnavailable(error);
   }
 };
+
+export const predictDelay = async (features) => {
+  try {
+    const { data } = await mlClient.post("/ml/predict-delay", features);
+    return data;
+  } catch (error) {
+    throw mlUnavailable(error);
+  }
+};
+
+export const detectPresenceAnomaly = async (features) => {
+  try {
+    const { data } = await mlClient.post("/ml/anomaly", features);
+    return data;
+  } catch (error) {
+    throw mlUnavailable(error);
+  }
+};

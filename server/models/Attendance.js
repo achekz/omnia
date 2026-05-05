@@ -27,14 +27,13 @@ const attendanceSchema = new Schema(
     },
     checkIn: {
       type: Date,
-      required: true,
     },
     checkOut: {
       type: Date,
     },
     status: {
       type: String,
-      enum: ["on_time", "late", "very_late"],
+      enum: ["present", "absent", "late", "very_late", "on_time"],
       required: true,
       index: true,
     },
@@ -72,6 +71,8 @@ const attendanceSchema = new Schema(
 );
 
 attendanceSchema.index({ userId: 1, dateKey: 1 }, { unique: true });
+attendanceSchema.index({ tenantId: 1, date: 1 });
 attendanceSchema.index({ tenantId: 1, date: 1, checkIn: 1 });
+attendanceSchema.index({ tenantId: 1, status: 1, date: -1 });
 
 export default mongoose.model("Attendance", attendanceSchema);

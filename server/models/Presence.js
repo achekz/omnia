@@ -10,52 +10,52 @@ const presenceSchema = new Schema(
       required: true,
       index: true,
     },
+    date: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    dateKey: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    checkIn: {
+      type: Date,
+    },
+    checkOut: {
+      type: Date,
+    },
+    status: {
+      type: String,
+      enum: ["present", "absent", "late", "very_late"],
+      required: true,
+      index: true,
+    },
+    delayMinutes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    reason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     tenantId: {
       type: Schema.Types.ObjectId,
       ref: "Tenant",
       index: true,
     },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    city: {
-      type: String,
-      trim: true,
-    },
-    phoneNumber: {
-      type: String,
-      trim: true,
-    },
-    verificationMethod: {
-      type: String,
-      enum: ["email", "sms", "whatsapp"],
-      required: true,
-    },
-    checkInTime: {
-      type: Date,
-      required: true,
-    },
-    lateReason: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    status: {
-      type: String,
-      enum: ["pending", "verified", "rejected"],
-      default: "pending",
-      index: true,
-    },
-    verifiedAt: {
-      type: Date,
-    },
   },
   {
     timestamps: true,
-    collection: "presence",
+    collection: "presences",
   },
 );
+
+presenceSchema.index({ userId: 1, dateKey: 1 }, { unique: true });
+presenceSchema.index({ tenantId: 1, date: 1 });
+presenceSchema.index({ tenantId: 1, status: 1, date: -1 });
 
 export default mongoose.model("Presence", presenceSchema);

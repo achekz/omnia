@@ -11,6 +11,8 @@ import type {
   FinancialRecord,
   MlInsights,
   Notification,
+  PresenceCalendarResponse,
+  PresenceDetailResponse,
   QueryHookOptions,
   Rule,
   Task,
@@ -625,6 +627,53 @@ export function useGetAdminPresences(options?: QueryHookOptions) {
     },
     enabled: options?.query?.enabled ?? true,
     initialData: [],
+  });
+}
+
+export function useGetPresenceCalendar(params: { month: number; year: number; role?: string }, options?: QueryHookOptions) {
+  return useQuery<PresenceCalendarResponse>({
+    queryKey: ["presence-calendar", params.month, params.year, params.role || "all"],
+    queryFn: async () => {
+      const response = await apiClient.get("/presences/calendar", { params });
+      return unwrapData<PresenceCalendarResponse>(response.data, {
+        days: [],
+        stats: { totalPresent: 0, totalAbsent: 0, totalLate: 0, avgDelay: 0 },
+        month: params.month,
+        year: params.year,
+      });
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: {
+      days: [],
+      stats: { totalPresent: 0, totalAbsent: 0, totalLate: 0, avgDelay: 0 },
+      month: params.month,
+      year: params.year,
+    },
+  });
+}
+
+export function useGetPresenceDay(date?: string, params?: { role?: string; status?: string }, options?: QueryHookOptions) {
+  return useQuery<PresenceDetailResponse>({
+    queryKey: ["presence-day", date, params?.role || "all", params?.status || "all"],
+    queryFn: async () => {
+      if (!date) {
+        return { date: "", records: [], stats: { totalPresent: 0, totalAbsent: 0, totalLate: 0, avgDelay: 0 } };
+      }
+      const response = await apiClient.get(`/presences/${date}`, { params });
+      return unwrapData<PresenceDetailResponse>(response.data, {
+        date,
+        records: [],
+        stats: { totalPresent: 0, totalAbsent: 0, totalLate: 0, avgDelay: 0 },
+      });
+    },
+    enabled: Boolean(date) && (options?.query?.enabled ?? true),
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: {
+      date: date || "",
+      records: [],
+      stats: { totalPresent: 0, totalAbsent: 0, totalLate: 0, avgDelay: 0 },
+    },
   });
 }
 

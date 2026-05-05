@@ -114,7 +114,7 @@ export interface Task {
   createdAt?: string;
 }
 
-export type AttendanceStatus = "on_time" | "late" | "very_late";
+export type AttendanceStatus = "present" | "absent" | "late" | "very_late" | "on_time";
 export type CheckOutStatus = "on_time" | "early" | "very_early";
 
 export interface Attendance {
@@ -134,6 +134,35 @@ export interface Attendance {
   reason?: string;
   checkOutReason?: string;
   createdAt?: string;
+}
+
+export interface PresenceCalendarDay {
+  date: string;
+  present: number;
+  absent: number;
+  late: number;
+  veryLate: number;
+  totalUsers: number;
+}
+
+export interface PresenceStats {
+  totalPresent: number;
+  totalAbsent: number;
+  totalLate: number;
+  avgDelay: number;
+}
+
+export interface PresenceCalendarResponse {
+  days: PresenceCalendarDay[];
+  stats: PresenceStats;
+  month: number;
+  year: number;
+}
+
+export interface PresenceDetailResponse {
+  date: string;
+  records: Attendance[];
+  stats: PresenceStats;
 }
 
 export interface Notification {

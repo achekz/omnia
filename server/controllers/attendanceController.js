@@ -44,7 +44,7 @@ function getCheckInState(now = new Date(Date.now())) {
   }
 
   if (minutes <= 8 * 60 + 30) {
-    return { status: "on_time", delayMinutes: 0, requiresReason: false };
+    return { status: "present", delayMinutes: 0, requiresReason: false };
   }
 
   const delayMinutes = Math.max(0, minutes - (8 * 60 + 30));
@@ -254,7 +254,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
     await attendance.populate("userId", "name firstName lastName email role profileType");
 
     await notifService.create(req.user._id, req.tenantId, {
-      type: checkInState.status === "on_time" ? "info" : "warning",
+      type: checkInState.status === "present" ? "info" : "warning",
       title: "Attendance marked",
       message: `Check-in recorded at ${formatClock(now)}.`,
       source: "system",
@@ -262,7 +262,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
       metadata: { attendanceId: attendance._id.toString(), status: checkInState.status },
     });
 
-    if (checkInState.status !== "on_time") {
+    if (checkInState.status !== "present") {
       await notifyAdmins(req, {
         type: checkInState.status === "very_late" ? "danger" : "warning",
         title: "Late attendance",

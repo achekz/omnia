@@ -30,6 +30,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import financeRoutes from './routes/finance.js';
 import mlRoutes from './routes/ml.js';
 import notificationRoutes from './routes/notifications.js';
+import presenceRoutes from './routes/presences.js';
 import ruleRoutes from './routes/rules.js';
 import teamRoutes from './routes/team.js';
 import taskRoutes from './routes/tasks.js';
@@ -160,6 +161,7 @@ app.use('/api/users', requireDatabase, userRoutes);
 app.use('/api/admin', requireDatabase, adminRoutes);  // ADMIN only - authorize('ADMIN')
 app.use('/api/attendance', requireDatabase, attendanceRoutes);
 app.use('/api/presence', requireDatabase, attendanceRoutes);
+app.use('/api/presences', requireDatabase, presenceRoutes);
 app.use('/api/analytics', requireDatabase, analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.post('/api/ai-assistant', requireDatabase, protect, chatWithAI);

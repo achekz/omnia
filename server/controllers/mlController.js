@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 import Recommendation from '../models/Recommendation.js';
 import * as mlService from '../services/mlService.js';
+import Attendance from '../models/Attendance.js';
 
 function normalizeRiskScore(score) {
   const numericScore = Number(score || 0);
@@ -184,6 +185,81 @@ export const anomaly = asyncHandler(async (req, res) => {
   }
 
   return res.json(new ApiResponse(200, { anomaly: saved }));
+});
+
+export const predictDelay = asyncHandler(async (req, res) => {
+  const userId = req.body?.userId || req.user._id;
+  const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  const records = await Attendance.find({
+    userId,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+    date: { $gte: since },
+  }).sort({ date: 1 }).lean();
+
+  const delays = records.map((record) => Number(record.delayMinutes || 0));
+  const features = {
+    past_delays: delays,
+    avg_delay: delays.length ? delays.reduce((sum, delay) => sum + delay, 0) / delays.length : 0,
+    late_count: records.filter((record) => ['late', 'very_late'].includes(record.status)).length,
+    absence_count: Math.max(0, 60 - records.length),
+    day_of_week: new Date().getDay(),
+  };
+
+  let result;
+  try {
+    result = await mlService.predictDelay(features);
+  } catch (error) {
+    throwIfMlUnavailable(error);
+  }
+
+  const riskScore = normalizeRiskScore(result.risk_score ?? result.riskScore ?? result.risk ?? 0);
+  const saved = await MLPrediction.create({
+    userId,
+    tenantId: req.tenantId,
+    modelType: 'presence_delay',
+    input: features,
+    output: result,
+    riskLevel: riskScore >= 0.7 ? 'high' : riskScore >= 0.4 ? 'medium' : 'low',
+    riskScore,
+    confidence: result.confidence || 0.75,
+  });
+
+  return res.json(new ApiResponse(200, { prediction: saved, riskScore, result }));
+});
+
+export const presenceAnomaly = asyncHandler(async (req, res) => {
+  const userId = req.body?.userId || req.user._id;
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const records = await Attendance.find({
+    userId,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+    date: { $gte: since },
+  }).sort({ date: 1 }).lean();
+
+  const features = {
+    delays: records.map((record) => Number(record.delayMinutes || 0)),
+    statuses: records.map((record) => record.status === 'on_time' ? 'present' : record.status),
+    dates: records.map((record) => record.dateKey),
+  };
+
+  let result;
+  try {
+    result = await mlService.detectPresenceAnomaly(features);
+  } catch (error) {
+    throwIfMlUnavailable(error);
+  }
+
+  const saved = await MLPrediction.create({
+    userId,
+    tenantId: req.tenantId,
+    modelType: 'presence_anomaly',
+    input: features,
+    output: result,
+    isAnomaly: Boolean(result.is_anomaly ?? result.isAnomaly),
+    riskScore: normalizeRiskScore(result.anomaly_score ?? result.score ?? 0),
+  });
+
+  return res.json(new ApiResponse(200, { anomaly: saved, result }));
 });
 
 // GET /api/ml/history

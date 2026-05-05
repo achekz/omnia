@@ -29,6 +29,7 @@ import MyPerformancePage from "./pages/performance/my-performance";
 import AdminUsersPage from "./pages/admin/users";
 import AdminUserTaskDetailsPage from "./pages/admin/user-task-details";
 import AdminPresencesPage from "./pages/admin/presences";
+import AdminPresenceDayPage from "./pages/admin/presence-day";
 import AdminTasksPage from "./pages/admin/tasks";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
@@ -129,6 +130,7 @@ const routes: AppRoute[] = [
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
   { path: "/admin/users/:id/tasks", component: AdminUserTaskDetailsPage, protected: true, roles: ["admin"] },
+  { path: "/admin/presences/:date", component: AdminPresenceDayPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },
   { path: "/admin/tasks", component: AdminTasksPage, protected: true, roles: ["admin"] },
 

@@ -149,6 +149,28 @@ def predict_batch():
         'batch_size': len(predictions),
     }), 200
 
+@app.route('/ml/predict-delay', methods=['POST'])
+@handle_errors
+def predict_delay():
+    """Predict attendance lateness risk from historical delays and absence behavior."""
+    data = request.get_json() or {}
+    delays = [float(value) for value in data.get('past_delays', []) if value is not None]
+    avg_delay = float(data.get('avg_delay', sum(delays) / len(delays) if delays else 0))
+    late_count = int(data.get('late_count', 0))
+    absence_count = int(data.get('absence_count', 0))
+    risk_score = min(1.0, (avg_delay / 120.0) + (late_count * 0.08) + (absence_count * 0.03))
+
+    return jsonify({
+        'status': 'success',
+        'risk_score': round(risk_score, 3),
+        'risk_level': 'high' if risk_score >= 0.7 else 'medium' if risk_score >= 0.4 else 'low',
+        'confidence': 0.78,
+        'recommendations': [
+            'Send an early reminder before the expected start time',
+            'Review schedule flexibility for users with repeated delay patterns',
+        ],
+    }), 200
+
 # ==================== Recommendation Endpoints ====================
 
 @app.route('/recommend', methods=['POST'])
@@ -281,6 +303,29 @@ def detect_anomalies_batch():
         'results': all_results,
         'batch_size': len(all_results),
         'severity_distribution': severity_dist,
+    }), 200
+
+@app.route('/ml/anomaly', methods=['POST'])
+@handle_errors
+def presence_anomaly():
+    """Detect unusual attendance delays and repeated absence patterns."""
+    data = request.get_json() or {}
+    delays = [float(value) for value in data.get('delays', []) if value is not None]
+    statuses = data.get('statuses', [])
+    absence_streak = ''.join('A' if status == 'absent' else 'P' for status in statuses).count('AAA')
+
+    if not delays:
+        score = 0.5 if absence_streak else 0.0
+    else:
+        avg_delay = sum(delays) / len(delays)
+        score = min(1.0, abs(delays[-1] - avg_delay) / 120.0 + absence_streak * 0.25)
+
+    return jsonify({
+        'status': 'success',
+        'is_anomaly': score >= 0.6,
+        'anomaly_score': round(score, 3),
+        'signals': ['repeated_absence'] if absence_streak else (['unusual_delay'] if score >= 0.6 else []),
+        'manager_alert': score >= 0.6,
     }), 200
 
 # ==================== Complete Analysis Endpoint ====================
