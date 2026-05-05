@@ -1,8 +1,9 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarCheck2, ChevronLeft, ChevronRight, Clock, Users, UserX } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";
+import { useToast } from "@/hooks/use-toast";
 import { useGetPresenceCalendar } from "@/lib/api-client";
 import type { PresenceCalendarDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,11 @@ const roles = ["all", "employee", "stagiaire", "comptable"];
 
 function dateKey(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function getTodayKey() {
+  const today = new Date();
+  return dateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
 }
 
 function monthLabel(date: Date) {
@@ -42,14 +48,40 @@ function buildCalendarDays(year: number, month: number, records: PresenceCalenda
 
 export default function AdminPresencesPage() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const now = new Date();
   const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [role, setRole] = useState("all");
+  const [todayKey, setTodayKey] = useState(getTodayKey);
   const year = cursor.getFullYear();
   const month = cursor.getMonth() + 1;
   const { data, isLoading } = useGetPresenceCalendar({ month, year, role }, { query: { refetchInterval: 30000 } });
-  const cells = useMemo(() => buildCalendarDays(year, month, data.days), [data.days, month, year]);
-  const chartData = data.days.map((day) => ({
+
+  useEffect(() => {
+    const syncToday = () => setTodayKey(getTodayKey());
+    const nowDate = new Date();
+    const nextMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() + 1, 0, 0, 1);
+    const timeout = window.setTimeout(syncToday, nextMidnight.getTime() - nowDate.getTime());
+    const interval = window.setInterval(syncToday, 60 * 1000);
+
+    return () => {
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const visibleDays = useMemo(() => data.days.filter((day) => day.date <= todayKey), [data.days, todayKey]);
+  const cells = useMemo(() => buildCalendarDays(year, month, visibleDays), [visibleDays, month, year]);
+  const visibleStats = useMemo(() => {
+    const delayedDays = visibleDays.filter((day) => day.late + day.veryLate > 0);
+    return {
+      totalPresent: visibleDays.reduce((sum, day) => sum + day.present + day.late + day.veryLate, 0),
+      totalAbsent: visibleDays.reduce((sum, day) => sum + day.absent, 0),
+      totalLate: visibleDays.reduce((sum, day) => sum + day.late + day.veryLate, 0),
+      avgDelay: data.stats.avgDelay && delayedDays.length ? data.stats.avgDelay : 0,
+    };
+  }, [data.stats.avgDelay, visibleDays]);
+  const chartData = visibleDays.map((day) => ({
     day: day.date.slice(8),
     present: day.present + day.late + day.veryLate,
     absent: day.absent,
@@ -58,6 +90,15 @@ export default function AdminPresencesPage() {
 
   const moveMonth = (offset: number) => {
     setCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+  };
+
+  const handleDateClick = (date: string) => {
+    if (date > todayKey) {
+      toast({ title: "No data yet", description: "Attendance data is available only for today and past days." });
+      return;
+    }
+
+    navigate(`/admin/presences/${date}`);
   };
 
   return (
@@ -93,10 +134,10 @@ export default function AdminPresencesPage() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-4">
-          <Stat icon={<Users className="h-4 w-4" />} label="Total present" value={data.stats.totalPresent} tone="emerald" />
-          <Stat icon={<UserX className="h-4 w-4" />} label="Total absent" value={data.stats.totalAbsent} tone="rose" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Late users" value={data.stats.totalLate} tone="orange" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Avg delay" value={`${data.stats.avgDelay} min`} tone="gray" />
+          <Stat icon={<Users className="h-4 w-4" />} label="Total present" value={visibleStats.totalPresent} tone="emerald" />
+          <Stat icon={<UserX className="h-4 w-4" />} label="Total absent" value={visibleStats.totalAbsent} tone="rose" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Late users" value={visibleStats.totalLate} tone="orange" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Avg delay" value={`${visibleStats.avgDelay} min`} tone="gray" />
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -123,19 +164,29 @@ export default function AdminPresencesPage() {
             </div>
 
             <div className="grid grid-cols-7">
-              {cells.map((cell) => (
-                <button
-                  key={cell.key}
-                  disabled={!cell.dayNumber}
-                  onClick={() => cell.dayNumber && navigate(`/admin/presences/${cell.key}`)}
-                  className={cn(
-                    "min-h-[118px] border-b border-r border-gray-100 p-2 text-left transition dark:border-gray-800",
-                    cell.dayNumber ? "bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800" : "bg-gray-50/70 dark:bg-gray-950",
-                  )}
-                >
-                  {cell.dayNumber ? <CalendarCell dayNumber={cell.dayNumber} record={cell.record} /> : null}
-                </button>
-              ))}
+              {cells.map((cell) => {
+                const isToday = cell.key === todayKey;
+                const isFuture = Boolean(cell.dayNumber && cell.key > todayKey);
+
+                return (
+                  <button
+                    key={cell.key}
+                    disabled={!cell.dayNumber}
+                    aria-disabled={isFuture}
+                    title={cell.dayNumber ? tooltipForDay(cell.record, isFuture) : undefined}
+                    onClick={() => cell.dayNumber && handleDateClick(cell.key)}
+                    className={cn(
+                      "min-h-[118px] border-b border-r border-gray-100 p-2 text-left transition dark:border-gray-800",
+                      !cell.dayNumber && "bg-gray-50/70 dark:bg-gray-950",
+                      cell.dayNumber && !isToday && !isFuture && "bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800",
+                      isToday && "bg-[#1e3a8a] text-white hover:bg-[#1e3a8a]",
+                      isFuture && "cursor-not-allowed bg-gray-900/10 opacity-30 dark:bg-gray-900",
+                    )}
+                  >
+                    {cell.dayNumber ? <CalendarCell dayNumber={cell.dayNumber} record={cell.record} isToday={isToday} isFuture={isFuture} /> : null}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -165,20 +216,38 @@ export default function AdminPresencesPage() {
   );
 }
 
-function CalendarCell({ dayNumber, record }: { dayNumber: number; record?: PresenceCalendarDay }) {
+function tooltipForDay(record?: PresenceCalendarDay, isFuture = false) {
+  if (isFuture) return "No data yet";
+  const present = (record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0);
+  const absent = record?.absent || 0;
+  const late = (record?.late || 0) + (record?.veryLate || 0);
+  return `${present} present, ${absent} absent, ${late} late`;
+}
+
+function CalendarCell({ dayNumber, record, isToday, isFuture }: { dayNumber: number; record?: PresenceCalendarDay; isToday: boolean; isFuture: boolean }) {
+  const present = (record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0);
+  const absent = record?.absent || 0;
+  const late = (record?.late || 0) + (record?.veryLate || 0);
+
   return (
     <div className="flex h-full flex-col gap-2">
-      <span className="text-sm font-bold text-gray-950 dark:text-gray-100">{dayNumber}</span>
-      <div className="mt-auto grid gap-1 text-xs font-semibold">
-        <Metric tone="emerald" label="Present" value={(record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0)} />
-        <Metric tone="rose" label="Absent" value={record?.absent || 0} />
-        <Metric tone="orange" label="Late" value={(record?.late || 0) + (record?.veryLate || 0)} />
-      </div>
+      <span className={cn("text-sm font-bold text-gray-950 dark:text-gray-100", isToday && "text-white")}>{dayNumber}</span>
+      {isFuture ? (
+        <div className="mt-auto rounded-md border border-dashed border-gray-400/60 px-2 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300">
+          No data yet
+        </div>
+      ) : (
+        <div className="mt-auto grid gap-1 text-xs font-semibold">
+          <CompactMetric tone="emerald" label="P" value={present} />
+          <CompactMetric tone="rose" label="A" value={absent} />
+          <CompactMetric tone="orange" label="L" value={late} />
+        </div>
+      )}
     </div>
   );
 }
 
-function Metric({ tone, label, value }: { tone: "emerald" | "rose" | "orange"; label: string; value: number }) {
+function CompactMetric({ tone, label, value }: { tone: "emerald" | "rose" | "orange"; label: string; value: number }) {
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
     rose: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
