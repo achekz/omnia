@@ -14,7 +14,7 @@ export default function MyPerformancePage() {
   if (!user || !["employee", "stagiaire", "comptable"].includes(user.profileType || user.role)) {
     return (
       <ModuleLayout activeItem="performances">
-        <div className="p-8 text-center text-gray-500">Accès restreint</div>
+        <div className="p-8 text-center text-gray-500">Access Restricted</div>
       </ModuleLayout>
     );
   }
@@ -30,17 +30,17 @@ export default function MyPerformancePage() {
     : tasks.slice(-7).map((task, index) => ({ day: `T${index + 1}`, score: task.status === "done" ? 100 : task.status === "in_progress" ? 60 : 25, tasks: task.status === "done" ? 1 : 0 }));
 
   const objectives = [
-    { title: "Terminer les tâches assignées", progress: completionRate, color: "bg-emerald-500" },
-    { title: "Garder les tâches en retard sous contrôle", progress: Math.max(0, 100 - overdueTasks * 20), color: "bg-rose-500" },
-    { title: "Finaliser les tâches actives", progress: totalTasks ? Math.round(((completedTasks + inProgressTasks) / totalTasks) * 100) : 0, color: "bg-blue-500" },
+    { title: "Complete assigned tasks", progress: completionRate, color: "bg-emerald-500" },
+    { title: "Keep delayed tasks under control", progress: Math.max(0, 100 - overdueTasks * 20), color: "bg-rose-500" },
+    { title: "Move active tasks to completion", progress: totalTasks ? Math.round(((completedTasks + inProgressTasks) / totalTasks) * 100) : 0, color: "bg-blue-500" },
   ];
 
   return (
     <ModuleLayout activeItem="performances">
       <div className="mx-auto max-w-6xl p-4 sm:p-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-display font-bold text-gray-900">Ma progression</h2>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Progression en direct basée sur vos tâches assignées et l'activité analytique.</p>
+          <h2 className="text-3xl font-display font-bold text-gray-900">My Progress</h2>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Live progress based on your assigned tasks and analytics activity.</p>
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -51,23 +51,23 @@ export default function MyPerformancePage() {
               </div>
               <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">{score?.trend || "stable"}</span>
             </div>
-            <h3 className="text-sm font-medium text-purple-100">Score global</h3>
+            <h3 className="text-sm font-medium text-purple-100">Overall Score</h3>
             <div className="mt-1 flex items-end gap-2">
               <span className="text-4xl font-bold">{currentScore}</span>
               <span className="mb-1 text-purple-200">/ 100</span>
             </div>
             <p className="mt-4 flex items-center gap-1 text-sm text-purple-100">
               <TrendingUp className="h-4 w-4 text-emerald-300" />
-              {score?.trendPct || 0}% de tendance
+              {score?.trendPct || 0}% trend
             </p>
           </div>
 
-          <MetricCard title="Tâches terminées" value={`${completionRate}%`} subtitle={`${completedTasks}/${totalTasks} terminées`} icon={<Award className="h-6 w-6" />} tone="emerald" />
-          <MetricCard title="Tâches en retard" value={String(overdueTasks)} subtitle="À surveiller" icon={<AlertCircle className="h-6 w-6" />} tone="rose" />
+          <MetricCard title="Tasks terminées" value={`${completionRate}%`} subtitle={`${completedTasks}/${totalTasks} terminées`} icon={<Award className="h-6 w-6" />} tone="emerald" />
+          <MetricCard title="Tasks en retard" value={String(overdueTasks)} subtitle="Needs attention" icon={<AlertCircle className="h-6 w-6" />} tone="rose" />
         </div>
 
         <div className="mb-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-950">Tendance de progression</h3>
+          <h3 className="mb-4 text-lg font-semibold text-gray-950">Progress trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -84,7 +84,7 @@ export default function MyPerformancePage() {
           <div className="border-b border-gray-100 p-6">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Presentation className="h-5 w-5 text-purple-600" />
-              Objectifs actuels
+              Current Objectives
             </h3>
           </div>
           <div className="divide-y divide-gray-100">

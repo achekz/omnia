@@ -94,7 +94,7 @@ export default function AdminPresencesPage() {
 
   const handleDateClick = (date: string) => {
     if (date > todayKey) {
-      toast({ title: "Aucune donnée pour le moment", description: "Les données de présence sont disponibles uniquement pour aujourd'hui et les jours passés." });
+      toast({ title: "No data yet", description: "Attendance data is available only for today and past days." });
       return;
     }
 
@@ -110,8 +110,8 @@ export default function AdminPresencesPage() {
               <CalendarCheck2 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">Présences</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Calendrier des présences, totaux en direct et signaux de retard.</p>
+              <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">Presences</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Calendar attendance, live totals, and delay signals.</p>
             </div>
           </div>
 
@@ -135,30 +135,30 @@ export default function AdminPresencesPage() {
 
         <div className="grid gap-3 md:grid-cols-4">
           <Stat icon={<Users className="h-4 w-4" />} label="Total présents" value={visibleStats.totalPresent} tone="emerald" />
-          <Stat icon={<UserX className="h-4 w-4" />} label="Total absents" value={visibleStats.totalAbsent} tone="rose" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Utilisateurs en retard" value={visibleStats.totalLate} tone="orange" />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Retard moyen" value={`${visibleStats.avgDelay} min`} tone="gray" />
+          <Stat icon={<UserX className="h-4 w-4" />} label="Total absent" value={visibleStats.totalAbsent} tone="rose" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Users en retard" value={visibleStats.totalLate} tone="orange" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Avg delay" value={`${visibleStats.avgDelay} min`} tone="gray" />
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <header className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(-1)} title="Mois précédent">
+                <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(-1)} title="Previous month">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <h2 className="min-w-[180px] text-center text-lg font-bold capitalize text-gray-950 dark:text-gray-100">{monthLabel(cursor)}</h2>
-                <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(1)} title="Mois suivant">
+                <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(1)} title="Next month">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
               <button className="rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => setCursor(new Date(now.getFullYear(), now.getMonth(), 1))}>
-                Aujourd'hui
+                Today
               </button>
             </header>
 
             <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50 text-center text-xs font-bold uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-800">
-              {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <div key={day} className="px-2 py-3">{day}</div>
               ))}
             </div>
@@ -192,8 +192,8 @@ export default function AdminPresencesPage() {
 
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <div className="mb-4">
-              <h2 className="text-base font-bold text-gray-950 dark:text-gray-100">Tendance mensuelle</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Présents, absents et retards par jour.</p>
+              <h2 className="text-base font-bold text-gray-950 dark:text-gray-100">Monthly trend</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Present, absents et retards par jour.</p>
             </div>
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +208,7 @@ export default function AdminPresencesPage() {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            {isLoading ? <p className="mt-3 text-sm text-gray-500">Actualisation du calendrier...</p> : null}
+            {isLoading ? <p className="mt-3 text-sm text-gray-500">Refreshing calendar...</p> : null}
           </div>
         </section>
       </div>
@@ -217,7 +217,7 @@ export default function AdminPresencesPage() {
 }
 
 function tooltipForDay(record?: PresenceCalendarDay, isFuture = false) {
-  if (isFuture) return "Aucune donnée pour le moment";
+  if (isFuture) return "No data yet";
   const present = (record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0);
   const absent = record?.absent || 0;
   const late = (record?.late || 0) + (record?.veryLate || 0);
@@ -234,7 +234,7 @@ function CalendarCell({ dayNumber, record, isToday, isFuture }: { dayNumber: num
       <span className={cn("text-sm font-bold text-gray-950 dark:text-gray-100", isToday && "text-white")}>{dayNumber}</span>
       {isFuture ? (
         <div className="mt-auto rounded-md border border-dashed border-gray-400/60 px-2 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300">
-          Aucune donnée
+          No data yet
         </div>
       ) : (
         <div className="mt-auto grid gap-1 text-xs font-semibold">
@@ -280,8 +280,8 @@ function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; va
 }
 
 function translateRole(role: string) {
-  if (role === "all") return "Tous";
-  if (role === "employee") return "Employé";
+  if (role === "all") return "All";
+  if (role === "employee") return "Employee";
   if (role === "comptable") return "Comptable";
   return "Stagiaire";
 }

@@ -60,17 +60,17 @@ export function ProfileMenu() {
           </div>
 
           <div className="p-2">
-            <MenuLink href="/settings" icon={<UserRound className="h-4 w-4" />} label="Paramètres du profil" onClick={() => setIsOpen(false)} />
-            <MenuLink href="/settings" icon={<Settings className="h-4 w-4" />} label="Paramètres de l'espace de travail" onClick={() => setIsOpen(false)} />
+            <MenuLink href="/settings" icon={<UserRound className="h-4 w-4" />} label="Profile settings" onClick={() => setIsOpen(false)} />
+            <MenuLink href="/settings" icon={<Settings className="h-4 w-4" />} label="Workspace settings" onClick={() => setIsOpen(false)} />
             <MenuButton
               icon={<Monitor className="h-4 w-4" />}
-              label="Thème"
+              label="Theme"
               onClick={() => {
                 setIsOpen(false);
                 setShowThemeModal(true);
               }}
             />
-            <MenuLink href="/help" icon={<HelpCircle className="h-4 w-4" />} label="Centre d'aide" onClick={() => setIsOpen(false)} />
+            <MenuLink href="/help" icon={<HelpCircle className="h-4 w-4" />} label="Help center" onClick={() => setIsOpen(false)} />
             <div className="my-2 h-px bg-gray-100" />
             <button
               type="button"
@@ -81,7 +81,7 @@ export function ProfileMenu() {
               className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
             >
               <LogOut className="h-4 w-4" />
-              Déconnexion
+              Log out
             </button>
           </div>
         </div>

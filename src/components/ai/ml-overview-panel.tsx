@@ -9,7 +9,7 @@ interface MlOverviewPanelProps {
   className?: string;
 }
 
-export function MlOverviewPanel({ title = "Intelligence IA", className }: MlOverviewPanelProps) {
+export function MlOverviewPanel({ title = "AI Intelligence", className }: MlOverviewPanelProps) {
   const { data: insights, isFetching, isError } = useMlInsights();
   const runRisk = useRunRiskPrediction();
   const generateRecommendations = useGenerateRecommendations();
@@ -53,14 +53,14 @@ export function MlOverviewPanel({ title = "Intelligence IA", className }: MlOver
         <>
           <div className="rounded-2xl bg-gray-50 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Score de risque</span>
+              <span className="text-sm font-semibold text-gray-700">Risk score</span>
               <span className="text-2xl font-bold text-gray-950">{riskPercent}%</span>
             </div>
             <Progress value={riskPercent} className={cn("h-3 bg-gray-200", riskMeta.progress)} />
             <div className={cn("mt-4 rounded-2xl border p-4 text-sm", riskMeta.explanationTone)}>
               <div className="mb-1 flex items-center gap-2 font-bold">
                 {riskMeta.explanationIcon}
-                Interprétation
+                Interpretation
               </div>
               <p>{riskMeta.explanation}</p>
             </div>
@@ -85,7 +85,7 @@ export function MlOverviewPanel({ title = "Intelligence IA", className }: MlOver
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:opacity-60"
         >
           {runRisk.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-          Prédire le risque
+          Predict risk
         </button>
         <button
           type="button"
@@ -94,18 +94,18 @@ export function MlOverviewPanel({ title = "Intelligence IA", className }: MlOver
           className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
         >
           {generateRecommendations.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          Recommander
+          Recommend
         </button>
       </div>
 
       <div className="mt-5 space-y-3">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">Recommandations</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">Recommendations</h3>
         {recommendations.length ? (
           recommendations.slice(0, 4).map((recommendation, index) => (
             <div key={`${recommendation}-${index}`} className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4 text-sm font-medium text-violet-950">
               <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-violet-700">
                 <Sparkles className="h-3.5 w-3.5" />
-                Basé sur votre comportement passé
+                Based on your past behavior
               </div>
               {recommendation}
             </div>
@@ -119,7 +119,7 @@ export function MlOverviewPanel({ title = "Intelligence IA", className }: MlOver
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
           <div className="mb-2 flex items-center gap-2 text-rose-700">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-bold">Alertes d'anomalie</span>
+            <span className="text-sm font-bold">Anomaly alerts</span>
           </div>
           <p className="text-sm text-rose-700">{anomalies.length} signal(aux) d'anomalie détecté(s) par le ML.</p>
         </div>
@@ -139,7 +139,7 @@ function getRiskMeta(level: string, percent: number, anomalyCount: number) {
       explanation: anomalyCount
         ? "Risque élevé car le modèle a trouvé des signaux d'anomalie et une pression opérationnelle récente."
         : "Risque élevé à cause des retards récents, des modèles d'activité manqués ou d'une charge urgente concentrée.",
-      factors: ["Retards récents", "Pression de travail", "Signaux d'anomalie"],
+      factors: ["Delays récents", "Pression de travail", "Signaux d'anomalie"],
     };
   }
 
@@ -162,7 +162,7 @@ function getRiskMeta(level: string, percent: number, anomalyCount: number) {
     explanationIcon: <CheckCircle2 className="h-4 w-4" />,
     explanationTone: "border-emerald-200 bg-emerald-50 text-emerald-700",
     explanation: "Risque faible : le comportement récent semble stable, sans anomalie critique ni modèle de retard détecté.",
-    factors: ["Activité stable", "Bon taux de réalisation", "Aucune alerte critique"],
+    factors: ["Stable activity", "Healthy completion rate", "No critical alert"],
   };
 }
 

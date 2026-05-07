@@ -103,15 +103,15 @@ export default function Login() {
               className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm transition hover:bg-amber-100"
             >
               <ShieldCheck className="h-4 w-4" />
-              Connexion admin
+              Login as Admin
             </button>
 
             <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center mb-8 shadow-lg shadow-purple-500/20">
               <SparklesIcon className="w-7 h-7 text-white" />
             </div>
 
-            <h1 className="font-display text-4xl font-bold text-gray-900 dark:text-white mb-2">Bon retour</h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">Connectez-vous pour accéder à votre espace Omni AI personnalisé.</p>
+            <h1 className="font-display text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome back</h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Sign in to access your personalized Omni AI workspace.</p>
 
             {error && (
               <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-sm">
@@ -121,7 +121,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Adresse email</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Email Address</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                     <Mail className="h-5 w-5" />
@@ -139,9 +139,9 @@ export default function Login() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Mot de passe</label>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Password</label>
                   <Link href="/forgot-password" className="text-sm font-semibold text-purple-600 transition-colors hover:text-purple-700">
-                    Mot de passe oublié ?
+                    Password oublié ?
                   </Link>
                 </div>
                 <div className="relative">
@@ -168,7 +168,7 @@ export default function Login() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    Se connecter
+                    Sign in
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </>
                 )}
@@ -176,9 +176,9 @@ export default function Login() {
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-              Vous n'avez pas de compte ?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/register" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">
-                S'inscrire
+                Sign up
               </Link>
             </p>
           </motion.div>
@@ -198,15 +198,15 @@ export default function Login() {
             <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-purple-500 mt-2" />
-                <p>Vérification email avant la création du compte</p>
+                <p>Email verification before account creation</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-purple-500 mt-2" />
-                <p>Mot de passe sécurisé et session JWT</p>
+                <p>Password sécurisé et session JWT</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-purple-500 mt-2" />
-                <p>Tableaux de bord préparés pour les assistants IA par rôle</p>
+                <p>Dashboards prepared for role-specific AI assistants</p>
               </div>
             </div>
           </div>
@@ -218,7 +218,7 @@ export default function Login() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <ShieldCheck className="h-5 w-5 text-amber-600" />
-              Connexion rapide admin
+              Admin Quick Login
             </DialogTitle>
           </DialogHeader>
 
@@ -230,7 +230,7 @@ export default function Login() {
             )}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Email admin</label>
+              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Admin Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
@@ -245,7 +245,7 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Mot de passe</label>
+              <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
@@ -254,7 +254,7 @@ export default function Login() {
                   value={adminPassword}
                   onChange={(event) => setAdminPassword(event.target.value)}
                   className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-gray-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                  placeholder="Saisir le mot de passe admin"
+                  placeholder="Enter admin password"
                 />
               </div>
             </div>
@@ -266,7 +266,7 @@ export default function Login() {
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 <X className="h-4 w-4" />
-                Annuler
+                Cancel edit
               </button>
               <button
                 type="submit"
@@ -274,7 +274,7 @@ export default function Login() {
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
               >
                 {isAdminLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                Entrer admin
+                Enter Admin
               </button>
             </div>
           </form>

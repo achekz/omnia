@@ -39,8 +39,8 @@ export default function InsightOverviewPage() {
               <BrainCircuit className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">Analyses IA</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">KPIs, recommandations et analyse automatique des données générés par le système.</p>
+              <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">AI Insights</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">KPIs, recommandations et analyse automatique des données générés par le system.</p>
             </div>
           </div>
 
@@ -64,10 +64,10 @@ export default function InsightOverviewPage() {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Aperçu de l'analyse automatique</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{snapshot?.summary || "Le système générera une analyse à partir des tâches, présences, finances et journaux d'activité."}</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{snapshot?.summary || "The system will generate an analysis from tasks, attendance, finance and activity logs."}</p>
             </div>
             <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-              {snapshot?.createdAt ? `Généré le ${new Date(snapshot.createdAt).toLocaleString()}` : isFetching ? "Chargement..." : "Aucun aperçu pour le moment"}
+              {snapshot?.createdAt ? `Generated ${new Date(snapshot.createdAt).toLocaleString()}` : isFetching ? "Loading..." : "No snapshot yet"}
             </div>
           </div>
         </section>
@@ -101,7 +101,7 @@ export default function InsightOverviewPage() {
               <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Analyse automatique</h2>
             </div>
             <div className="space-y-3">
-              {(snapshot?.analysis || []).length ? snapshot?.analysis.map((item, index) => <AnalysisCard key={`${item.metric}-${index}`} item={item} />) : <EmptyState label="Aucune analyse générée pour le moment." />}
+              {(snapshot?.analysis || []).length ? snapshot?.analysis.map((item, index) => <AnalysisCard key={`${item.metric}-${index}`} item={item} />) : <EmptyState label="No analysis generated yet." />}
             </div>
           </div>
         </section>
@@ -109,12 +109,12 @@ export default function InsightOverviewPage() {
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-4 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-violet-600" />
-            <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Recommandations IA</h2>
+            <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Recommendations IA</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
             {(snapshot?.recommendations || []).length
               ? snapshot?.recommendations.map((item, index) => <RecommendationCard key={`${item.title}-${index}`} item={item} />)
-              : <EmptyState label="Aucune recommandation générée pour le moment." />}
+              : <EmptyState label="No recommendations generated yet." />}
           </div>
         </section>
       </div>
@@ -157,7 +157,7 @@ function RecommendationCard({ item }: { item: InsightRecommendation }) {
         <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold capitalize", priorityTone[item.priority])}>{translatePriority(item.priority)}</span>
       </div>
       <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">{item.message}</p>
-      <p className="mt-3 text-xs font-semibold uppercase text-gray-400">{item.source || "système"}</p>
+      <p className="mt-3 text-xs font-semibold uppercase text-gray-400">{item.source || "system"}</p>
     </div>
   );
 }

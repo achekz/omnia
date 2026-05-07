@@ -19,9 +19,9 @@ interface NotificationPanelProps {
 }
 
 const filters: { id: NotificationCategory; label: string }[] = [
-  { id: "all", label: "Toutes" },
+  { id: "all", label: "All" },
   { id: "ml", label: "Alertes ML" },
-  { id: "tasks", label: "Tâches" },
+  { id: "tasks", label: "Tasks" },
 ];
 
 export function getNotificationCategory(notification: Notification): NotificationCategory {
@@ -83,7 +83,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                 <Bell className="h-3.5 w-3.5" />
                 Historique des notifications
               </div>
-              <h2 className="text-xl font-bold text-slate-950">Centre d'alertes</h2>
+              <h2 className="text-xl font-bold text-slate-950">Centre d'alerts</h2>
               <p className="text-sm text-slate-500">{unreadCount} alerte{unreadCount > 1 ? "s" : ""} non lue{unreadCount > 1 ? "s" : ""} synchronisée{unreadCount > 1 ? "s" : ""} depuis MongoDB.</p>
             </div>
             <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700" title="Fermer">
@@ -139,8 +139,8 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           ) : filteredNotifications.length === 0 ? (
             <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 p-8 text-center">
               <Bell className="mb-3 h-10 w-10 text-slate-300" />
-              <p className="font-semibold text-slate-900">Aucune notification ici</p>
-              <p className="mt-1 text-sm text-slate-500">Les nouvelles alertes ML, tâches et finance apparaîtront dans cet historique.</p>
+              <p className="font-semibold text-slate-900">No notifications here</p>
+              <p className="mt-1 text-sm text-slate-500">New ML, task and finance alerts will appear in this history.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -188,7 +188,7 @@ function NotificationCard({
     (notification.metadata?.actionRequired === true || String(notification.title).toLowerCase().includes("assigned"));
   const categoryMeta = {
     ml: { label: "Alerte ML", icon: <Bot className="h-4 w-4" />, tone: "bg-violet-50 text-violet-700 border-violet-100" },
-    tasks: { label: "Tâche", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
+    tasks: { label: "Task", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
     finance: { label: "Finance", icon: <Coins className="h-4 w-4" />, tone: "bg-emerald-50 text-emerald-700 border-emerald-100" },
     all: { label: "Système", icon: <Bell className="h-4 w-4" />, tone: "bg-slate-50 text-slate-700 border-slate-100" },
   }[category];
@@ -228,7 +228,7 @@ function NotificationCard({
                 disabled={isTaskUpdating}
                 className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
               >
-                Confirmer
+                Confirm
               </button>
               <button
                 type="button"
@@ -246,7 +246,7 @@ function NotificationCard({
           )}
           <div className="mt-3 flex items-center justify-between gap-3">
             <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", notification.isRead ? "bg-slate-100 text-slate-500" : "bg-violet-100 text-violet-700")}>
-              {notification.isRead ? "Lu" : "Non lu"}
+              {notification.isRead ? "Read" : "Unread"}
             </span>
             {!notification.isRead && id && (
               <button
@@ -258,7 +258,7 @@ function NotificationCard({
                 disabled={isUpdating}
                 className="text-xs font-bold text-violet-700 transition hover:text-violet-900 disabled:opacity-50"
               >
-                Marquer comme lu
+                Mark as read
               </button>
             )}
           </div>
