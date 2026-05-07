@@ -29,7 +29,7 @@ const notificationSchema = new Schema(
 
     source: {
       type: String,
-      enum: ['rule_engine', 'ml', 'ai', 'system', 'user'],
+      enum: ['rule_engine', 'ml', 'ai', 'ai_rules', 'system', 'user'],
       default: 'system',
     },
 

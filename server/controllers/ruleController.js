@@ -7,6 +7,53 @@ function scopedFilter(req) {
   return req.tenantId ? { tenantId: req.tenantId } : {};
 }
 
+function validateRulePayload(payload, { partial = false } = {}) {
+  const requiredFields = [
+    ['name', 'Rule name'],
+    ['description', 'Description'],
+    ['trigger', 'Trigger'],
+    ['resource', 'Resource'],
+    ['conditions', 'IF condition'],
+    ['action', 'THEN action'],
+  ];
+
+  const missing = [];
+
+  for (const [field, label] of requiredFields) {
+    if (partial && payload[field] === undefined) continue;
+    const value = payload[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && !value.trim()) ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
+      missing.push(label);
+    }
+  }
+
+  const action = payload.action || {};
+  if (!partial || payload.action !== undefined) {
+    if (!String(action.title || '').trim()) missing.push('Notification title');
+    if (!String(action.message || '').trim()) missing.push('Notification message');
+  }
+
+  const conditions = payload.conditions || [];
+  if ((!partial || payload.conditions !== undefined) && Array.isArray(conditions)) {
+    conditions.forEach((condition, index) => {
+      if (!condition.metric) missing.push(`Condition ${index + 1} metric`);
+      if (!condition.operator) missing.push(`Condition ${index + 1} operator`);
+      if (condition.value === undefined || condition.value === null || condition.value === '') {
+        missing.push(`Condition ${index + 1} value`);
+      }
+    });
+  }
+
+  if (missing.length) {
+    throw new ApiError(400, `Please fill required fields: ${[...new Set(missing)].join(', ')}`);
+  }
+}
+
 export const listRules = asyncHandler(async (req, res) => {
   const rules = await Rule.find(scopedFilter(req)).sort({ createdAt: -1 });
   res.json(new ApiResponse(200, { rules }));
@@ -14,6 +61,7 @@ export const listRules = asyncHandler(async (req, res) => {
 
 export const createRule = asyncHandler(async (req, res) => {
   const { name, description, trigger, resource, roles, conditions, action, redirectTarget, cooldownMinutes, isActive } = req.body;
+  validateRulePayload(req.body);
 
   const rule = await Rule.create({
     tenantId: req.tenantId,
@@ -40,6 +88,7 @@ export const createRule = asyncHandler(async (req, res) => {
 export const updateRule = asyncHandler(async (req, res) => {
   const rule = await Rule.findOne({ _id: req.params.id, ...scopedFilter(req) });
   if (!rule) throw new ApiError(404, 'Rule not found');
+  validateRulePayload(req.body, { partial: true });
 
   const editable = ['name', 'description', 'trigger', 'resource', 'roles', 'conditions', 'action', 'redirectTarget', 'cooldownMinutes', 'isActive'];
   editable.forEach((field) => {

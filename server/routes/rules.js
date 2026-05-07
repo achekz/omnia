@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.use(protect, tenantIsolation);
 
-router.get('/', authorize('admin', 'comptable'), listRules);
-router.post('/', authorize('admin', 'comptable'), createRule);
-router.post('/run', authorize('admin', 'comptable'), runRules);
-router.put('/:id', authorize('admin', 'comptable'), updateRule);
-router.delete('/:id', authorize('admin', 'comptable'), deleteRule);
+router.get('/', authorize('admin'), listRules);
+router.post('/', authorize('admin'), createRule);
+router.post('/run', authorize('admin'), runRules);
+router.put('/:id', authorize('admin'), updateRule);
+router.delete('/:id', authorize('admin'), deleteRule);
 
 export default router;

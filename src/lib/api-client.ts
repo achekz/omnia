@@ -263,6 +263,13 @@ const fallbackAnalyticsScore: AnalyticsScore = {
 
 const fallbackRules: Rule[] = [];
 
+type SendAttendanceCodeResponse = {
+  action?: "check-in" | "check-out";
+  emailSent?: boolean;
+  devCode?: string;
+  expiresAt?: string;
+};
+
 function unwrapData<T>(payload: unknown, fallback: T): T {
   if (payload && typeof payload === "object") {
     const dataPayload = payload as { data?: T };
@@ -601,7 +608,7 @@ export function useSendAttendanceCode() {
   return useMutation({
     mutationFn: async (data: { action: "check-in" | "check-out"; reason?: string }) => {
       const response = await apiClient.post("/presence/send-code", data);
-      return unwrapData(response.data, {});
+      return unwrapData<SendAttendanceCodeResponse>(response.data, {});
     },
   });
 }

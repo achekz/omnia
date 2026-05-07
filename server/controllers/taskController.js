@@ -54,6 +54,19 @@ function userCanAccessTask(task, user) {
   );
 }
 
+function ensureTaskInTenant(task, req) {
+  if (req.tenantId && task.tenantId?.toString?.() !== req.tenantId.toString()) {
+    throw new ApiError(404, 'Task not found');
+  }
+}
+
+function scopedUserLookup(req, userId) {
+  return {
+    _id: userId,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+  };
+}
+
 function buildTaskAiRecommendation(task) {
   const isLate =
     task.status === 'overdue' ||
@@ -218,7 +231,7 @@ export const createTask = asyncHandler(async (req, res) => {
       throw new ApiError(400, 'Assigned user is required');
     }
 
-    const assignedUser = await User.findOne({ _id: assignedTo }).select('_id email name firstName lastName role');
+    const assignedUser = await User.findOne(scopedUserLookup(req, assignedTo)).select('_id email name firstName lastName role tenantId');
     if (!assignedUser) {
       throw new ApiError(404, 'Assigned user not found');
     }
@@ -229,6 +242,7 @@ export const createTask = asyncHandler(async (req, res) => {
 
     taskData.assignedTo = assignedUser._id;
     taskData.assignedRole = normalizedAssignedRole;
+    taskData.tenantId = req.tenantId || assignedUser.tenantId;
   }
 
   const task = await Task.create(taskData);
@@ -246,7 +260,7 @@ export const createTask = asyncHandler(async (req, res) => {
   if (task.assignedTo && task.assignedTo._id.toString() !== req.user._id.toString()) {
     emitToUser(task.assignedTo._id.toString(), 'task_created', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskCreated', { task });
-    await notifService.create(task.assignedTo._id, req.tenantId, {
+    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
       type: 'info',
       title: 'New task assigned',
       message: `A new task "${task.title}" was assigned to you for ${getTaskDay(task)}. Confirm it or choose Plus tard.`,
@@ -263,7 +277,7 @@ export const createTask = asyncHandler(async (req, res) => {
   await evaluateTaskRules(task, req, 'task');
 
   void refreshRecommendationsForScope({
-    tenantId: req.tenantId || undefined,
+    tenantId: task.tenantId || req.tenantId || undefined,
     userIds: [task.assignedTo?._id?.toString?.(), task.createdBy?._id?.toString?.()].filter(Boolean),
     trigger: 'task-created',
   });
@@ -275,6 +289,7 @@ export const createTask = asyncHandler(async (req, res) => {
 export const updateTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
+  ensureTaskInTenant(task, req);
 
   const canEdit =
     task.createdBy.toString() === req.user._id.toString() ||
@@ -297,8 +312,8 @@ export const updateTask = asyncHandler(async (req, res) => {
     'lateReason',
   ];
   if (req.body.assignedTo !== undefined) {
-  const assignedUser = await User.findOne({ _id: req.body.assignedTo })
-    .select('_id email name firstName lastName role');
+  const assignedUser = await User.findOne(scopedUserLookup(req, req.body.assignedTo))
+    .select('_id email name firstName lastName role tenantId');
   if (!assignedUser) {
     throw new ApiError(404, 'Assigned user not found');
   }
@@ -307,6 +322,7 @@ export const updateTask = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
   }
   task.assignedRole = normalizedAssignedRole;
+  task.tenantId = req.tenantId || task.tenantId || assignedUser.tenantId;
 }
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
@@ -315,7 +331,7 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
-    await notifService.create(task.assignedTo._id, req.tenantId, {
+    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
       type: 'info',
       title: 'Task updated',
       message: `"${task.title}" was updated by admin.`,
@@ -336,6 +352,7 @@ export const updateTask = asyncHandler(async (req, res) => {
 export const deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
+  ensureTaskInTenant(task, req);
 
   const canDelete =
     task.createdBy.toString() === req.user._id.toString() ||
@@ -356,6 +373,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
+  ensureTaskInTenant(task, req);
 
   const isAssignedUser = task.assignedTo?.toString() === req.user._id.toString();
   const isCreator = task.createdBy?.toString() === req.user._id.toString();
@@ -369,8 +387,8 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Assigned users can only confirm, complete, or decline tasks');
   }
 
-  if (status === 'declined' && isAssignedUser && !String(declineReason || '').trim()) {
-    throw new ApiError(400, 'Reason is required when marking a task late or choosing Plus tard');
+  if (status === 'declined' && !String(declineReason || '').trim()) {
+    throw new ApiError(400, 'Reason is required when choosing Plus tard');
   }
 
   const isLateCompletion = status === 'done' && (
@@ -441,7 +459,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   const actorName = getDisplayName(req.user);
 
   if (status === 'in_progress' && task.createdBy) {
-    await notifService.create(task.createdBy._id, req.tenantId, {
+    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
       type: 'info',
       title: 'Task confirmed',
       message: `${actorName} confirmed "${task.title}". It is now in progress.`,
@@ -452,7 +470,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   }
 
   if (status === 'declined' && task.createdBy) {
-    await notifService.create(task.createdBy._id, req.tenantId, {
+    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
       type: 'danger',
       title: 'Task cancelled',
       message: `${actorName} chose Plus tard for "${task.title}".`,
@@ -463,7 +481,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   }
 
   if (status === 'done' && task.createdBy) {
-    await notifService.create(task.createdBy._id, req.tenantId, {
+    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
       type: task.isDelayed ? 'warning' : 'success',
       title: 'Task completed',
       message: `${actorName} completed "${task.title}"${task.isDelayed ? ' with delay' : ''}.`,
@@ -484,7 +502,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     if (task.assignedTo?._id && savedRecommendation) {
       await MLPrediction.create({
         userId: task.assignedTo._id,
-        tenantId: req.tenantId,
+        tenantId: task.tenantId || req.tenantId,
         modelType: 'recommendation',
         input: {
           trigger: `task-${status}`,
@@ -515,6 +533,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
+  ensureTaskInTenant(task, req);
 
   if (req.tenantId && task.tenantId?.toString?.() !== req.tenantId.toString()) {
     throw new ApiError(404, 'Task not found');
@@ -553,7 +572,7 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
-    await notifService.create(task.assignedTo._id, req.tenantId, {
+    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
       type: 'info',
       title: 'Task rescheduled',
       message: `"${task.title}" was rescheduled for today.`,
@@ -570,7 +589,7 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
 
   await MLPrediction.create({
     userId: task.assignedTo?._id || task.assignedTo || req.user._id,
-    tenantId: req.tenantId,
+    tenantId: task.tenantId || req.tenantId,
     modelType: 'recommendation',
     input: {
       trigger: 'task-reschedule-today',
@@ -593,6 +612,7 @@ export const addTaskComment = asyncHandler(async (req, res) => {
 
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
+  ensureTaskInTenant(task, req);
 
   const isAssignedUser = task.assignedTo?.toString() === req.user._id.toString();
   const isCreator = task.createdBy?.toString() === req.user._id.toString();
@@ -608,7 +628,7 @@ export const addTaskComment = asyncHandler(async (req, res) => {
 
   const targetUserId = isAdmin ? task.assignedTo?._id || task.assignedTo : task.createdBy;
   if (targetUserId) {
-    await notifService.create(targetUserId, req.tenantId, {
+    await notifService.create(targetUserId, task.tenantId || req.tenantId, {
       type: 'info',
       title: 'Task comment added',
       message: `${getDisplayName(req.user)} commented on "${task.title}".`,
@@ -629,7 +649,7 @@ export const acceptTask = (req, res, next) => {
 
 // PATCH /api/tasks/:id/later
 export const sendTaskLater = (req, res, next) => {
-  req.body = { ...req.body, status: 'declined', declineReason: req.body?.declineReason || 'Plus tard' };
+  req.body = { ...req.body, status: 'declined', declineReason: req.body?.declineReason };
   return updateTaskStatus(req, res, next);
 };
 

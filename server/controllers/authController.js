@@ -205,7 +205,10 @@ export const sendCode = asyncHandler(async (req, res) => {
   }
 
   try {
-    const { expiresAt, delivery } = await createAndSendVerificationCode({
+    const allowLocalCodeFallback =
+      process.env.NODE_ENV !== "production" || process.env.EMAIL_DEV_FALLBACK === "true";
+
+    const { expiresAt, delivery, code } = await createAndSendVerificationCode({
       purpose: "register",
       firstName,
       lastName,
@@ -216,6 +219,7 @@ export const sendCode = asyncHandler(async (req, res) => {
       profileType,
       gender,
       verificationMethod,
+      allowDeliveryFailure: allowLocalCodeFallback,
     });
 
     return res.status(200).json(
@@ -228,8 +232,9 @@ export const sendCode = asyncHandler(async (req, res) => {
           verificationMethod,
           expiresAt,
           delivery,
+          devCode: delivery?.channel === "local" ? code : undefined,
         },
-        "Verification code sent",
+        delivery?.channel === "local" ? "Verification code generated locally" : "Verification code sent",
       ),
     );
   } catch (error) {
@@ -308,6 +313,11 @@ export const register = asyncHandler(async (req, res) => {
 
   if (!phoneValidation.valid) {
     throw new ApiError(400, phoneValidation.message);
+  }
+
+  const phoneUser = await User.findOne({ phoneNumber: phoneValidation.phoneNumber });
+  if (phoneUser) {
+    throw new ApiError(409, "Phone number already registered");
   }
 
   const payloadMatches =
@@ -391,7 +401,7 @@ export const login = asyncHandler(async (req, res) => {
 
     if (!user) {
       console.error("[AUTH] Login failed: user not found", { email });
-      throw new ApiError(401, "Invalid credentials");
+      throw new ApiError(401, "Email incorrect");
     }
   }
 
@@ -429,7 +439,7 @@ export const login = asyncHandler(async (req, res) => {
       hasPassword: Boolean(user.password),
       passwordFormat: String(user.password || "").slice(0, 4),
     });
-    throw new ApiError(401, "Invalid credentials");
+    throw new ApiError(401, "Password incorrect");
   }
 
   if (!user.isActive) {
@@ -478,7 +488,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
     user = await repairAdminAccountForLogin(email, password);
 
     if (!user) {
-      throw new ApiError(401, "Invalid credentials");
+      throw new ApiError(401, "Email incorrect");
     }
   }
 
@@ -496,7 +506,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
   }
 
   if (!passwordMatches) {
-    throw new ApiError(401, "Invalid credentials");
+    throw new ApiError(401, "Password incorrect");
   }
 
   if (normalizeRole(user.role, "employee") !== "admin") {

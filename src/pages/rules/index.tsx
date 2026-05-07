@@ -61,6 +61,7 @@ export default function RuleEnginePage() {
   const runRules = useRunRules();
   const [form, setForm] = useState<Rule>(emptyForm);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formError, setFormError] = useState("");
   const [executionLogs, setExecutionLogs] = useState<Array<{ id: string; timestamp: string; rulesEvaluated: number; triggeredCount: number }>>(() => {
     try {
       return JSON.parse(localStorage.getItem("omni_rule_engine_logs") || "[]");
@@ -73,6 +74,7 @@ export default function RuleEnginePage() {
 
   function resetForm() {
     setForm(emptyForm);
+    setFormError("");
     setIsFormOpen(true);
   }
 
@@ -86,18 +88,16 @@ export default function RuleEnginePage() {
       action: { ...emptyForm.action, ...rule.action, redirectTarget, actionUrl: redirectTarget },
       roles: rule.roles?.length ? rule.roles : [],
     });
+    setFormError("");
     setIsFormOpen(true);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!form.name.trim() || !form.action.title.trim() || !form.action.message.trim()) {
-      toast({
-        title: "Rule incomplete",
-        description: "Name, notification title and message are required.",
-        variant: "destructive",
-      });
+    const validationMessage = getRuleValidationMessage(form);
+    if (validationMessage) {
+      setFormError(validationMessage);
       return;
     }
 
@@ -108,6 +108,7 @@ export default function RuleEnginePage() {
         description: "The automation rule is saved in MongoDB.",
       });
       setForm(emptyForm);
+      setFormError("");
       setIsFormOpen(false);
     } catch {
       toast({
@@ -227,6 +228,12 @@ export default function RuleEnginePage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {formError && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                  {formError}
+                </div>
+              )}
+
               <Field label="Rule name">
                 <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="form-input" placeholder="Task delay > 2 days" />
               </Field>
@@ -344,6 +351,12 @@ export default function RuleEnginePage() {
                 Rule enabled
               </label>
 
+              {formError && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                  {formError}
+                </div>
+              )}
+
               <button type="submit" disabled={saveRule.isPending} className="w-full rounded-2xl bg-gray-950 px-5 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:opacity-60">
                 {saveRule.isPending ? "Saving..." : "Save rule"}
               </button>
@@ -435,6 +448,36 @@ function labelForMetric(value: RuleMetric) {
 
 function labelForOperator(value: RuleOperator) {
   return operatorOptions.find((option) => option.value === value)?.label || value;
+}
+
+function getRuleValidationMessage(form: Rule) {
+  const condition = form.conditions?.[0];
+  const missingFields: string[] = [];
+
+  if (!form.name.trim()) missingFields.push("Rule name");
+  if (!String(form.description || "").trim()) missingFields.push("Description");
+  if (!condition?.metric) missingFields.push("IF metric");
+  if (!condition?.operator) missingFields.push("IF operator");
+  if (condition?.value === undefined || condition?.value === null || String(condition.value).trim() === "") missingFields.push("IF value");
+  if (!form.action?.target) missingFields.push("Notification target");
+  if (!form.action?.severity) missingFields.push("Severity");
+  if (!String(form.redirectTarget || form.action?.redirectTarget || form.action?.actionUrl || "").trim()) missingFields.push("Redirect target");
+  if (!String(form.action?.title || "").trim()) missingFields.push("Notification title");
+  if (!String(form.action?.message || "").trim()) missingFields.push("Notification message");
+
+  if (!missingFields.length) return "";
+
+  const textFieldsAreEmpty =
+    !form.name.trim() &&
+    !String(form.description || "").trim() &&
+    !String(form.action?.title || "").trim() &&
+    !String(form.action?.message || "").trim();
+
+  if (textFieldsAreEmpty) {
+    return "Please fill the form before saving. Required fields: Rule name, Description, Notification title, Notification message.";
+  }
+
+  return `Please fill this field: ${missingFields[0]}.`;
 }
 
 function translateTarget(value?: Rule["action"]["target"]) {

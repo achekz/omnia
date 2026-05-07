@@ -36,18 +36,39 @@ export async function createAndSendVerificationCode(payload) {
   await verification.setCode(code);
   await verification.save();
 
-  const delivery = await deliverVerificationCode({
-    method: normalizedPayload.verificationMethod,
-    email: normalizedPayload.email,
-    phoneNumber: normalizedPayload.phoneNumber,
-    code,
-    firstName: normalizedPayload.firstName,
-  });
+  let delivery;
+
+  try {
+    delivery = await deliverVerificationCode({
+      method: normalizedPayload.verificationMethod,
+      email: normalizedPayload.email,
+      phoneNumber: normalizedPayload.phoneNumber,
+      code,
+      firstName: normalizedPayload.firstName,
+    });
+  } catch (error) {
+    if (!payload.allowDeliveryFailure) {
+      throw error;
+    }
+
+    console.warn("[OTP] Email delivery failed; local development fallback enabled.", {
+      message: error?.message,
+      code: error?.code,
+    });
+
+    delivery = {
+      provider: "local-dev",
+      channel: "local",
+      deliveryId: null,
+      error: error?.message || "Email delivery failed",
+    };
+  }
 
   return {
     verification,
     delivery,
     expiresAt,
+    code: payload.allowDeliveryFailure && delivery.channel === "local" ? code : undefined,
   };
 }
 

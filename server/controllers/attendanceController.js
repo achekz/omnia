@@ -188,17 +188,44 @@ export const sendAttendanceCode = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid attendance action");
   }
 
-  await createAndSendVerificationCode({
-    purpose: "presence",
-    type: "presence",
-    email: req.user.email,
-    firstName: req.user.firstName || req.user.name || "User",
-    lastName: req.user.lastName || "",
-    role: req.user.role,
-    gender: req.user.gender || "male",
-  });
+  const allowLocalCodeFallback =
+    process.env.NODE_ENV !== "production" || process.env.EMAIL_DEV_FALLBACK === "true";
 
-  res.json(new ApiResponse(200, { action }, "Verification code sent"));
+  let verificationResult;
+
+  try {
+    verificationResult = await createAndSendVerificationCode({
+      purpose: "presence",
+      type: "presence",
+      email: req.user.email,
+      firstName: req.user.firstName || req.user.name || "User",
+      lastName: req.user.lastName || "",
+      role: req.user.role,
+      gender: req.user.gender || "male",
+      allowDeliveryFailure: allowLocalCodeFallback,
+    });
+  } catch (error) {
+    console.error("[ATTENDANCE] Could not send verification code.", {
+      message: error?.message,
+      code: error?.code,
+    });
+    throw new ApiError(503, "Could not send verification code. Check the system email configuration.");
+  }
+
+  const emailSent = verificationResult.delivery?.channel === "email";
+
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        action,
+        emailSent,
+        devCode: emailSent ? undefined : verificationResult.code,
+        expiresAt: verificationResult.expiresAt,
+      },
+      emailSent ? "Verification code sent" : "Verification code generated locally",
+    ),
+  );
 });
 
 export const confirmAttendance = asyncHandler(async (req, res) => {

@@ -4,7 +4,7 @@ import { getAllowedRoles } from "./roleNormalization.js";
 
 const allowedRoles = getAllowedRoles();
 const allowedGenders = ["male", "female"];
-const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const allowedVerificationMethods = ["email"];
 
 export const validateSendCode = [
@@ -89,7 +89,7 @@ export const validateRegister = [
     .withMessage("Gender must be male or female"),
   body("password")
     .matches(passwordPattern)
-    .withMessage("Password must be 8+ chars with uppercase, number, and special char"),
+    .withMessage("Password must be 8+ chars with uppercase, lowercase, number, and special char"),
   body("confirmPassword")
     .custom((value, { req }) => value === req.body.password)
     .withMessage("Passwords do not match"),
@@ -130,7 +130,7 @@ export const validateResetPassword = [
     .withMessage("Valid email is required"),
   body("password")
     .matches(passwordPattern)
-    .withMessage("Password must be 8+ chars with uppercase, number, and special char"),
+    .withMessage("Password must be 8+ chars with uppercase, lowercase, number, and special char"),
   body("confirmPassword")
     .custom((value, { req }) => value === req.body.password)
     .withMessage("Passwords do not match"),

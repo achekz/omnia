@@ -135,11 +135,21 @@ export default function PresencePage() {
     }
 
     try {
-      await sendCode.mutateAsync({ action: selectedAction, reason });
+      const result = await sendCode.mutateAsync({ action: selectedAction, reason });
       setStep("code");
-      toast({ title: "Code sent", description: "Check your email for the verification code." });
+      if (result.devCode) {
+        setCode(result.devCode);
+        toast({ title: "Code generated locally", description: `Email unavailable. Use code ${result.devCode}.` });
+      } else {
+        toast({ title: "Code sent", description: "Check your email for the verification code." });
+      }
     } catch (error: any) {
-      toast({ title: "Verification failed", description: error?.response?.data?.message || "Could not send code.", variant: "destructive" });
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Could not send code.";
+      toast({ title: "Verification failed", description: message, variant: "destructive" });
     }
   };
 
