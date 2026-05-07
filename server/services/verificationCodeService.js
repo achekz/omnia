@@ -4,10 +4,12 @@ import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.
 
 const VERIFICATION_WINDOW_MS = 5 * 60 * 1000;
 
+// Role: Decrit la logique generateOtpCode.
 function generateOtpCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Role: Cree une nouvelle ressource.
 export async function createAndSendVerificationCode(payload) {
   const code = generateOtpCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_WINDOW_MS);
@@ -72,6 +74,7 @@ export async function createAndSendVerificationCode(payload) {
   };
 }
 
+// Role: Verifie les donnees ou les droits.
 export async function verifyOtpCode({ purpose, email, phoneNumber, code }) {
   const normalizedEmail = email?.trim().toLowerCase();
   const verification = await VerificationCode.findOne({

@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGetAnalyticsActivity, useGetAnalyticsScore, useGetTasks } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
+// Role: Affiche et organise cet ecran.
 export default function MyPerformancePage() {
   const { user } = useAuth();
   const { data: tasks = [] } = useGetTasks({ query: { refetchInterval: 30000 } });
@@ -106,6 +107,7 @@ export default function MyPerformancePage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function MetricCard({ title, value, subtitle, icon, tone }: { title: string; value: string; subtitle: string; icon: JSX.Element; tone: "emerald" | "rose" }) {
   const tones = {
     emerald: "bg-emerald-100 text-emerald-600",

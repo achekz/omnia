@@ -9,26 +9,32 @@ import { refreshRecommendationsForScope } from "./recommendationService.js";
 
 const WINDOW_DAYS = 30;
 
+// Role: Construit des donnees derivees.
 function scopeFilter(tenantId) {
   return tenantId ? { tenantId } : {};
 }
 
+// Role: Decrit la logique pct.
 function pct(value, total) {
   return total ? Math.round((value / total) * 100) : 0;
 }
 
+// Role: Decrit la logique kpi.
 function kpi({ key, label, value, unit = "", trend = "stable", status = "neutral", description = "" }) {
   return { key, label, value, unit, trend, status, description };
 }
 
+// Role: Decrit la logique analysis.
 function analysis({ severity = "info", title, message, metric = "" }) {
   return { severity, title, message, metric };
 }
 
+// Role: Lance un traitement metier ou IA.
 function recommendation({ title, message, priority = "medium", source = "system" }) {
   return { title, message, priority, source };
 }
 
+// Role: Recupere les donnees necessaires.
 function getStatusFromThreshold(value, warning, critical, inverse = false) {
   if (inverse) {
     if (value <= critical) return "critical";
@@ -41,6 +47,7 @@ function getStatusFromThreshold(value, warning, critical, inverse = false) {
   return "good";
 }
 
+// Role: Decrit la logique generateInsightSnapshot.
 export async function generateInsightSnapshot({ tenantId, generatedBy = "system", role = "all" } = {}) {
   const windowEnd = new Date();
   const windowStart = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -248,6 +255,7 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
   });
 }
 
+// Role: Recupere les donnees necessaires.
 export async function getLatestInsightSnapshot({ tenantId } = {}) {
   const scoped = scopeFilter(tenantId);
   const latest = await InsightSnapshot.findOne(scoped).sort({ createdAt: -1 });

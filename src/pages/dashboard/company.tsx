@@ -7,6 +7,7 @@ import { useGetDashboardStats, useGetTeamMembers } from "@/lib/api-client";
 import type { TeamMemberSummary } from "@/lib/types";
 import { cn, getRiskColor } from "@/lib/utils";
 
+// Role: Affiche et organise cet ecran.
 export default function CompanyDashboard() {
   const { data: stats } = useGetDashboardStats();
   const { data: teamMembers = [], isLoading: teamLoading } = useGetTeamMembers();

@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 const transporters = new Map();
 const DEFAULT_FROM_NAME = "OmniAI Platform";
 
+// Role: Recupere les donnees necessaires.
 function getEmailCredentials() {
   const user = process.env.EMAIL_USER?.trim();
   const pass = process.env.EMAIL_PASS?.replace(/\s+/g, "");
@@ -18,6 +19,7 @@ function getEmailCredentials() {
   return { user, pass };
 }
 
+// Role: Recupere les donnees necessaires.
 function getSystemSender() {
   const { user } = getEmailCredentials();
   const fromName = process.env.EMAIL_FROM_NAME?.trim() || DEFAULT_FROM_NAME;
@@ -25,6 +27,7 @@ function getSystemSender() {
   return `"${fromName}" <${user}>`;
 }
 
+// Role: Cree une nouvelle ressource.
 function createTransporter(mode = "gmail-service") {
   const { user, pass } = getEmailCredentials();
   const baseConfig = {
@@ -76,6 +79,7 @@ function createTransporter(mode = "gmail-service") {
   });
 }
 
+// Role: Recupere les donnees necessaires.
 function getTransporter(mode = "gmail-service") {
   if (transporters.has(mode)) {
     return transporters.get(mode);
@@ -87,6 +91,7 @@ function getTransporter(mode = "gmail-service") {
   return transporter;
 }
 
+// Role: Retourne un etat booleen.
 function shouldRetryWithAlternateMode(error) {
   const message = String(error?.message || "").toLowerCase();
 
@@ -101,6 +106,7 @@ function shouldRetryWithAlternateMode(error) {
   ].some((pattern) => message.includes(pattern) || String(error?.code || "").toLowerCase().includes(pattern));
 }
 
+// Role: Envoie un message ou une notification.
 async function sendWithMode({ mode, to, subject, html, text }) {
   const smtpTransporter = getTransporter(mode);
   const info = await smtpTransporter.sendMail({
@@ -125,6 +131,7 @@ async function sendWithMode({ mode, to, subject, html, text }) {
   };
 }
 
+// Role: Recupere les donnees necessaires.
 function getTransportModesForError(error) {
   if (!error) {
     return ["gmail-service", "starttls-ipv4", "ssl-ipv4"];
@@ -137,6 +144,7 @@ function getTransportModesForError(error) {
   return [];
 }
 
+// Role: Envoie un message ou une notification.
 async function sendEmail({ to, subject, html, text }) {
   getEmailCredentials();
 
@@ -203,6 +211,7 @@ async function sendEmail({ to, subject, html, text }) {
   }
 }
 
+// Role: Verifie les donnees ou les droits.
 export async function verifyEmailTransport() {
   try {
     await getTransporter("gmail-service").verify();
@@ -240,6 +249,7 @@ export async function verifyEmailTransport() {
   }
 }
 
+// Role: Envoie un message ou une notification.
 export const sendAlert = async (to, subject, htmlContent) => {
   return sendEmail({
     to,
@@ -248,6 +258,7 @@ export const sendAlert = async (to, subject, htmlContent) => {
   });
 };
 
+// Role: Envoie un message ou une notification.
 export const sendEmailVerificationCode = async (email, code, firstName = "there") => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px;">
@@ -267,6 +278,7 @@ export const sendEmailVerificationCode = async (email, code, firstName = "there"
   });
 };
 
+// Role: Envoie un message ou une notification.
 export const sendPasswordResetCode = async (email, code, firstName = "there") => {
   const textContent = `Your verification code is: ${code}`;
   const htmlContent = `

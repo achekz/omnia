@@ -4,6 +4,7 @@ import { ModuleLayout } from "@/components/layout/module-layout";
 import { useDeleteAdminUser, useGetAdminUsers } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
+// Role: Affiche et organise cet ecran.
 export default function AdminUsersPage() {
   const { data: users = [], isLoading } = useGetAdminUsers();
   const deleteUser = useDeleteAdminUser();
@@ -11,6 +12,7 @@ export default function AdminUsersPage() {
   const { toast } = useToast();
   const visibleUsers = users.filter((user) => user.role !== "admin");
 
+  // Role: Traite une action utilisateur.
   const handleDelete = async (id?: string, label?: string) => {
     if (!id) return;
     const confirmed = window.confirm(`Delete ${label || "ce compte"} et tous les enregistrements liés ?`);

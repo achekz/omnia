@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import ActivityLog from "../models/ActivityLog.js";
 import { normalizeRole } from "../utils/roleNormalization.js";
 
+// Role: Recupere les donnees necessaires.
 export async function getContext(user) {
   if (!user) {
     return {

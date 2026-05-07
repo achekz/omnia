@@ -2,11 +2,13 @@ import { getLatestInsightSnapshot, generateInsightSnapshot } from "../services/i
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+// Role: Recupere les donnees necessaires.
 export const getOverview = asyncHandler(async (req, res) => {
   const snapshot = await getLatestInsightSnapshot({ tenantId: req.tenantId });
   res.json(new ApiResponse(200, { snapshot }, "AI insight snapshot retrieved"));
 });
 
+// Role: Decrit la logique generateOverview.
 export const generateOverview = asyncHandler(async (req, res) => {
   const snapshot = await generateInsightSnapshot({
     tenantId: req.tenantId,

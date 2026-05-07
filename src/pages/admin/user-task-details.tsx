@@ -7,6 +7,7 @@ import type { Task, User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatDuration(seconds: number) {
   const safeSeconds = Math.max(0, Math.floor(seconds));
   const hours = Math.floor(safeSeconds / 3600);
@@ -15,6 +16,7 @@ function formatDuration(seconds: number) {
   return `${hours}h ${minutes}m ${remainingSeconds}s`;
 }
 
+// Role: Recupere les donnees necessaires.
 function getTaskDurationSeconds(task: Task, now: number) {
   const startedAt = task.actualStartedAt || task.acceptedAt || task.startTime;
   const finishedAt = task.actualFinishedAt || task.completedAt;
@@ -27,11 +29,13 @@ function getTaskDurationSeconds(task: Task, now: number) {
   return Math.max(0, Math.floor((end - start) / 1000));
 }
 
+// Role: Recupere les donnees necessaires.
 function getUserName(user?: Partial<User> | string) {
   if (!user || typeof user === "string") return "User";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "User";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AdminUserTaskDetailsPage() {
   const [, params] = useRoute("/admin/users/:id/tasks");
   const [, setLocation] = useLocation();
@@ -105,6 +109,7 @@ export default function AdminUserTaskDetailsPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -114,12 +119,14 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
   const [comment, setComment] = useState("");
   const addComment = useAddTaskComment();
   const { toast } = useToast();
   const id = task._id || task.id;
 
+  // Role: Traite une action utilisateur.
   const submitComment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!id || !comment.trim()) return;
@@ -195,6 +202,7 @@ function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800">
@@ -207,6 +215,7 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function translateTaskStatus(status: Task["status"]) {
   if (status === "done") return "Completed";
   if (status === "in_progress") return "In progress";

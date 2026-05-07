@@ -6,6 +6,7 @@ import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
 import { ruleEngine } from '../services/ruleEngine.js';
 
+// Role: Construit des donnees derivees.
 function buildFinanceFilter(req, extra = {}) {
   const filter = { ...extra };
   if (req.tenantId) {
@@ -14,6 +15,7 @@ function buildFinanceFilter(req, extra = {}) {
   return filter;
 }
 
+// Role: Decrit la logique applyDateRange.
 function applyDateRange(filter, startDate, endDate) {
   if (startDate || endDate) {
     filter.date = {};
@@ -23,6 +25,7 @@ function applyDateRange(filter, startDate, endDate) {
   return filter;
 }
 
+// Role: Construit des donnees derivees.
 function summarizeRecords(records) {
   const totalIncome = records.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
   const totalExpense = records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
@@ -59,11 +62,13 @@ function summarizeRecords(records) {
   return { totalIncome, totalExpense, balance, byCategory, byMonth, anomalyCount, recentAnomalies };
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function escapeCsv(value) {
   const text = String(value ?? '');
   return /[;"\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+// Role: Decrit la logique evaluateFinanceRules.
 async function evaluateFinanceRules(record, req) {
   try {
     await ruleEngine.handleEvent({
@@ -79,6 +84,7 @@ async function evaluateFinanceRules(record, req) {
 }
 
 // GET /api/finance/records
+// Role: Recupere les donnees necessaires.
 export const getRecords = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, type, category, startDate, endDate } = req.query;
 
@@ -97,6 +103,7 @@ export const getRecords = asyncHandler(async (req, res) => {
 });
 
 // POST /api/finance/records
+// Role: Cree une nouvelle ressource.
 export const createRecord = asyncHandler(async (req, res) => {
   const { clientName, type, amount, category, description, date, budgetLimit } = req.body;
   if (!type || !amount) throw new ApiError(400, 'type and amount are required');
@@ -146,12 +153,14 @@ export const createRecord = asyncHandler(async (req, res) => {
 });
 
 // GET /api/finance/summary
+// Role: Recupere les donnees necessaires.
 export const getSummary = asyncHandler(async (req, res) => {
   const records = await FinancialRecord.find(buildFinanceFilter(req));
   return res.json(new ApiResponse(200, summarizeRecords(records)));
 });
 
 // GET /api/finance/overview
+// Role: Recupere les donnees necessaires.
 export const getOverview = asyncHandler(async (req, res) => {
   const records = await FinancialRecord.find(buildFinanceFilter(req)).lean();
   const summary = summarizeRecords(records);
@@ -178,12 +187,14 @@ export const getOverview = asyncHandler(async (req, res) => {
 });
 
 // GET /api/finance/anomalies
+// Role: Recupere les donnees necessaires.
 export const getAnomalies = asyncHandler(async (req, res) => {
   const anomalies = await FinancialRecord.find(buildFinanceFilter(req, { isAnomaly: true })).sort({ flaggedAt: -1 });
   return res.json(new ApiResponse(200, { anomalies }));
 });
 
 // GET /api/finance/reports
+// Role: Recupere les donnees necessaires.
 export const getReport = asyncHandler(async (req, res) => {
   const { startDate, endDate } = req.query;
   const filter = applyDateRange(buildFinanceFilter(req), startDate, endDate);
@@ -206,6 +217,7 @@ export const getReport = asyncHandler(async (req, res) => {
 });
 
 // GET /api/finance/export?format=csv|json
+// Role: Decrit la logique exportReport.
 export const exportReport = asyncHandler(async (req, res) => {
   const { format = 'csv', startDate, endDate } = req.query;
   const filter = applyDateRange(buildFinanceFilter(req), startDate, endDate);

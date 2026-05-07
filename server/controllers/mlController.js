@@ -12,10 +12,12 @@ import User from '../models/User.js';
 
 const PRIVILEGED_ANALYTICS_ROLES = ['admin', 'comptable'];
 
+// Role: Retourne un etat booleen.
 function canInspectOtherUsers(user) {
   return PRIVILEGED_ANALYTICS_ROLES.includes(normalizeRole(user?.role, user?.role));
 }
 
+// Role: Construit des donnees derivees.
 async function resolveAnalyticsUserId(req, requestedUserId) {
   const ownUserId = req.user._id;
   const targetUserId = requestedUserId || ownUserId;
@@ -38,6 +40,7 @@ async function resolveAnalyticsUserId(req, requestedUserId) {
   return targetUserId;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function normalizeRiskScore(score) {
   const numericScore = Number(score || 0);
   if (!Number.isFinite(numericScore)) return 0;
@@ -46,6 +49,7 @@ function normalizeRiskScore(score) {
     : Math.max(0, Math.min(1, numericScore));
 }
 
+// Role: Decrit la logique throwIfMlUnavailable.
 function throwIfMlUnavailable(error) {
   if (error?.code === 'ML_SERVICE_UNAVAILABLE') {
     throw new ApiError(503, 'ML service is unavailable. ML predictions are disabled until the real ML service is online.');
@@ -54,6 +58,7 @@ function throwIfMlUnavailable(error) {
 }
 
 // POST /api/ml/predict
+// Role: Lance un traitement metier ou IA.
 export const predict = asyncHandler(async (req, res) => {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -119,6 +124,7 @@ export const predict = asyncHandler(async (req, res) => {
 });
 
 // POST /api/ml/recommend
+// Role: Lance un traitement metier ou IA.
 export const recommend = asyncHandler(async (req, res) => {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -171,6 +177,7 @@ export const recommend = asyncHandler(async (req, res) => {
 });
 
 // POST /api/ml/anomaly
+// Role: Lance un traitement metier ou IA.
 export const anomaly = asyncHandler(async (req, res) => {
   let { values } = req.body;
 
@@ -218,6 +225,7 @@ export const anomaly = asyncHandler(async (req, res) => {
   return res.json(new ApiResponse(200, { anomaly: saved }));
 });
 
+// Role: Lance un traitement metier ou IA.
 export const predictDelay = asyncHandler(async (req, res) => {
   const userId = await resolveAnalyticsUserId(req, req.body?.userId);
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
@@ -258,6 +266,7 @@ export const predictDelay = asyncHandler(async (req, res) => {
   return res.json(new ApiResponse(200, { prediction: saved, riskScore, result }));
 });
 
+// Role: Decrit la logique presenceAnomaly.
 export const presenceAnomaly = asyncHandler(async (req, res) => {
   const userId = await resolveAnalyticsUserId(req, req.body?.userId);
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -294,6 +303,7 @@ export const presenceAnomaly = asyncHandler(async (req, res) => {
 });
 
 // GET /api/ml/history
+// Role: Decrit la logique history.
 export const history = asyncHandler(async (req, res) => {
   const records = await MLPrediction.find({
     userId: req.user._id,
@@ -306,6 +316,7 @@ export const history = asyncHandler(async (req, res) => {
 });
 
 // GET /api/ml/insights
+// Role: Decrit la logique insights.
 export const insights = asyncHandler(async (req, res) => {
   const scopeFilter = {
     userId: req.user._id,
@@ -342,6 +353,7 @@ export const insights = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Lance un traitement metier ou IA.
 export const recommendations = asyncHandler(async (req, res) => {
   const role = normalizeRole(req.user?.role, req.user?.role);
   const scopeFilter = role === 'admin'

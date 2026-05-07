@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils";
 const roles = ["all", "employee", "stagiaire", "comptable"];
 const statuses = ["all", "present", "absent", "late", "very_late"];
 
+// Role: Recupere les donnees necessaires.
 function getUser(record: Attendance): Partial<User> {
   if (typeof record.userId === "object" && record.userId) return record.userId as Partial<User>;
   return record.userSnapshot || {};
 }
 
+// Role: Decrit la logique statusLabel.
 function statusLabel(status: string) {
   if (status === "all") return "All";
   if (status === "present") return "Présent";
@@ -24,6 +26,7 @@ function statusLabel(status: string) {
   return status.replace("_", " ");
 }
 
+// Role: Decrit la logique statusTone.
 function statusTone(status: string) {
   if (status === "present" || status === "on_time") return "bg-emerald-100 text-emerald-700";
   if (status === "absent") return "bg-red-100 text-red-700";
@@ -31,6 +34,7 @@ function statusTone(status: string) {
   return "bg-red-950 text-red-50";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AdminPresenceDayPage() {
   const [, params] = useRoute("/admin/presences/:date");
   const [role, setRole] = useState("all");
@@ -171,6 +175,7 @@ export default function AdminPresenceDayPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function FilterButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
@@ -187,6 +192,7 @@ function FilterButton({ active, label, onClick }: { active: boolean; label: stri
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; value: number | string; tone: "emerald" | "rose" | "orange" | "gray" }) {
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700",
@@ -204,6 +210,7 @@ function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; va
   );
 }
 
+// Role: Decrit la logique roleLabel.
 function roleLabel(role: string) {
   if (role === "all") return "All";
   if (role === "employee") return "Employee";

@@ -66,6 +66,7 @@ const cityOptions = [
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
+// Role: Recupere les donnees necessaires.
 function getApiErrorMessage(error: unknown, fallback: string) {
   const axiosError = error as AxiosError<{ message?: string; details?: string; code?: string }>;
   const status = axiosError.response?.status;
@@ -82,6 +83,7 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return data?.message || fallback;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function Register() {
   const { register } = useAuth();
   const [step, setStep] = useState<RegisterStep>("details");
@@ -119,6 +121,7 @@ export default function Register() {
     [passwords],
   );
 
+  // Role: Verifie les donnees ou les droits.
   const validateStepOne = () => {
     if (!details.firstName.trim() || !details.lastName.trim() || !details.email.trim() || !details.phoneNumber.trim() || !details.city || !details.verificationMethod || !details.role || !details.gender) {
       return "All fields are required.";
@@ -131,6 +134,7 @@ export default function Register() {
     return "";
   };
 
+  // Role: Verifie les donnees ou les droits.
   const validatePasswordStep = () => {
     if (!passwordPattern.test(passwords.password)) {
       return "Password must be at least 8 characters and include an uppercase letter, a number, and a special character.";
@@ -143,6 +147,7 @@ export default function Register() {
     return "";
   };
 
+  // Role: Traite une action utilisateur.
   const handleSendCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
@@ -178,6 +183,7 @@ export default function Register() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleVerifyCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
@@ -205,6 +211,7 @@ export default function Register() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleCreateAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
@@ -600,6 +607,7 @@ export default function Register() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
@@ -609,6 +617,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Requirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div className={cn("flex items-center gap-3", met ? "text-emerald-700" : "text-slate-500")}>
@@ -618,6 +627,7 @@ function Requirement({ met, label }: { met: boolean; label: string }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function FeatureCard({
   icon,
   title,

@@ -5,6 +5,7 @@ const mlClient = axios.create({
   timeout: 8000,
 });
 
+// Role: Decrit la logique mlUnavailable.
 function mlUnavailable(error) {
   const unavailable = new Error(`ML service unavailable: ${error.message}`);
   unavailable.code = "ML_SERVICE_UNAVAILABLE";
@@ -13,6 +14,7 @@ function mlUnavailable(error) {
 }
 
 // -------- RISK --------
+// Role: Lance un traitement metier ou IA.
 export const predict = async (features) => {
   try {
     const { data } = await mlClient.post("/predict-risk", {
@@ -32,6 +34,7 @@ export const predict = async (features) => {
 };
 
 // -------- RECOMMEND --------
+// Role: Lance un traitement metier ou IA.
 export const recommend = async (features) => {
   try {
     const { data } = await mlClient.post("/recommend", {
@@ -45,6 +48,7 @@ export const recommend = async (features) => {
 };
 
 // -------- ANOMALY --------
+// Role: Lance un traitement metier ou IA.
 export const detectAnomaly = async (values) => {
   try {
     const { data } = await mlClient.post("/detect-anomaly", {
@@ -57,6 +61,7 @@ export const detectAnomaly = async (values) => {
   }
 };
 
+// Role: Lance un traitement metier ou IA.
 export const predictDelay = async (features) => {
   try {
     const { data } = await mlClient.post("/ml/predict-delay", features);
@@ -66,6 +71,7 @@ export const predictDelay = async (features) => {
   }
 };
 
+// Role: Lance un traitement metier ou IA.
 export const detectPresenceAnomaly = async (features) => {
   try {
     const { data } = await mlClient.post("/ml/anomaly", features);

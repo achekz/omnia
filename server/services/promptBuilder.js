@@ -5,6 +5,7 @@
  */
 import { normalizeRole } from "../utils/roleNormalization.js";
 
+// Role: Construit des donnees derivees.
 export function buildPrompt(user, message, context) {
   if (!message) {
     return "Please provide a question.";
@@ -49,6 +50,7 @@ Respond now:`;
  * Format available context for the AI prompt
  * Extracts relevant information the AI can use
  */
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatContext(context, role) {
   if (!context || Object.keys(context).length === 0) {
     return "No specific context available.";

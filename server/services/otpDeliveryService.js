@@ -1,5 +1,6 @@
 import { sendEmailVerificationCode } from "./emailService.js";
 
+// Role: Envoie un message ou une notification.
 export async function deliverVerificationCode({
   method,
   email,

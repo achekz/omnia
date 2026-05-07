@@ -9,11 +9,13 @@ const RESET_EMAIL_STORAGE_KEY = "omni_ai_reset_email";
 const RESET_VERIFIED_STORAGE_KEY = "omni_ai_reset_verified";
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
+// Role: Recupere les donnees necessaires.
 function getErrorMessage(error: unknown) {
   const axiosError = error as AxiosError<{ message?: string }>;
   return axiosError.response?.data?.message || "Failed to reset password";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function ResetPasswordPage() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
@@ -46,6 +48,7 @@ export default function ResetPasswordPage() {
     [password, confirmPassword],
   );
 
+  // Role: Traite une action utilisateur.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
@@ -166,6 +169,7 @@ export default function ResetPasswordPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Requirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div className={cn("flex items-center gap-3", met ? "text-emerald-700" : "text-slate-500")}>

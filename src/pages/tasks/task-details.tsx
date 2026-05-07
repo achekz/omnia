@@ -14,20 +14,24 @@ const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.El
   declined: { label: "Plus tard", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-4 w-4" /> },
 };
 
+// Role: Recupere les donnees necessaires.
 function getUserName(user: Partial<User> | string | undefined) {
   if (!user || typeof user === "string") return "-";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "-";
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatDate(value?: string) {
   return value ? new Date(value).toLocaleString() : "-";
 }
 
+// Role: Retourne un etat booleen.
 function isDelayed(task?: Task | null) {
   if (!task) return false;
   return task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()) || (task.delayDays || 0) > 0;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function TaskDetailsPage() {
   const [, params] = useRoute("/tasks/:id");
   const taskId = params?.id;
@@ -39,6 +43,7 @@ export default function TaskDetailsPage() {
   const meta = task ? statusMeta[task.status] || statusMeta.todo : statusMeta.todo;
   const executed = task?.status === "done" || Boolean(task?.actualStartedAt || task?.actualFinishedAt || task?.completedAt);
 
+  // Role: Decrit la logique rescheduleToday.
   const rescheduleToday = () => {
     if (!taskId) return;
     reschedule.mutate(
@@ -123,6 +128,7 @@ export default function TaskDetailsPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 shadow-sm shadow-slate-950/20">

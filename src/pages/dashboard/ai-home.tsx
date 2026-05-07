@@ -23,6 +23,7 @@ interface Message {
   text: string;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AIHome() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,6 +31,7 @@ export default function AIHome() {
   const [activeModule, setActiveModule] = useState("tresorerie");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Role: Traite une action utilisateur.
   const handleSend = async (text?: string) => {
     const message = text || input.trim();
     if (!message) {

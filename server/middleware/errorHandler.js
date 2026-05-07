@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiResponse.js';
 import { parseMongoConnectionError } from '../config/db.js';
 
+// Role: Decrit la logique errorHandler.
 const errorHandler = (err, req, res, next) => {
   const isDev = process.env.NODE_ENV === 'development';
 

@@ -19,6 +19,7 @@ const priorityTone = {
   high: "bg-rose-100 text-rose-700",
 };
 
+// Role: Affiche et organise cet ecran.
 export default function InsightOverviewPage() {
   const { user } = useAuth();
   const { data: snapshot, isFetching } = useGetInsightOverview({ query: { refetchInterval: 60000 } });
@@ -122,6 +123,7 @@ export default function InsightOverviewPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function KpiCard({ item }: { item: InsightKpi }) {
   return (
     <div className={cn("rounded-lg border p-4 shadow-sm", statusTone[item.status || "neutral"])}>
@@ -138,6 +140,7 @@ function KpiCard({ item }: { item: InsightKpi }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AnalysisCard({ item }: { item: InsightAnalysisItem }) {
   const tone = item.severity === "critical" ? "border-rose-200 bg-rose-50 text-rose-800" : item.severity === "warning" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-blue-200 bg-blue-50 text-blue-800";
 
@@ -149,6 +152,7 @@ function AnalysisCard({ item }: { item: InsightAnalysisItem }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function RecommendationCard({ item }: { item: InsightRecommendation }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -162,6 +166,7 @@ function RecommendationCard({ item }: { item: InsightRecommendation }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm font-semibold text-gray-500 dark:border-gray-700">
@@ -170,6 +175,7 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function translatePriority(priority: InsightRecommendation["priority"]) {
   if (priority === "high") return "élevée";
   if (priority === "medium") return "moyenne";

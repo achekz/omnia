@@ -5,6 +5,7 @@ import * as notifService from "./notifService.js";
 /**
  * Main AI function
  */
+// Role: Decrit la logique askAI.
 export async function askAI({ user, message, context }) {
   try {
     console.log("🤖 AI Processing:", message);

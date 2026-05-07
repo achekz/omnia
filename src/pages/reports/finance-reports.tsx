@@ -10,6 +10,7 @@ const currencyFormatter = new Intl.NumberFormat("fr-TN", {
   maximumFractionDigits: 0,
 });
 
+// Role: Affiche et organise cet ecran.
 export default function FinanceReportsPage() {
   const { data: report, isLoading } = useGetFinanceReport();
   const exportReport = useExportFinanceReport();
@@ -147,6 +148,7 @@ export default function FinanceReportsPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">

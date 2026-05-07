@@ -17,15 +17,18 @@ import * as notifService from '../services/notifService.js';
 import { ruleEngine } from '../services/ruleEngine.js';
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 
+// Role: Construit des donnees derivees.
 function buildScopeFilter(req) {
   return req.user?.tenantId ? { tenantId: req.user.tenantId } : {};
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function normalizeRoleFilter(role) {
   const normalized = String(role || '').trim();
   return normalized ? normalizeRole(normalized, "") : null;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function serializeAttendanceRecord(record) {
   const raw = typeof record.toObject === 'function' ? record.toObject() : record;
   const populatedUser = raw.userId && typeof raw.userId === 'object' ? raw.userId : null;
@@ -44,12 +47,14 @@ function serializeAttendanceRecord(record) {
   };
 }
 
+// Role: Decrit la logique riskLevelFromScore.
 function riskLevelFromScore(score) {
   if (score >= 0.7) return 'high';
   if (score >= 0.4) return 'medium';
   return 'low';
 }
 
+// Role: Construit des donnees derivees.
 function buildTaskRiskFeatures(tasks, logs) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const recentLogs = logs.filter((log) => new Date(log.date) >= sevenDaysAgo);
@@ -65,6 +70,7 @@ function buildTaskRiskFeatures(tasks, logs) {
   };
 }
 
+// Role: Construit des donnees derivees.
 async function buildAdminAiMetrics(scopeFilter) {
   const alertFilter = {
     ...scopeFilter,
@@ -111,6 +117,7 @@ async function buildAdminAiMetrics(scopeFilter) {
   };
 }
 
+// Role: Recupere les donnees necessaires.
 export const getAdminDashboard = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -203,6 +210,7 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Lance un traitement metier ou IA.
 export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
 
@@ -250,6 +258,7 @@ export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { anomaly: saved, isAnomaly, anomalyScore }, 'Global anomaly detection executed'));
 });
 
+// Role: Decrit la logique monitorUserRisks.
 export const monitorUserRisks = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const users = await User.find({ ...scopeFilter, role: { $ne: 'admin' } }).select('_id name email role profileType tenantId isActive');
@@ -301,6 +310,7 @@ export const monitorUserRisks = asyncHandler(async (req, res) => {
   }, 'User risk monitoring executed'));
 });
 
+// Role: Lance un traitement metier ou IA.
 export const optimizeSystemRules = asyncHandler(async (req, res) => {
   const [ruleResult, recommendation] = await Promise.all([
     ruleEngine.run({ trigger: 'manual', tenantId: req.tenantId }),
@@ -316,6 +326,7 @@ export const optimizeSystemRules = asyncHandler(async (req, res) => {
   }, 'System rules optimized'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAllUsers = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const role = normalizeRoleFilter(req.query.role);
@@ -328,6 +339,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { users }, 'Users retrieved'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getUserTaskDetails = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } })
@@ -347,6 +359,7 @@ export const getUserTaskDetails = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { user, tasks }, 'User task details retrieved'));
 });
 
+// Role: Supprime ou reinitialise des donnees.
 export const deleteUserAccount = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const user = await User.findOne({ _id: req.params.id, ...scopeFilter }).select('_id role tenantId email');
@@ -385,6 +398,7 @@ export const deleteUserAccount = asyncHandler(async (req, res) => {
   }, 'User account deleted'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAllPresences = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
 
@@ -396,6 +410,7 @@ export const getAllPresences = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { records: records.map(serializeAttendanceRecord) }, 'Presences retrieved'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAllTasks = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
 
@@ -409,11 +424,13 @@ export const getAllTasks = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { tasks }, 'Tasks retrieved'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAllTenants = asyncHandler(async (req, res) => {
   const tenants = await Organization.find({}).select('name type ownerId members plan');
   res.json(new ApiResponse(200, { tenants }, 'Tenants retrieved'));
 });
 
+// Role: Controle l etat de l interface.
 export const toggleUserActive = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const user = await User.findOne({ _id: req.params.id, ...scopeFilter }).select('-password -refreshToken');
@@ -428,6 +445,7 @@ export const toggleUserActive = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { user }, 'User status updated'));
 });
 
+// Role: Supprime ou reinitialise des donnees.
 export const deleteTenant = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -437,6 +455,7 @@ export const deleteTenant = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, {}, 'Tenant deactivated'));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getSystemAnalytics = asyncHandler(async (req, res) => {
   const [totalUsers, totalTasks, totalRecommendations, totalPresence] = await Promise.all([
     User.countDocuments(),
@@ -460,6 +479,7 @@ export const getSystemAnalytics = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAIInsights = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const latestRecommendation = await Recommendation.findOne(scopeFilter).sort({ createdAt: -1 });

@@ -4,6 +4,7 @@ const DEFAULT_MODEL = "grok-4.20-reasoning";
 const XAI_BASE_URL = "https://api.x.ai/v1/chat/completions";
 const FALLBACK_MODELS = ["grok-4.20-reasoning", "grok-4"];
 
+// Role: Recupere les donnees necessaires.
 function getXaiApiKey() {
   const apiKey = process.env.XAI_API_KEY;
 
@@ -16,6 +17,7 @@ function getXaiApiKey() {
   return apiKey;
 }
 
+// Role: Recupere les donnees necessaires.
 function getRoleInstruction(role) {
   const normalizedRole = normalizeRole(role, "employee");
 
@@ -31,6 +33,7 @@ function getRoleInstruction(role) {
   }
 }
 
+// Role: Construit des donnees derivees.
 function buildMessages(prompt, role) {
   return [
     {
@@ -48,6 +51,7 @@ function buildMessages(prompt, role) {
   ];
 }
 
+// Role: Decrit la logique extractReply.
 function extractReply(payload) {
   const content = payload?.choices?.[0]?.message?.content;
 
@@ -69,12 +73,14 @@ function extractReply(payload) {
   return "";
 }
 
+// Role: Recupere les donnees necessaires.
 function getModelCandidates() {
   const configuredModel = process.env.XAI_MODEL?.trim();
   const models = [configuredModel, DEFAULT_MODEL, ...FALLBACK_MODELS].filter(Boolean);
   return [...new Set(models)];
 }
 
+// Role: Construit des donnees derivees.
 function buildApiError(status, payload, rawText) {
   const message =
     payload?.error?.message ||
@@ -88,6 +94,7 @@ function buildApiError(status, payload, rawText) {
   return error;
 }
 
+// Role: Decrit la logique generateResponse.
 export async function generateResponse(prompt, role = "employee") {
   if (!prompt || !prompt.trim()) {
     const error = new Error("Prompt is required.");

@@ -7,11 +7,13 @@ import apiClient from "@/lib/api-client";
 const RESET_EMAIL_STORAGE_KEY = "omni_ai_reset_email";
 const RESET_VERIFIED_STORAGE_KEY = "omni_ai_reset_verified";
 
+// Role: Recupere les donnees necessaires.
 function getErrorMessage(error: unknown) {
   const axiosError = error as AxiosError<{ message?: string }>;
   return axiosError.response?.data?.message || "Invalid or expired code";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function VerifyResetCodePage() {
   const [, setLocation] = useLocation();
   const [code, setCode] = useState("");
@@ -29,6 +31,7 @@ export default function VerifyResetCodePage() {
     setEmail(storedEmail);
   }, [setLocation]);
 
+  // Role: Traite une action utilisateur.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");

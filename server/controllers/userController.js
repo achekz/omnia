@@ -5,12 +5,14 @@ import { getAllUsers } from "../services/userService.js";
 import { sendEmailVerificationCode as sendVerificationEmail } from "../services/emailService.js";
 
 // GET profile
+// Role: Recupere les donnees necessaires.
 export const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('-password -refreshToken');
   return res.json(new ApiResponse(200, { user }));
 });
 
 // UPDATE profile
+// Role: Enregistre une modification.
 export const updateProfile = asyncHandler(async (req, res) => {
   const allowed = ['name', 'avatar', 'preferences', 'isPublic'];
   const updates = {};
@@ -26,6 +28,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 });
 
 // Send email verification code
+// Role: Envoie un message ou une notification.
 export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
   const { newEmail } = req.body;
 
@@ -62,6 +65,7 @@ export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
 });
 
 // Verify email change
+// Role: Verifie les donnees ou les droits.
 export const verifyEmailChange = asyncHandler(async (req, res) => {
   const { newEmail, code } = req.body;
 
@@ -103,6 +107,7 @@ export const verifyEmailChange = asyncHandler(async (req, res) => {
 });
 
 // Update notification preferences
+// Role: Enregistre une modification.
 export const updateNotificationPreferences = asyncHandler(async (req, res) => {
   const allowed = ['emailNotifications', 'inAppMentions', 'taskUpdates', 'aiInsights', 'marketingUpdates'];
   const updates = { notificationPreferences: {} };
@@ -123,6 +128,7 @@ export const updateNotificationPreferences = asyncHandler(async (req, res) => {
 });
 
 // Change password
+// Role: Enregistre une modification.
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
@@ -154,6 +160,7 @@ export const changePassword = asyncHandler(async (req, res) => {
 });
 
 // GET users (tenant)
+// Role: Recupere les donnees necessaires.
 export const listUsers = asyncHandler(async (req, res) => {
   if (!req.tenantId) throw new ApiError(403, 'Tenant required');
 
@@ -164,6 +171,7 @@ export const listUsers = asyncHandler(async (req, res) => {
 });
 
 // 🔥 ADMIN ONLY
+// Role: Recupere les donnees necessaires.
 export const getUsers = async (req, res) => {
   const users = await getAllUsers();
   res.json(users);

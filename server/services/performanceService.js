@@ -10,6 +10,7 @@ import mongoose from 'mongoose';
 /**
  * Create database indexes for performance
  */
+// Role: Cree une nouvelle ressource.
 export const createDatabaseIndexes = async () => {
   try {
     console.log('📑 Creating database indexes...');
@@ -65,6 +66,7 @@ export const selectFields = {
 /**
  * Batch operations for bulk inserts
  */
+// Role: Decrit la logique batchInsert.
 export const batchInsert = async (Model, data, batchSize = 1000) => {
   try {
     const batches = [];
@@ -89,6 +91,7 @@ export const batchInsert = async (Model, data, batchSize = 1000) => {
 /**
  * Bulk update operations
  */
+// Role: Decrit la logique bulkUpdate.
 export const bulkUpdate = async (Model, updates) => {
   try {
     const bulk = Model.collection.initializeUnorderedBulkOp();
@@ -110,6 +113,7 @@ export const bulkUpdate = async (Model, updates) => {
 /**
  * Pagination with calculated skip
  */
+// Role: Recupere les donnees necessaires.
 export const getPaginationParams = (page = 1, limit = 15) => {
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
@@ -121,6 +125,7 @@ export const getPaginationParams = (page = 1, limit = 15) => {
 /**
  * Efficient query with projection
  */
+// Role: Decrit la logique efficientQuery.
 export const efficientQuery = async (Model, filter = {}, options = {}) => {
   const {
     select = '',
@@ -167,6 +172,7 @@ export const efficientQuery = async (Model, filter = {}, options = {}) => {
 /**
  * Aggregation pipeline for complex queries
  */
+// Role: Decrit la logique aggregateQuery.
 export const aggregateQuery = async (Model, pipeline = []) => {
   try {
     const result = await Model.aggregate(pipeline);
@@ -180,6 +186,7 @@ export const aggregateQuery = async (Model, pipeline = []) => {
 /**
  * Connection pool optimization
  */
+// Role: Decrit la logique configureConnectionPool.
 export const configureConnectionPool = () => {
   mongoose.set('maxPoolSize', 10);
   mongoose.set('minPoolSize', 5);
@@ -197,6 +204,7 @@ export const configureConnectionPool = () => {
 /**
  * Query performance monitoring
  */
+// Role: Decrit la logique enableQueryLogging.
 export const enableQueryLogging = () => {
   mongoose.set('debug', (collectionName, method, query, doc) => {
     if (process.env.NODE_ENV === 'development') {
@@ -209,6 +217,7 @@ export const enableQueryLogging = () => {
 /**
  * Memory usage optimization - use lean() for read-only queries
  */
+// Role: Recupere les donnees necessaires.
 export const getLeanDocuments = async (Model, filter = {}, options = {}) => {
   const { page = 1, limit = 15 } = options;
   const { skip } = getPaginationParams(page, limit);
@@ -228,6 +237,7 @@ export const getLeanDocuments = async (Model, filter = {}, options = {}) => {
 /**
  * Watch collections for real-time updates (Change Streams)
  */
+// Role: Decrit la logique watchCollection.
 export const watchCollection = (Model, pipeline = []) => {
   const changeStream = Model.watch(pipeline);
 
@@ -245,6 +255,7 @@ export const watchCollection = (Model, pipeline = []) => {
 /**
  * Database statistics
  */
+// Role: Recupere les donnees necessaires.
 export const getDatabaseStats = async () => {
   try {
     const db = mongoose.connection.db;
@@ -266,6 +277,7 @@ export const getDatabaseStats = async () => {
 /**
  * Collection statistics
  */
+// Role: Recupere les donnees necessaires.
 export const getCollectionStats = async (Model) => {
   try {
     const stats = await Model.collection.aggregate([
@@ -286,6 +298,7 @@ export const getCollectionStats = async (Model) => {
 /**
  * Index statistics
  */
+// Role: Recupere les donnees necessaires.
 export const getIndexStats = async (Model) => {
   try {
     const stats = await Model.collection.aggregate([
@@ -302,6 +315,7 @@ export const getIndexStats = async (Model) => {
 /**
  * Query execution time profiling
  */
+// Role: Decrit la logique profileQuery.
 export const profileQuery = async (Model, filter = {}, name = 'Query') => {
   const startTime = Date.now();
 
@@ -321,6 +335,7 @@ export const profileQuery = async (Model, filter = {}, name = 'Query') => {
 /**
  * Memory-efficient streaming for large datasets
  */
+// Role: Decrit la logique streamLargeDataset.
 export const streamLargeDataset = async (Model, callback, batchSize = 1000) => {
   try {
     const total = await Model.countDocuments();
@@ -346,6 +361,7 @@ export const streamLargeDataset = async (Model, callback, batchSize = 1000) => {
 /**
  * Analyze query plan
  */
+// Role: Lance un traitement metier ou IA.
 export const analyzeQueryPlan = async (Model, filter = {}) => {
   try {
     const plan = await Model.collection.find(filter).explain('executionStats');
@@ -359,6 +375,7 @@ export const analyzeQueryPlan = async (Model, filter = {}) => {
 /**
  * Garbage collection optimization
  */
+// Role: Lance un traitement metier ou IA.
 export const optimizeMemory = () => {
   if (global.gc) {
     global.gc();

@@ -10,6 +10,7 @@ const aiClient = axios.create({
   },
 });
 
+// Role: Decrit la logique fallbackPrediction.
 function fallbackPrediction(user, tasks = [], performanceLogs = []) {
   const completedTasks = tasks.filter((task) => task.status === "done").length;
   const delayedTasks = tasks.filter((task) => task.status === "overdue").length;
@@ -30,6 +31,7 @@ function fallbackPrediction(user, tasks = [], performanceLogs = []) {
   };
 }
 
+// Role: Construit des donnees derivees.
 function buildFallbackRecommendations(predictions = []) {
   const sortedByPerformance = [...predictions].sort((a, b) => (b.performanceScore || 0) - (a.performanceScore || 0));
   const sortedByDiscipline = [...predictions].sort((a, b) => (b.disciplineScore || 0) - (a.disciplineScore || 0));
@@ -59,6 +61,7 @@ function buildFallbackRecommendations(predictions = []) {
   };
 }
 
+// Role: Lance un traitement metier ou IA.
 export async function predictPerformance(payload) {
   try {
     const { data } = await aiClient.post("/predict/performance", payload);
@@ -73,6 +76,7 @@ export async function predictPerformance(payload) {
   }
 }
 
+// Role: Recupere les donnees necessaires.
 export async function fetchRecommendations(payload) {
   try {
     const { data } = await aiClient.get("/recommendations", {

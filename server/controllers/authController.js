@@ -61,19 +61,23 @@ const ADMIN_RECOVERY_ACCOUNT = {
   gender: "male",
 };
 
+// Role: Recupere les donnees necessaires.
 function getRecoveryAccount(email) {
   return RECOVERY_ACCOUNTS[email];
 }
 
+// Role: Recupere les donnees necessaires.
 function getRecoveryPassword(email) {
   const account = getRecoveryAccount(email);
   return account?.envKey ? process.env[account.envKey] : undefined;
 }
 
+// Role: Retourne un etat booleen.
 function isDevelopmentPasswordRepairEnabled() {
   return process.env.NODE_ENV !== "production" && process.env.AUTH_DEV_PASSWORD_REPAIR !== "false";
 }
 
+// Role: Decrit la logique repairRecoveryAccountForLogin.
 async function repairRecoveryAccountForLogin(email, password) {
   const account = getRecoveryAccount(email);
   const recoveryPassword = getRecoveryPassword(email) || (isDevelopmentPasswordRepairEnabled() ? password : undefined);
@@ -107,6 +111,7 @@ async function repairRecoveryAccountForLogin(email, password) {
   return User.findById(user._id).select("+password +refreshToken");
 }
 
+// Role: Decrit la logique repairAdminAccountForLogin.
 async function repairAdminAccountForLogin(email, password) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const expectedPassword = process.env[ADMIN_RECOVERY_ACCOUNT.envKey] || (isDevelopmentPasswordRepairEnabled() ? password : undefined);
@@ -138,10 +143,12 @@ async function repairAdminAccountForLogin(email, password) {
   return User.findById(user._id).select("+password +refreshToken");
 }
 
+// Role: Decrit la logique generateVerificationCode.
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function sanitizeUser(user) {
   const normalizedRole = normalizeRole(user.role || user.profileType, "employee");
   const normalizedProfileType = normalizeProfileType(user.profileType || normalizedRole, normalizedRole);
@@ -166,6 +173,7 @@ function sanitizeUser(user) {
   };
 }
 
+// Role: Decrit la logique persistCanonicalRole.
 async function persistCanonicalRole(user) {
   const role = normalizeRole(user.role || user.profileType, "employee");
   const profileType = normalizeProfileType(user.profileType || role, role);
@@ -179,6 +187,7 @@ async function persistCanonicalRole(user) {
   return user;
 }
 
+// Role: Envoie un message ou une notification.
 export const sendCode = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
@@ -253,6 +262,7 @@ export const sendCode = asyncHandler(async (req, res) => {
   }
 });
 
+// Role: Verifie les donnees ou les droits.
 export const verifyCode = asyncHandler(async (req, res) => {
   const code = req.body.code;
   const email = req.body.email?.trim().toLowerCase();
@@ -282,6 +292,7 @@ export const verifyCode = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Cree une nouvelle ressource.
 export const register = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, password, phoneNumber, city, verificationMethod } = req.body;
   const role = normalizeRole(req.body.role, "employee");
@@ -391,6 +402,7 @@ export const register = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Gere une etape d authentification.
 export const login = asyncHandler(async (req, res) => {
   const password = String(req.body.password || "").trim();
   const email = req.body.email?.trim().toLowerCase();
@@ -479,6 +491,7 @@ export const login = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Decrit la logique adminLogin.
 export const adminLogin = asyncHandler(async (req, res) => {
   const password = String(req.body.password || "").trim();
   const email = req.body.email?.trim().toLowerCase();
@@ -546,6 +559,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Decrit la logique repairAuth.
 export const repairAuth = asyncHandler(async (req, res) => {
   const result = await resetAuthSystem({ connect: false, close: false });
 
@@ -580,6 +594,7 @@ export const repairAuth = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Decrit la logique debugLogin.
 export const debugLogin = asyncHandler(async (req, res) => {
   const email = req.query.email?.trim().toLowerCase();
 
@@ -614,6 +629,7 @@ export const debugLogin = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Decrit la logique forgotPassword.
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = req.body.email?.trim().toLowerCase();
 
@@ -693,6 +709,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Verifie les donnees ou les droits.
 export const verifyResetCode = asyncHandler(async (req, res) => {
   const code = req.body.code;
   const email = req.body.email?.trim().toLowerCase();
@@ -747,6 +764,7 @@ export const verifyResetCode = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Supprime ou reinitialise des donnees.
 export const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
   const email = req.body.email?.trim().toLowerCase();
@@ -798,6 +816,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Gere une etape d authentification.
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken: token } = req.body;
 
@@ -830,6 +849,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Gere une etape d authentification.
 export const logout = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
 
@@ -838,6 +858,7 @@ export const logout = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Recupere les donnees necessaires.
 export const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select("-password -refreshToken");
 
@@ -856,6 +877,7 @@ export const getMe = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Decrit la logique testEmail.
 export const testEmail = asyncHandler(async (req, res) => {
   const to = req.query.email || process.env.EMAIL_USER;
   const code = "123456";

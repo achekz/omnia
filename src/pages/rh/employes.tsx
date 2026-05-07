@@ -3,6 +3,7 @@ import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Calculator, CalendarClock, CircleDollarSign, FileText, GraduationCap, ShieldAlert, Timer, UserMinus, Users } from "lucide-react";
 
+// Role: Affiche et organise cet ecran.
 export default function EmployesRedesign() {
   const { user } = useAuth();
 

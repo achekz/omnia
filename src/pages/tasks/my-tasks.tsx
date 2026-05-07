@@ -26,19 +26,23 @@ const statusMeta: Record<TaskStatus, { label: string; tone: string; icon: JSX.El
   declined: { label: "Plus tard", tone: "bg-rose-100 text-rose-700", icon: <XCircle className="h-4 w-4" /> },
 };
 
+// Role: Recupere les donnees necessaires.
 function getUserName(user: Partial<User> | string | undefined) {
   if (!user || typeof user === "string") return "Admin";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Admin";
 }
 
+// Role: Recupere les donnees necessaires.
 function getTaskId(task: Task) {
   return task._id || task.id || "";
 }
 
+// Role: Retourne un etat booleen.
 function isDelayed(task: Task) {
   return task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()) || (task.delayDays || 0) > 0;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function MyTasks() {
   const [filter, setFilter] = useState<TaskFilter>("all");
   const { data: tasks = [], isLoading } = useGetTasks({ params: { status: filter, limit: 100 }, query: { refetchInterval: 15000 } });
@@ -46,6 +50,7 @@ export default function MyTasks() {
   const rescheduleTask = useRescheduleTaskToday();
   const { toast } = useToast();
 
+  // Role: Enregistre une modification.
   const updateStatus = (task: Task, status: TaskStatus) => {
     const id = getTaskId(task);
     if (!id) return;
@@ -74,6 +79,7 @@ export default function MyTasks() {
     updateTaskStatus.mutate(payload);
   };
 
+  // Role: Decrit la logique rescheduleToday.
   const rescheduleToday = (task: Task) => {
     const id = getTaskId(task);
     if (!id) return;

@@ -11,6 +11,7 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+// Role: Affiche et organise cet ecran.
 export default function BudgetPage() {
   const [clientName, setClientName] = useState("");
   const [type, setType] = useState<"income" | "expense">("income");
@@ -28,6 +29,7 @@ export default function BudgetPage() {
     { title: "Balance", value: currencyFormatter.format(summary?.balance || 0), icon: <PiggyBank className="w-5 h-5 text-indigo-600" /> },
   ];
 
+  // Role: Traite une action utilisateur.
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const numericAmount = Number(amount);

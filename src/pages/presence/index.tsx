@@ -11,6 +11,7 @@ type AttendanceAction = "check-in" | "check-out";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Role: Recupere les donnees necessaires.
 function getDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -18,6 +19,7 @@ function getDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+// Role: Recupere les donnees necessaires.
 function getCheckInPreview(now: Date) {
   if (now.getDay() === 0) {
     return { allowed: false, color: "red", status: "Sunday rest day", requiresReason: false, delay: 0 };
@@ -40,6 +42,7 @@ function getCheckInPreview(now: Date) {
   return { allowed: true, color: "red", status: "very late", requiresReason: true, delay: minutes - (8 * 60 + 30) };
 }
 
+// Role: Recupere les donnees necessaires.
 function getCheckOutPreview(now: Date) {
   if (now.getDay() === 0) {
     return { color: "red", status: "Sunday rest day", requiresReason: false };
@@ -58,10 +61,12 @@ function getCheckOutPreview(now: Date) {
   return { color: "green", status: "on-time", requiresReason: false };
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function normalizeStatus(status?: string) {
   return String(status || "").replace("_", " ");
 }
 
+// Role: Affiche et organise cet ecran.
 export default function PresencePage() {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -107,6 +112,7 @@ export default function PresencePage() {
   const requiresReason = activePreview.requiresReason;
   const activeDelay = "delay" in activePreview ? Number(activePreview.delay || 0) : 0;
 
+  // Role: Controle l etat de l interface.
   const openTodayModal = () => {
     setStep("action");
     setCode("");
@@ -115,6 +121,7 @@ export default function PresencePage() {
     setIsModalOpen(true);
   };
 
+  // Role: Decrit la logique requestCode.
   const requestCode = async (selectedAction: AttendanceAction) => {
     setAction(selectedAction);
     const preview = selectedAction === "check-in" ? getCheckInPreview(new Date()) : getCheckOutPreview(new Date());
@@ -153,6 +160,7 @@ export default function PresencePage() {
     }
   };
 
+  // Role: Verifie les donnees ou les droits.
   const confirm = async () => {
     try {
       await confirmAttendance.mutateAsync({ action, code, reason });
@@ -316,6 +324,7 @@ export default function PresencePage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Attendance | null; loading: boolean; onOpen: () => void; isSunday: boolean }) {
   return (
     <aside className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -359,6 +368,7 @@ function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Atten
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800">

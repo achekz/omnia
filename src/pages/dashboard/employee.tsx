@@ -74,10 +74,12 @@ const statusMeta: Record<TaskStatus, { label: string; className: string }> = {
   declined: { label: "Postponed", className: "border-violet-300/40 bg-violet-500/10 text-violet-50" },
 };
 
+// Role: Decrit la logique clamp.
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
+// Role: Recupere les donnees necessaires.
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -85,31 +87,37 @@ function getGreeting() {
   return "Good evening";
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function normalizeRiskScore(score?: number) {
   if (score === undefined || Number.isNaN(score)) return 28;
   return clamp(score <= 1 ? score * 100 : score);
 }
 
+// Role: Recupere les donnees necessaires.
 function getRiskLevel(score: number): RiskLevel {
   if (score >= 70) return "High";
   if (score >= 40) return "Medium";
   return "Low";
 }
 
+// Role: Recupere les donnees necessaires.
 function getTaskId(task: Task, index: number) {
   return task._id ?? task.id ?? `task-${index}`;
 }
 
+// Role: Recupere les donnees necessaires.
 function getDaysUntil(date?: string) {
   if (!date) return 99;
   return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
 }
 
+// Role: Recupere les donnees necessaires.
 function getUserName(user: Partial<User> | string | undefined) {
   if (!user || typeof user === "string") return "Admin";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Admin";
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatDeadline(date?: string) {
   if (!date) return "No deadline";
   return new Intl.DateTimeFormat("en-US", {
@@ -120,10 +128,12 @@ function formatDeadline(date?: string) {
   }).format(new Date(date));
 }
 
+// Role: Retourne un etat booleen.
 function isUrgentTask(task: Task) {
   return task.status === "overdue" || task.priority === "critical" || task.priority === "high" || (task.delayDays ?? 0) > 0 || getDaysUntil(task.dueDate) <= 1;
 }
 
+// Role: Construit des donnees derivees.
 function deriveEmployeeSignal(args: {
   firstName: string;
   tasks: Task[];
@@ -188,6 +198,7 @@ function deriveEmployeeSignal(args: {
   };
 }
 
+// Role: Affiche et organise cet ecran.
 function HeroEmployee({ signal, isConnected }: { signal: EmployeeSignal; isConnected: boolean }) {
   const cards = [
     { label: "Productivity", value: `${signal.productivityScore}%`, detail: "daily AI score", icon: Gauge, className: "border-emerald-300/30 bg-emerald-500/10 text-emerald-50" },
@@ -234,6 +245,7 @@ function HeroEmployee({ signal, isConnected }: { signal: EmployeeSignal; isConne
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAnalyze: () => void }) {
   return (
     <section className={cn("rounded-2xl p-6", glassSurface)}>
@@ -305,6 +317,7 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SmartTaskBoard({
   tasks,
   isLoading,
@@ -379,6 +392,7 @@ function SmartTaskBoard({
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function EmployeeTaskCard({
   task,
   isUpdating,
@@ -439,6 +453,7 @@ function EmployeeTaskCard({
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SmartActionsEmployee({
   onOptimize,
   onAnalyze,
@@ -483,6 +498,7 @@ function SmartActionsEmployee({
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function PerformanceEmployee({ signal }: { signal: EmployeeSignal }) {
   const metrics = [
     { label: "Daily productivity", value: signal.productivityScore, icon: Gauge, detail: "AI work score" },
@@ -520,6 +536,7 @@ function PerformanceEmployee({ signal }: { signal: EmployeeSignal }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function ActivitySignals({ signal }: { signal: EmployeeSignal }) {
   const signals = [
     { label: "Activity stability", value: `${signal.consistencyScore}%`, tone: "text-emerald-200" },
@@ -543,6 +560,7 @@ function ActivitySignals({ signal }: { signal: EmployeeSignal }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const { isConnected } = useSocket();
@@ -572,17 +590,20 @@ export default function EmployeeDashboard() {
     [activity, firstName, mlInsights?.latestRecommendation?.recommendations, riskLevel, riskScore, stats?.currentScore, stats?.weeklyActivity, tasks],
   );
 
+  // Role: Enregistre une modification.
   const updateStatus = (task: Task, status: TaskStatus) => {
     const id = task._id || task.id;
     if (!id) return;
     updateTaskStatus.mutate({ id, status });
   };
 
+  // Role: Lance un traitement metier ou IA.
   const analyzeProductivity = () => {
     runRiskPrediction.mutate();
     generateRecommendations.mutate();
   };
 
+  // Role: Lance un traitement metier ou IA.
   const optimizeWorkload = () => {
     generateRecommendations.mutate();
     runRules.mutate();

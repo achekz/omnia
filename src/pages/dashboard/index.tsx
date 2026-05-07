@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { getRoleRedirect } from "@/lib/roles";
 
+// Role: Affiche et organise cet ecran.
 export default function DashboardHub() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();

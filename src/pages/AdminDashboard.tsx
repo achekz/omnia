@@ -105,6 +105,7 @@ const defaultDashboard: AdminDashboardPayload = {
   },
 };
 
+// Role: Affiche et organise cet ecran.
 export default function AdminDashboard() {
   const { toast } = useToast();
   const { data: rules = [] } = useGetRules();
@@ -116,6 +117,7 @@ export default function AdminDashboard() {
     void loadDashboard();
   }, []);
 
+  // Role: Recupere les donnees necessaires.
   async function loadDashboard() {
     try {
       setLoading(true);
@@ -134,6 +136,7 @@ export default function AdminDashboard() {
 
   const intel = useMemo(() => buildAdminIntel(dashboard, rules), [dashboard, rules]);
 
+  // Role: Lance un traitement metier ou IA.
   async function runAdminAction(action: "behavior" | "anomalies" | "rules" | "risks") {
     try {
       setRunningAction(action);
@@ -216,6 +219,7 @@ export default function AdminDashboard() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AdminHero({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
   const healthTone = {
     Good: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
@@ -273,6 +277,7 @@ function AdminHero({ dashboard, intel }: { dashboard: AdminDashboardPayload; int
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SystemInsight({ intel, rules }: { intel: AdminIntel; rules: Rule[] }) {
   const activeRules = rules.filter((rule) => rule.isActive !== false).length;
   const riskTotal = Math.max(1, intel.riskDistribution.low + intel.riskDistribution.medium + intel.riskDistribution.high);
@@ -324,6 +329,7 @@ function SystemInsight({ intel, rules }: { intel: AdminIntel; rules: Rule[] }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function UserOverview({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-xl shadow-slate-950/30">
@@ -367,6 +373,7 @@ function UserOverview({ dashboard, intel }: { dashboard: AdminDashboardPayload; 
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AdminActions({
   isAnalyzing,
   isDetecting,
@@ -396,6 +403,7 @@ function AdminActions({
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SystemMetrics({ dashboard, intel }: { dashboard: AdminDashboardPayload; intel: AdminIntel }) {
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -407,6 +415,7 @@ function SystemMetrics({ dashboard, intel }: { dashboard: AdminDashboardPayload;
   );
 }
 
+// Role: Construit des donnees derivees.
 function buildAdminIntel(dashboard: AdminDashboardPayload, rules: Rule[]): AdminIntel {
   const inactiveUsers = dashboard.users.filter((user) => !user.isActive);
   const metricRiskDistribution = dashboard.aiMetrics?.riskDistribution || { low: 0, medium: 0, high: 0 };
@@ -461,6 +470,7 @@ function buildAdminIntel(dashboard: AdminDashboardPayload, rules: Rule[]): Admin
   };
 }
 
+// Role: Affiche et organise cet ecran.
 function ActionButton({ icon, label, busy, onClick, tone = "slate" }: { icon: ReactNode; label: string; busy: boolean; onClick: () => void; tone?: "slate" | "rose" | "orange" | "cyan" }) {
   const tones = {
     slate: "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800",
@@ -477,6 +487,7 @@ function ActionButton({ icon, label, busy, onClick, tone = "slate" }: { icon: Re
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function MetricCard({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
@@ -487,6 +498,7 @@ function MetricCard({ icon, label, value, alert }: { icon: ReactNode; label: str
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function HeroSignal({ icon, label, value, alert }: { icon: ReactNode; label: string; value: number; alert?: boolean }) {
   return (
     <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
@@ -499,6 +511,7 @@ function HeroSignal({ icon, label, value, alert }: { icon: ReactNode; label: str
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function MiniSignal({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
@@ -508,6 +521,7 @@ function MiniSignal({ label, value }: { label: string; value: number }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function RiskBar({ label, value, total, className }: { label: string; value: number; total: number; className: string }) {
   return (
     <div className="mb-4 last:mb-0">
@@ -522,6 +536,7 @@ function RiskBar({ label, value, total, className }: { label: string; value: num
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function InsightChip({ label, value, tone }: { label: string; value: ReactNode; tone: "emerald" | "amber" | "cyan" }) {
   const tones = {
     emerald: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
@@ -537,6 +552,7 @@ function InsightChip({ label, value, tone }: { label: string; value: ReactNode; 
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function OverviewStat({ icon, label, value, tone }: { icon: ReactNode; label: string; value: number; tone: "emerald" | "slate" | "rose" }) {
   const tones = {
     emerald: "bg-emerald-400/10 text-emerald-200",
@@ -553,12 +569,14 @@ function OverviewStat({ icon, label, value, tone }: { icon: ReactNode; label: st
   );
 }
 
+// Role: Decrit la logique riskTone.
 function riskTone(level: RiskLevel) {
   if (level === "high") return "bg-rose-500/10 text-rose-200";
   if (level === "medium") return "bg-amber-400/10 text-amber-200";
   return "bg-emerald-400/10 text-emerald-200";
 }
 
+// Role: Retourne un etat booleen.
 function isRiskUser(user: AdminUser | RiskUser): user is RiskUser {
   return "riskLevel" in user;
 }

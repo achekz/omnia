@@ -53,6 +53,7 @@ const emptyForm: Rule = {
   cooldownMinutes: 60,
 };
 
+// Role: Affiche et organise cet ecran.
 export default function RuleEnginePage() {
   const { toast } = useToast();
   const { data: rules = [], isLoading } = useGetRules();
@@ -72,12 +73,14 @@ export default function RuleEnginePage() {
 
   const activeCount = useMemo(() => rules.filter((rule) => rule.isActive !== false).length, [rules]);
 
+  // Role: Supprime ou reinitialise des donnees.
   function resetForm() {
     setForm(emptyForm);
     setFormError("");
     setIsFormOpen(true);
   }
 
+  // Role: Enregistre une modification.
   function editRule(rule: Rule) {
     const redirectTarget = rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl || emptyForm.redirectTarget;
     setForm({
@@ -92,6 +95,7 @@ export default function RuleEnginePage() {
     setIsFormOpen(true);
   }
 
+  // Role: Traite une action utilisateur.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -119,6 +123,7 @@ export default function RuleEnginePage() {
     }
   }
 
+  // Role: Traite une action utilisateur.
   async function handleDelete(rule: Rule) {
     const id = rule._id || rule.id;
     if (!id) return;
@@ -135,6 +140,7 @@ export default function RuleEnginePage() {
     }
   }
 
+  // Role: Traite une action utilisateur.
   async function handleRunRules() {
     try {
       const result = await runRules.mutateAsync();
@@ -442,14 +448,17 @@ export default function RuleEnginePage() {
   );
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function labelForMetric(value: RuleMetric) {
   return metricOptions.find((option) => option.value === value)?.label || value;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function labelForOperator(value: RuleOperator) {
   return operatorOptions.find((option) => option.value === value)?.label || value;
 }
 
+// Role: Recupere les donnees necessaires.
 function getRuleValidationMessage(form: Rule) {
   const condition = form.conditions?.[0];
   const missingFields: string[] = [];
@@ -480,18 +489,21 @@ function getRuleValidationMessage(form: Rule) {
   return `Please fill this field: ${missingFields[0]}.`;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function translateTarget(value?: Rule["action"]["target"]) {
   if (value === "assignedUser") return "assignedUser";
   if (value === "creator") return "creator";
   return "target";
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function translateSeverity(value?: Rule["action"]["severity"]) {
   if (value === "warning") return "warning";
   if (value === "danger") return "danger";
   return "info";
 }
 
+// Role: Affiche et organise cet ecran.
 function RuleStat({ label, value, suffix }: { label: string; value: number; suffix?: string }) {
   return (
     <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -504,6 +516,7 @@ function RuleStat({ label, value, suffix }: { label: string; value: number; suff
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">

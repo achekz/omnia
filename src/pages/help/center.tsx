@@ -80,6 +80,7 @@ interface FAQCategory {
   icon: React.ReactNode;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function HelpCenterPage() {
   // const [, setLocation] = useLocation();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);

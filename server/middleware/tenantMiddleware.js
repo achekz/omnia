@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiResponse.js';
 
 // Multi-Tenant Isolation Middleware - CRITICAL SECURITY
+// Role: Decrit la logique requireTenant.
 export const requireTenant = (req, res, next) => {
   // Attach tenantId to req for all queries
   if (!req.user || !req.user.tenantId) {
@@ -14,6 +15,7 @@ export const requireTenant = (req, res, next) => {
 };
 
 // Query Helper - automatically adds tenant filter
+// Role: Decrit la logique withTenantFilter.
 export const withTenantFilter = (model) => async (queryObj, options = {}) => {
   const tenantFilter = { tenantId: options.tenantId || model.tenantId };
   return await model.find({ ...queryObj, ...tenantFilter }, null, options);

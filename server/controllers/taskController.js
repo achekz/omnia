@@ -16,11 +16,13 @@ const ASSIGNABLE_ROLES = ['employee', 'stagiaire', 'comptable'];
 const ADMIN_ROLES = ['company_admin', 'cabinet_admin', 'manager', 'admin'];
 const TASK_STATUSES = ['todo', 'in_progress', 'done', 'overdue', 'declined'];
 
+// Role: Recupere les donnees necessaires.
 function getDisplayName(user) {
   if (!user) return 'User';
   return user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
 }
 
+// Role: Decrit la logique populateTask.
 async function populateTask(task) {
   return task.populate([
     { path: 'assignedTo', select: 'name firstName lastName email avatar role profileType' },
@@ -30,6 +32,7 @@ async function populateTask(task) {
   ]);
 }
 
+// Role: Recupere les donnees necessaires.
 function getTaskDay(task) {
   const date = task.startTime || task.plannedStartAt || task.dueDate || task.createdAt || new Date();
   return new Date(date).toLocaleDateString('en-GB', {
@@ -40,6 +43,7 @@ function getTaskDay(task) {
   });
 }
 
+// Role: Decrit la logique userCanAccessTask.
 function userCanAccessTask(task, user) {
   const normalizedRole = normalizeRole(user.role, user.role);
   const isAdmin = ADMIN_ROLES.includes(normalizedRole);
@@ -54,12 +58,14 @@ function userCanAccessTask(task, user) {
   );
 }
 
+// Role: Verifie les donnees ou les droits.
 function ensureTaskInTenant(task, req) {
   if (req.tenantId && task.tenantId?.toString?.() !== req.tenantId.toString()) {
     throw new ApiError(404, 'Task not found');
   }
 }
 
+// Role: Construit des donnees derivees.
 function scopedUserLookup(req, userId) {
   return {
     _id: userId,
@@ -67,6 +73,7 @@ function scopedUserLookup(req, userId) {
   };
 }
 
+// Role: Construit des donnees derivees.
 function buildTaskAiRecommendation(task) {
   const isLate =
     task.status === 'overdue' ||
@@ -89,6 +96,7 @@ function buildTaskAiRecommendation(task) {
   };
 }
 
+// Role: Envoie un message ou une notification.
 async function sendTaskAssignmentEmail(task, assignedUser) {
   if (!assignedUser?.email) return;
 
@@ -114,6 +122,7 @@ async function sendTaskAssignmentEmail(task, assignedUser) {
   }
 }
 
+// Role: Decrit la logique evaluateTaskRules.
 async function evaluateTaskRules(task, req, trigger = 'task') {
   try {
     await ruleEngine.handleEvent({
@@ -129,6 +138,7 @@ async function evaluateTaskRules(task, req, trigger = 'task') {
 }
 
 // GET /api/tasks
+// Role: Recupere les donnees necessaires.
 export const getTasks = asyncHandler(async (req, res) => {
   const { status, priority, assignedTo, userId, role, page = 1, limit = 20 } = req.query;
   const filter = {};
@@ -171,6 +181,7 @@ export const getTasks = asyncHandler(async (req, res) => {
 });
 
 // GET /api/tasks/:id
+// Role: Recupere les donnees necessaires.
 export const getTaskById = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id)
     .populate('assignedTo', 'name firstName lastName email avatar role profileType')
@@ -190,6 +201,7 @@ export const getTaskById = asyncHandler(async (req, res) => {
 });
 
 // POST /api/tasks
+// Role: Cree une nouvelle ressource.
 export const createTask = asyncHandler(async (req, res) => {
   const {
     title,
@@ -286,6 +298,7 @@ export const createTask = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/tasks/:id
+// Role: Enregistre une modification.
 export const updateTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
@@ -349,6 +362,7 @@ export const updateTask = asyncHandler(async (req, res) => {
 });
 
 // DELETE /api/tasks/:id
+// Role: Supprime ou reinitialise des donnees.
 export const deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
@@ -364,6 +378,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 });
 
 // PATCH /api/tasks/:id/status
+// Role: Enregistre une modification.
 export const updateTaskStatus = asyncHandler(async (req, res) => {
   const { status, declineReason, lateReason } = req.body;
   if (!status) throw new ApiError(400, 'status is required');
@@ -530,6 +545,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/tasks/:id/reschedule
+// Role: Decrit la logique rescheduleTaskToday.
 export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task not found');
@@ -604,6 +620,7 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
 });
 
 // POST /api/tasks/:id/comments
+// Role: Cree une nouvelle ressource.
 export const addTaskComment = asyncHandler(async (req, res) => {
   const message = String(req.body?.message || '').trim();
   if (!message) {
@@ -642,18 +659,21 @@ export const addTaskComment = asyncHandler(async (req, res) => {
 });
 
 // PATCH /api/tasks/:id/accept
+// Role: Decrit la logique acceptTask.
 export const acceptTask = (req, res, next) => {
   req.body = { ...req.body, status: 'in_progress' };
   return updateTaskStatus(req, res, next);
 };
 
 // PATCH /api/tasks/:id/later
+// Role: Envoie un message ou une notification.
 export const sendTaskLater = (req, res, next) => {
   req.body = { ...req.body, status: 'declined', declineReason: req.body?.declineReason };
   return updateTaskStatus(req, res, next);
 };
 
 // GET /api/tasks/stats
+// Role: Recupere les donnees necessaires.
 export const getTaskStats = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.tenantId) filter.tenantId = req.tenantId;

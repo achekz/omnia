@@ -14,6 +14,7 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Role: Affiche et organise cet ecran.
 export default function EmployeeDashboard() {
   const { clearAllUsers } = useAuth(); // ✅ هنا
 
@@ -28,6 +29,7 @@ export default function EmployeeDashboard() {
   const chatRef = useRef(null);
 
   useEffect(() => {
+    // Role: Recupere les donnees necessaires.
     const fetchTasks = async () => {
       const res = await API.get("/api/tasks");
       setTasks(res.data);
@@ -36,6 +38,7 @@ export default function EmployeeDashboard() {
   }, []);
 
   useEffect(() => {
+    // Role: Recupere les donnees necessaires.
     const fetchData = async () => {
       const res = await API.get("/api/analytics/activity");
       setChartData(res.data);
@@ -43,6 +46,7 @@ export default function EmployeeDashboard() {
     fetchData();
   }, []);
 
+  // Role: Envoie un message ou une notification.
   const sendMessage = async () => {
     if (!input.trim()) return;
 

@@ -11,6 +11,7 @@ import { ApiError } from '../utils/ApiResponse.js';
 /**
  * Generic rate limit middleware
  */
+// Role: Decrit la logique rateLimit.
 export const rateLimit = (options = {}) => {
   const {
     windowMs = 15 * 60 * 1000,  // 15 minutes
@@ -57,6 +58,7 @@ export const rateLimit = (options = {}) => {
 /**
  * Endpoint-specific rate limiters
  */
+// Role: Cree une nouvelle ressource.
 export const createRateLimiter = (type = 'general', options = {}) => {
   const limiters = {
     // General API: 100 requests per 15 minutes
@@ -103,6 +105,7 @@ export const createRateLimiter = (type = 'general', options = {}) => {
 /**
  * Per-user rate limiter (requires authentication)
  */
+// Role: Decrit la logique userRateLimit.
 export const userRateLimit = (windowMs = 60 * 60 * 1000, maxRequests = 1000) => {
   return rateLimit({
     windowMs,
@@ -115,6 +118,7 @@ export const userRateLimit = (windowMs = 60 * 60 * 1000, maxRequests = 1000) => 
 /**
  * Per-IP rate limiter
  */
+// Role: Decrit la logique ipRateLimit.
 export const ipRateLimit = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
   return rateLimit({
     windowMs,
@@ -127,6 +131,7 @@ export const ipRateLimit = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
 /**
  * Sliding window rate limiter
  */
+// Role: Decrit la logique slidingWindowRateLimit.
 export const slidingWindowRateLimit = (windowMs = 60000, maxRequests = 10) => {
   return async (req, res, next) => {
     try {
@@ -155,6 +160,7 @@ export const slidingWindowRateLimit = (windowMs = 60000, maxRequests = 10) => {
 /**
  * Token bucket rate limiter
  */
+// Role: Decrit la logique tokenBucketRateLimit.
 export const tokenBucketRateLimit = (capacity = 10, refillRate = 1) => {
   return async (req, res, next) => {
     try {
@@ -205,6 +211,7 @@ export const tokenBucketRateLimit = (capacity = 10, refillRate = 1) => {
 /**
  * Burst protection - prevent sudden spikes
  */
+// Role: Decrit la logique burstProtection.
 export const burstProtection = (maxBurst = 20) => {
   return async (req, res, next) => {
     try {
@@ -230,6 +237,7 @@ export const burstProtection = (maxBurst = 20) => {
 /**
  * Exponential backoff rate limiter
  */
+// Role: Decrit la logique exponentialBackoffLimiter.
 export const exponentialBackoffLimiter = () => {
   return async (req, res, next) => {
     try {
@@ -263,6 +271,7 @@ export const exponentialBackoffLimiter = () => {
 /**
  * Record failed attempt and apply backoff
  */
+// Role: Decrit la logique recordFailedAttempt.
 export const recordFailedAttempt = async (userId, maxAttempts = 5) => {
   const attemptKey = `ratelimit:attempts:${userId}`;
   const lockoutKey = `ratelimit:lockout:${userId}`;
@@ -282,6 +291,7 @@ export const recordFailedAttempt = async (userId, maxAttempts = 5) => {
 /**
  * Reset failed attempts
  */
+// Role: Supprime ou reinitialise des donnees.
 export const resetFailedAttempts = async (userId) => {
   const attemptKey = `ratelimit:attempts:${userId}`;
   await deleteCache(attemptKey);
@@ -290,6 +300,7 @@ export const resetFailedAttempts = async (userId) => {
 /**
  * Get rate limit status
  */
+// Role: Recupere les donnees necessaires.
 export const getRateLimitStatus = async (userId) => {
   const authLimiter = `ratelimit:auth:${userId}`;
   const uploadLimiter = `ratelimit:upload:${userId}`;

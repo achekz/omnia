@@ -8,6 +8,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const USER_ROLES = ["employee", "stagiaire", "comptable", "admin"];
 
+// Role: Recupere les donnees necessaires.
 function getDateParts(now = new Date(Date.now())) {
   const dayStart = new Date(now);
   dayStart.setHours(0, 0, 0, 0);
@@ -22,20 +23,24 @@ function getDateParts(now = new Date(Date.now())) {
   };
 }
 
+// Role: Verifie les donnees ou les droits.
 function ensureWorkingDay(now = new Date(Date.now())) {
   if (now.getDay() === 0) {
     throw new ApiError(400, "Attendance is disabled on Sunday because it is a rest day");
   }
 }
 
+// Role: Decrit la logique minutesSinceMidnight.
 function minutesSinceMidnight(date) {
   return date.getHours() * 60 + date.getMinutes();
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatClock(date) {
   return date.toLocaleTimeString("en-GB", { hour12: false });
 }
 
+// Role: Recupere les donnees necessaires.
 function getCheckInState(now = new Date(Date.now())) {
   const minutes = minutesSinceMidnight(now);
 
@@ -56,6 +61,7 @@ function getCheckInState(now = new Date(Date.now())) {
   return { status: "very_late", delayMinutes, requiresReason: true };
 }
 
+// Role: Recupere les donnees necessaires.
 function getCheckOutState(now = new Date(Date.now())) {
   const minutes = minutesSinceMidnight(now);
 
@@ -70,6 +76,7 @@ function getCheckOutState(now = new Date(Date.now())) {
   return { checkOutStatus: "on_time", requiresReason: false };
 }
 
+// Role: Envoie un message ou une notification.
 async function notifyAdmins(req, payload) {
   const filter = { role: "admin" };
   if (req.tenantId) {
@@ -88,6 +95,7 @@ async function notifyAdmins(req, payload) {
   );
 }
 
+// Role: Construit des donnees derivees.
 function buildUserSnapshot(user) {
   const firstName = String(user?.firstName || "").trim();
   const lastName = String(user?.lastName || "").trim();
@@ -103,6 +111,7 @@ function buildUserSnapshot(user) {
   };
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function serializeAttendance(record) {
   if (!record) return null;
   const raw = typeof record.toObject === "function" ? record.toObject() : record;
@@ -124,6 +133,7 @@ function serializeAttendance(record) {
   };
 }
 
+// Role: Recupere les donnees necessaires.
 export const getMyAttendance = asyncHandler(async (req, res) => {
   const { month, year } = req.query;
   const now = new Date(Date.now());
@@ -150,6 +160,7 @@ export const getMyAttendance = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Envoie un message ou une notification.
 export const sendAttendanceCode = asyncHandler(async (req, res) => {
   const { action = "check-in", reason = "" } = req.body;
   const now = new Date(Date.now());
@@ -228,6 +239,7 @@ export const sendAttendanceCode = asyncHandler(async (req, res) => {
   );
 });
 
+// Role: Verifie les donnees ou les droits.
 export const confirmAttendance = asyncHandler(async (req, res) => {
   const { action = "check-in", code, reason = "" } = req.body;
   const now = new Date(Date.now());
@@ -354,6 +366,7 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
   throw new ApiError(400, "Invalid attendance action");
 });
 
+// Role: Recupere les donnees necessaires.
 export const getAllAttendance = asyncHandler(async (req, res) => {
   const filter = req.tenantId ? { tenantId: req.tenantId } : {};
 

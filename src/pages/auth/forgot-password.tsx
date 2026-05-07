@@ -7,11 +7,13 @@ import apiClient from "@/lib/api-client";
 const RESET_EMAIL_STORAGE_KEY = "omni_ai_reset_email";
 const RESET_VERIFIED_STORAGE_KEY = "omni_ai_reset_verified";
 
+// Role: Recupere les donnees necessaires.
 function getErrorMessage(error: unknown) {
   const axiosError = error as AxiosError<{ message?: string }>;
   return axiosError.response?.data?.message || "Failed to send reset code";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
@@ -20,6 +22,7 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Role: Traite une action utilisateur.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");

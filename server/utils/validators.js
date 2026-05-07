@@ -286,6 +286,7 @@ export const validateMLPredict = [
     .withMessage("Features must be object"),
 ];
 
+// Role: Traite une action utilisateur.
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
 
@@ -302,6 +303,7 @@ export const handleValidationErrors = (req, res, next) => {
   next();
 };
 
+// Role: Prepare une valeur pour l affichage ou l API.
 export const sanitizeObject = (obj, allowedFields) => {
   const sanitized = {};
   allowedFields.forEach((field) => {
@@ -312,6 +314,7 @@ export const sanitizeObject = (obj, allowedFields) => {
   return sanitized;
 };
 
+// Role: Verifie les donnees ou les droits.
 export const validatePagination = (page = 1, limit = 10) => {
   const p = Math.max(1, parseInt(page, 10) || 1);
   const l = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));

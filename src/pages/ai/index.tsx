@@ -18,6 +18,7 @@ interface Message {
   text: string;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AIDashboard() {
   const { user } = useAuth();
   const [prompt, setPrompt] = useState("");
@@ -69,6 +70,7 @@ export default function AIDashboard() {
     "Automatiser mon CRM",
   ];
 
+  // Role: Envoie un message ou une notification.
   const sendMessage = async (message?: string) => {
     const textToSend = message || prompt.trim();
     if (!textToSend) {

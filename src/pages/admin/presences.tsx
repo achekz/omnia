@@ -10,19 +10,23 @@ import { cn } from "@/lib/utils";
 
 const roles = ["all", "employee", "stagiaire", "comptable"];
 
+// Role: Decrit la logique dateKey.
 function dateKey(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+// Role: Recupere les donnees necessaires.
 function getTodayKey() {
   const today = new Date();
   return dateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
 }
 
+// Role: Decrit la logique monthLabel.
 function monthLabel(date: Date) {
   return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
+// Role: Construit des donnees derivees.
 function buildCalendarDays(year: number, month: number, records: PresenceCalendarDay[]) {
   const byDate = new Map(records.map((day) => [day.date, day]));
   const first = new Date(year, month - 1, 1);
@@ -46,6 +50,7 @@ function buildCalendarDays(year: number, month: number, records: PresenceCalenda
   return cells;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AdminPresencesPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -58,6 +63,7 @@ export default function AdminPresencesPage() {
   const { data, isLoading } = useGetPresenceCalendar({ month, year, role }, { query: { refetchInterval: 30000 } });
 
   useEffect(() => {
+    // Role: Recupere les donnees necessaires.
     const syncToday = () => setTodayKey(getTodayKey());
     const nowDate = new Date();
     const nextMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() + 1, 0, 0, 1);
@@ -88,10 +94,12 @@ export default function AdminPresencesPage() {
     late: day.late + day.veryLate,
   }));
 
+  // Role: Controle l etat de l interface.
   const moveMonth = (offset: number) => {
     setCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   };
 
+  // Role: Traite une action utilisateur.
   const handleDateClick = (date: string) => {
     if (date > todayKey) {
       toast({ title: "No data yet", description: "Attendance data is available only for today and past days." });
@@ -216,6 +224,7 @@ export default function AdminPresencesPage() {
   );
 }
 
+// Role: Decrit la logique tooltipForDay.
 function tooltipForDay(record?: PresenceCalendarDay, isFuture = false) {
   if (isFuture) return "No data yet";
   const present = (record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0);
@@ -224,6 +233,7 @@ function tooltipForDay(record?: PresenceCalendarDay, isFuture = false) {
   return `${present} présents, ${absent} absents, ${late} en retard`;
 }
 
+// Role: Affiche et organise cet ecran.
 function CalendarCell({ dayNumber, record, isToday, isFuture }: { dayNumber: number; record?: PresenceCalendarDay; isToday: boolean; isFuture: boolean }) {
   const present = (record?.present || 0) + (record?.late || 0) + (record?.veryLate || 0);
   const absent = record?.absent || 0;
@@ -247,6 +257,7 @@ function CalendarCell({ dayNumber, record, isToday, isFuture }: { dayNumber: num
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function CompactMetric({ tone, label, value }: { tone: "emerald" | "rose" | "orange"; label: string; value: number }) {
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
@@ -262,6 +273,7 @@ function CompactMetric({ tone, label, value }: { tone: "emerald" | "rose" | "ora
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; value: number | string; tone: "emerald" | "rose" | "orange" | "gray" }) {
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700",
@@ -279,6 +291,7 @@ function Stat({ icon, label, value, tone }: { icon: ReactNode; label: string; va
   );
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function translateRole(role: string) {
   if (role === "all") return "All";
   if (role === "employee") return "Employee";

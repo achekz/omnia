@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { User } from "@/lib/types";
 
+// Role: Recupere les donnees necessaires.
 function getLoginErrorMessage(error: unknown) {
   const axiosError = error as AxiosError<{ message?: string; details?: string; code?: string }>;
   const status = axiosError.response?.status;
@@ -24,6 +25,7 @@ function getLoginErrorMessage(error: unknown) {
   return data?.message || "Identifiants invalides";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -36,6 +38,7 @@ export default function Login() {
   const [adminError, setAdminError] = useState("");
   const [isAdminLoading, setIsAdminLoading] = useState(false);
 
+  // Role: Traite une action utilisateur.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -50,6 +53,7 @@ export default function Login() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleAdminLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setAdminError("");
@@ -284,6 +288,7 @@ export default function Login() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SparklesIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg

@@ -12,6 +12,7 @@ const priorityScores = {
   critical: 4,
 };
 
+// Role: Decrit la logique compare.
 function compare(actual, operator, expected) {
   switch (operator) {
     case 'gt': return Number(actual) > Number(expected);
@@ -26,20 +27,24 @@ function compare(actual, operator, expected) {
   }
 }
 
+// Role: Decrit la logique daysBetween.
 function daysBetween(from, to = new Date()) {
   return Math.floor((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+// Role: Retourne un etat booleen.
 function isInCooldown(rule) {
   if (!rule.lastTriggeredAt || !rule.cooldownMinutes) return false;
   const nextAllowedAt = rule.lastTriggeredAt.getTime() + rule.cooldownMinutes * 60 * 1000;
   return Date.now() < nextAllowedAt;
 }
 
+// Role: Recupere les donnees necessaires.
 function getObjectId(value) {
   return value?._id || value || null;
 }
 
+// Role: Construit des donnees derivees.
 function buildRedirectTarget(rule, context) {
   const rawTarget = rule.redirectTarget || rule.action?.redirectTarget || rule.action?.actionUrl || defaultRedirectForResource(rule.resource);
   return String(rawTarget)
@@ -48,11 +53,13 @@ function buildRedirectTarget(rule, context) {
     .replaceAll('{userId}', context.user?._id?.toString?.() || '');
 }
 
+// Role: Decrit la logique defaultRedirectForResource.
 function defaultRedirectForResource(resource) {
   if (resource === 'finance') return '/finance';
   return '/tasks';
 }
 
+// Role: Recupere les donnees necessaires.
 async function getTenantAdmins(tenantId) {
   if (!tenantId) return [];
   return User.find({
@@ -62,6 +69,7 @@ async function getTenantAdmins(tenantId) {
   }).select('_id');
 }
 
+// Role: Construit des donnees derivees.
 async function resolveActionTargets(rule, context) {
   const target = rule.action?.target || 'currentUser';
 
@@ -87,6 +95,7 @@ async function resolveActionTargets(rule, context) {
   return [];
 }
 
+// Role: Envoie un message ou une notification.
 async function notify(rule, context) {
   const targetIds = await resolveActionTargets(rule, context);
   const redirectTarget = buildRedirectTarget(rule, context);
@@ -112,6 +121,7 @@ async function notify(rule, context) {
   );
 }
 
+// Role: Decrit la logique metricValue.
 async function metricValue(rule, condition, context) {
   if (condition.metric === 'task.delayDays') {
     if (Number.isFinite(Number(context.task?.delayDays))) return Number(context.task.delayDays);
@@ -150,6 +160,7 @@ async function metricValue(rule, condition, context) {
   return undefined;
 }
 
+// Role: Decrit la logique matchesRule.
 async function matchesRule(rule, context) {
   if (isInCooldown(rule)) return false;
 
@@ -169,6 +180,7 @@ async function matchesRule(rule, context) {
   return true;
 }
 
+// Role: Decrit la logique contextsForRule.
 async function contextsForRule(rule, scopeTenantId) {
   const baseFilter = rule.tenantId ? { tenantId: rule.tenantId } : (scopeTenantId ? { tenantId: scopeTenantId } : {});
 

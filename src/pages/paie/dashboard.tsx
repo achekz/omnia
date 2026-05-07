@@ -14,6 +14,7 @@ import {
   type LucideProps,
 } from "lucide-react";
 
+// Role: Affiche et organise cet ecran.
 export default function PaieTunisieDashboard() {
   const { user } = useAuth();
 
@@ -123,14 +124,17 @@ export default function PaieTunisieDashboard() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function CircleDollarSign(props: LucideProps) {
   return <Banknote {...props} />;
 }
 
+// Role: Affiche et organise cet ecran.
 function ShieldAlert(props: LucideProps) {
   return <Info {...props} />;
 }
 
+// Role: Affiche et organise cet ecran.
 function Timer(props: LucideProps) {
   return <Calendar {...props} />;
 }

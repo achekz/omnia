@@ -1,5 +1,6 @@
 import ActivityLog from '../models/ActivityLog.js';
 
+// Role: Construit des donnees derivees.
 export const calculateScore = async (userId) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);

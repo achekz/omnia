@@ -7,10 +7,12 @@ import { normalizeRole } from "../utils/roleNormalization.js";
 
 const WINDOW_DAYS = 6;
 
+// Role: Recupere les donnees necessaires.
 function getWindowStart() {
   return new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
 }
 
+// Role: Construit des donnees derivees.
 function buildScopeFilter({ tenantId, userIds }) {
   const filter = {};
 
@@ -25,6 +27,7 @@ function buildScopeFilter({ tenantId, userIds }) {
   return filter;
 }
 
+// Role: Gere une etape d authentification.
 export async function refreshRecommendationsForScope({ tenantId, userIds, trigger = "manual" } = {}) {
   const windowStart = getWindowStart();
   const windowEnd = new Date();

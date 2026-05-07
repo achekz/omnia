@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+// Role: Decrit la logique requireDatabase.
 const requireDatabase = (req, res, next) => {
   if (mongoose.connection.readyState === 1) {
     return next();

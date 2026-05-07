@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import { emitToUser } from '../config/socket.js';
 
+// Role: Construit des donnees derivees.
 function resolveRedirectTarget(target, metadata = {}) {
   const rawTarget = target || '/notifications';
   return String(rawTarget)
@@ -9,6 +10,7 @@ function resolveRedirectTarget(target, metadata = {}) {
     .replaceAll('{userId}', metadata.userId || '');
 }
 
+// Role: Cree une nouvelle ressource.
 export const create = async (userId, tenantId, { type, title, message, source, redirectTarget, actionUrl, metadata }) => {
   const resolvedRedirectTarget = resolveRedirectTarget(redirectTarget || actionUrl, metadata);
 

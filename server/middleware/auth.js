@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { normalizeProfileType, normalizeRole } from '../utils/roleNormalization.js';
 
+// Role: Decrit la logique attachCanonicalRole.
 function attachCanonicalRole(user) {
   const role = normalizeRole(user.role || user.profileType, 'employee');
   const profileType = normalizeProfileType(user.profileType || role, role);
@@ -13,6 +14,7 @@ function attachCanonicalRole(user) {
   return user;
 }
 
+// Role: Decrit la logique protect.
 export const protect = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -40,6 +42,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   next();
 });
 
+// Role: Decrit la logique optionalAuth.
 export const optionalAuth = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 

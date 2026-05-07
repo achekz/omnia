@@ -13,6 +13,7 @@ import ActivityLog from '../models/ActivityLog.js';
 /**
  * Build dynamic MongoDB query from filter params
  */
+// Role: Construit des donnees derivees.
 export const buildQuery = (filters) => {
   const query = {};
   
@@ -74,6 +75,7 @@ export const buildQuery = (filters) => {
 /**
  * Build sort object from sort params
  */
+// Role: Construit des donnees derivees.
 export const buildSort = (sortBy) => {
   const sortMap = {
     'date': { createdAt: -1 },
@@ -93,6 +95,7 @@ export const buildSort = (sortBy) => {
 /**
  * Search Tasks with advanced filters
  */
+// Role: Decrit la logique searchTasks.
 export const searchTasks = async (userId, filters, pagination) => {
   const query = buildQuery({
     ...filters,
@@ -127,6 +130,7 @@ export const searchTasks = async (userId, filters, pagination) => {
 /**
  * Search Users (admin only)
  */
+// Role: Decrit la logique searchUsers.
 export const searchUsers = async (filters, pagination) => {
   const query = buildQuery({
     ...filters,
@@ -164,6 +168,7 @@ export const searchUsers = async (filters, pagination) => {
 /**
  * Search Financial Records with advanced filtering
  */
+// Role: Decrit la logique searchFinanceRecords.
 export const searchFinanceRecords = async (userId, tenantId, filters, pagination) => {
   const query = buildQuery({
     ...filters,
@@ -211,6 +216,7 @@ export const searchFinanceRecords = async (userId, tenantId, filters, pagination
 /**
  * Full-text search across multiple collections
  */
+// Role: Decrit la logique globalSearch.
 export const globalSearch = async (userId, tenantId, searchQuery, pagination) => {
   const textSearchQuery = { $text: { $search: searchQuery } };
   const { skip, limit } = pagination;
@@ -254,6 +260,7 @@ export const globalSearch = async (userId, tenantId, searchQuery, pagination) =>
 /**
  * Advanced aggregation - Activity analytics
  */
+// Role: Recupere les donnees necessaires.
 export const getActivityAnalytics = async (userId, tenantId, dateRange) => {
   const startDate = new Date(Date.now() - dateRange * 24 * 60 * 60 * 1000);
   
@@ -319,6 +326,7 @@ export const getActivityAnalytics = async (userId, tenantId, dateRange) => {
 /**
  * Suggest relevant content based on user activity
  */
+// Role: Recupere les donnees necessaires.
 export const getSuggestions = async (userId, tenantId) => {
   const [recentTasks, upcomingDue] = await Promise.all([
     Task.find({ 
@@ -354,6 +362,7 @@ export const getSuggestions = async (userId, tenantId) => {
 /**
  * Export search results as CSV/JSON
  */
+// Role: Decrit la logique exportSearchResults.
 export const exportSearchResults = async (data, format = 'json') => {
   if (format === 'json') {
     return JSON.stringify(data, null, 2);

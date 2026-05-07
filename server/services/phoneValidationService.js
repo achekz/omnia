@@ -25,11 +25,13 @@ const CITY_RULES = [
   { city: "south africa", aliases: ["south africa", "cape town", "johannesburg"], dialCode: "+27" },
 ];
 
+// Role: Recupere les donnees necessaires.
 export function getPhoneRuleByCity(city) {
   const normalizedCity = String(city || "").trim().toLowerCase();
   return CITY_RULES.find((rule) => rule.aliases.includes(normalizedCity)) || null;
 }
 
+// Role: Verifie les donnees ou les droits.
 export function validatePhoneNumberByCity(city, phoneNumber) {
   const rule = getPhoneRuleByCity(city);
   const rawPhone = String(phoneNumber || "").trim();

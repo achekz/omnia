@@ -3,6 +3,7 @@ import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGetNotifications, useMarkNotificationRead } from "@/lib/api-client";
 import type { Notification } from "@/lib/types";
 
+// Role: Affiche et organise cet ecran.
 export default function NotificationsPage() {
   const { data: notifications = [], isFetching } = useGetNotifications({ query: { refetchInterval: 30000 } });
   const markRead = useMarkNotificationRead();
@@ -40,6 +41,7 @@ export default function NotificationsPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function NotificationRow({ notification, onRead }: { notification: Notification; onRead: (id: string) => void }) {
   const id = notification._id || notification.id;
 

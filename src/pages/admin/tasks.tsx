@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Task, TaskStatus, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Role: Recupere les donnees necessaires.
 function getUserName(user: Partial<User> | string | undefined) {
   if (!user || typeof user === "string") return "-";
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "-";
@@ -37,14 +38,17 @@ const statusFilterLabels: Record<(typeof statusFilters)[number], string> = {
   declined: "Cancelled",
 };
 
+// Role: Recupere les donnees necessaires.
 function getTaskId(task: Task) {
   return task._id || task.id || "";
 }
 
+// Role: Retourne un etat booleen.
 function isDelayed(task: Task) {
   return task.status === "overdue" || task.isDelayed || (task.dueDate && new Date(task.dueDate) < new Date()) || (task.delayDays || 0) > 0;
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AdminTasksPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -63,6 +67,7 @@ export default function AdminTasksPage() {
 
   const assignableUsers = users.filter((user) => ["employee", "stagiaire", "comptable"].includes(user.role));
 
+  // Role: Traite une action utilisateur.
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -103,6 +108,7 @@ export default function AdminTasksPage() {
     }
   };
 
+  // Role: Decrit la logique startEdit.
   const startEdit = (task: Task) => {
     const taskId = task._id || task.id || "";
     setEditingTaskId(taskId);
@@ -114,6 +120,7 @@ export default function AdminTasksPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Role: Controle l etat de l interface.
   const cancelEdit = () => {
     setEditingTaskId("");
     setTitle("");
@@ -123,6 +130,7 @@ export default function AdminTasksPage() {
     setEstimatedDuration(60);
   };
 
+  // Role: Decrit la logique rescheduleToday.
   const rescheduleToday = (task: Task) => {
     const id = getTaskId(task);
     if (!id) return;

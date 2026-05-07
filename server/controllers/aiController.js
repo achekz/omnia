@@ -2,6 +2,7 @@ import { generateResponse } from "../services/geminiService.js";
 import { ApiError } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+// Role: Decrit la logique chatWithAI.
 export const chatWithAI = asyncHandler(async (req, res) => {
   const { message } = req.body;
 

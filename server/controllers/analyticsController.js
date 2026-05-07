@@ -4,6 +4,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // GET /api/analytics/activity
+// Role: Recupere les donnees necessaires.
 export const getActivity = asyncHandler(async (req, res) => {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const logs = await ActivityLog.find({
@@ -22,6 +23,7 @@ export const getActivity = asyncHandler(async (req, res) => {
 });
 
 // GET /api/analytics/score
+// Role: Recupere les donnees necessaires.
 export const getScore = asyncHandler(async (req, res) => {
   const logs = await ActivityLog.find({ userId: req.user._id }).sort({ date: -1 }).limit(14);
   const current = logs[0]?.score || 0;
@@ -36,6 +38,7 @@ export const getScore = asyncHandler(async (req, res) => {
 });
 
 // GET /api/analytics/team
+// Role: Recupere les donnees necessaires.
 export const getTeamAnalytics = asyncHandler(async (req, res) => {
   if (!req.tenantId) return res.json(new ApiResponse(200, { team: [] }));
 
@@ -54,6 +57,7 @@ export const getTeamAnalytics = asyncHandler(async (req, res) => {
 });
 
 // POST /api/analytics/log
+// Role: Decrit la logique logActivity.
 export const logActivity = asyncHandler(async (req, res) => {
   const { tasksCompleted, activeMinutes, loginEvent, budgetSpent } = req.body;
   const today = new Date(); today.setHours(0, 0, 0, 0);

@@ -40,6 +40,7 @@ export const upload = multer({
   }
 });
 
+// Role: Decrit la logique uploadFile.
 export const uploadFile = asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
@@ -81,6 +82,7 @@ export const uploadFile = asyncHandler(async (req, res) => {
   }
 });
 
+// Role: Decrit la logique uploadMultipleFiles.
 export const uploadMultipleFiles = asyncHandler(async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -120,6 +122,7 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
   }
 });
 
+// Role: Decrit la logique uploadAvatar.
 export const uploadAvatar = asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
@@ -153,6 +156,7 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
   }
 });
 
+// Role: Decrit la logique uploadTaskAttachment.
 export const uploadTaskAttachment = asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
@@ -185,6 +189,7 @@ export const uploadTaskAttachment = asyncHandler(async (req, res) => {
   }
 });
 
+// Role: Recupere les donnees necessaires.
 export const getDownloadUrl = asyncHandler(async (req, res) => {
   const { fileKey } = req.params;
   const fullPath = path.join(uploadsDir, fileKey);
@@ -200,6 +205,7 @@ export const getDownloadUrl = asyncHandler(async (req, res) => {
   });
 });
 
+// Role: Supprime ou reinitialise des donnees.
 export const deleteFile = asyncHandler(async (req, res) => {
   const { fileKey } = req.params;
   const fullPath = path.join(uploadsDir, fileKey);
@@ -213,6 +219,7 @@ export const deleteFile = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'File deleted' });
 });
 
+// Role: Recupere les donnees necessaires.
 export const listUserFiles = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const userDir = path.join(uploadsDir, userId);
@@ -241,6 +248,7 @@ export const listUserFiles = asyncHandler(async (req, res) => {
   });
 });
 
+// Role: Decrit la logique uploadWithProgress.
 export const uploadWithProgress = asyncHandler(async (req, res) => {
   await uploadFile(req, res);
 });

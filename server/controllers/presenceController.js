@@ -10,10 +10,12 @@ const LATE_THRESHOLD_MINUTES = Number(process.env.PRESENCE_LATE_THRESHOLD_MINUTE
 const VERY_LATE_THRESHOLD_MINUTES = Number(process.env.PRESENCE_VERY_LATE_THRESHOLD_MINUTES || 60);
 const EXPECTED_START_TIME = process.env.PRESENCE_EXPECTED_START_TIME || "08:30";
 
+// Role: Construit des donnees derivees.
 function scopedFilter(req) {
   return req.tenantId ? { tenantId: req.tenantId } : {};
 }
 
+// Role: Recupere les donnees necessaires.
 function getDateRange(dateKey) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey))) {
     throw new ApiError(400, "Date must use YYYY-MM-DD format");
@@ -26,6 +28,7 @@ function getDateRange(dateKey) {
   return { start, end, dateKey };
 }
 
+// Role: Decrit la logique monthRange.
 function monthRange(month, year) {
   const now = new Date();
   const safeYear = Number(year) || now.getFullYear();
@@ -35,6 +38,7 @@ function monthRange(month, year) {
   return { start, end, year: safeYear, month: safeMonth };
 }
 
+// Role: Decrit la logique dateKeyFromDate.
 function dateKeyFromDate(date) {
   const value = new Date(date);
   const year = value.getFullYear();
@@ -43,25 +47,30 @@ function dateKeyFromDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function normalizeStatus(status) {
   return status === "on_time" ? "present" : status;
 }
 
+// Role: Decrit la logique parseExpectedStartMinutes.
 function parseExpectedStartMinutes(value = EXPECTED_START_TIME) {
   const [hours = "8", minutes = "30"] = String(value).split(":");
   return Number(hours) * 60 + Number(minutes);
 }
 
+// Role: Decrit la logique minutesSinceMidnight.
 function minutesSinceMidnight(date) {
   return date.getHours() * 60 + date.getMinutes();
 }
 
+// Role: Decrit la logique statusFromDelay.
 function statusFromDelay(delayMinutes) {
   if (delayMinutes > VERY_LATE_THRESHOLD_MINUTES) return "very_late";
   if (delayMinutes > LATE_THRESHOLD_MINUTES) return "late";
   return "present";
 }
 
+// Role: Construit des donnees derivees.
 function buildUserSnapshot(user) {
   const firstName = String(user?.firstName || "").trim();
   const lastName = String(user?.lastName || "").trim();
@@ -77,10 +86,12 @@ function buildUserSnapshot(user) {
   };
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatClock(date) {
   return date ? new Date(date).toLocaleTimeString("en-GB", { hour12: false }) : null;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function serializePresence(record) {
   if (!record) return null;
   const raw = typeof record.toObject === "function" ? record.toObject() : record;
@@ -94,6 +105,7 @@ function serializePresence(record) {
   };
 }
 
+// Role: Envoie un message ou une notification.
 async function notifyTenantAdmins(req, payload) {
   const filter = { role: "admin", isActive: true };
   if (req.tenantId) filter.tenantId = req.tenantId;
@@ -109,6 +121,7 @@ async function notifyTenantAdmins(req, payload) {
   );
 }
 
+// Role: Lance un traitement metier ou IA.
 async function runPresenceRules(req, attendance) {
   const user = attendance.userId && typeof attendance.userId === "object" ? attendance.userId : req.user;
   const name = user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "A user";
@@ -146,6 +159,7 @@ async function runPresenceRules(req, attendance) {
   }
 }
 
+// Role: Recupere les donnees necessaires.
 export const getPresenceCalendar = asyncHandler(async (req, res) => {
   const { start, end, month, year } = monthRange(req.query.month, req.query.year);
   const scope = scopedFilter(req);
@@ -208,6 +222,7 @@ export const getPresenceCalendar = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { days, stats, month, year }, "Presence calendar retrieved"));
 });
 
+// Role: Recupere les donnees necessaires.
 export const getPresenceByDate = asyncHandler(async (req, res) => {
   const { dateKey } = getDateRange(req.params.date);
   const scope = scopedFilter(req);
@@ -277,6 +292,7 @@ export const getPresenceByDate = asyncHandler(async (req, res) => {
   }, "Presence details retrieved"));
 });
 
+// Role: Verifie les donnees ou les droits.
 export const checkIn = asyncHandler(async (req, res) => {
   const now = req.body.checkIn ? new Date(req.body.checkIn) : new Date();
   if (Number.isNaN(now.getTime())) throw new ApiError(400, "Invalid checkIn date");

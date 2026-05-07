@@ -53,25 +53,30 @@ const readableLabel = "text-gray-300";
 const glassSurface = "border-blue-200/15 bg-blue-950/35 backdrop-blur-md shadow-xl shadow-blue-950/20";
 const nestedSurface = "border-blue-200/15 bg-indigo-950/30 backdrop-blur-md";
 
+// Role: Decrit la logique clamp.
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
+// Role: Recupere les donnees necessaires.
 function getRiskLevel(score: number): RiskLevel {
   if (score >= 70) return "High";
   if (score >= 40) return "Medium";
   return "Low";
 }
 
+// Role: Recupere les donnees necessaires.
 function getRecordId(record: FinancialRecord, index: number) {
   return record._id ?? record.id ?? `record-${index}`;
 }
 
+// Role: Retourne un etat booleen.
 function isFlaggedRecord(record: FinancialRecord) {
   const recordWithBudget = record as FinancialRecord & { overBudget?: boolean };
   return Boolean(record.isAnomaly || (record.anomalyScore ?? 0) >= 70 || recordWithBudget.overBudget);
 }
 
+// Role: Construit des donnees derivees.
 function deriveFinanceSignal(records: FinancialRecord[]): FinanceSignal {
   const incomeRecords = records.filter((record) => record.type === "income");
   const expenseRecords = records.filter((record) => record.type === "expense");
@@ -121,6 +126,7 @@ function deriveFinanceSignal(records: FinancialRecord[]): FinanceSignal {
   };
 }
 
+// Role: Affiche et organise cet ecran.
 function HeroFinance({ signal }: { signal: FinanceSignal }) {
   const cards = [
     { label: "Revenue", value: formatCurrency(signal.revenue), icon: TrendingUp, className: "border-emerald-300/30 bg-emerald-500/10 text-emerald-50" },
@@ -164,6 +170,7 @@ function HeroFinance({ signal }: { signal: FinanceSignal }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function AIInsightFinance({ signal, onDetect }: { signal: FinanceSignal; onDetect: () => void }) {
   return (
     <section className={cn("rounded-2xl p-6", glassSurface)}>
@@ -230,6 +237,7 @@ function AIInsightFinance({ signal, onDetect }: { signal: FinanceSignal; onDetec
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function SmartFinanceBoard({ records }: { records: FinancialRecord[] }) {
   const flagged = records.filter(isFlaggedRecord).slice(0, 5);
   const inProgress = records.filter((record) => !isFlaggedRecord(record) && record.type === "expense").slice(0, 5);
@@ -271,6 +279,7 @@ function SmartFinanceBoard({ records }: { records: FinancialRecord[] }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function FinanceRecordCard({ record }: { record: FinancialRecord }) {
   const flagged = isFlaggedRecord(record);
   return (
@@ -295,6 +304,7 @@ function FinanceRecordCard({ record }: { record: FinancialRecord }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function FinanceActions({ onDetect, onRecommend, onRules, isScanning }: { onDetect: () => void; onRecommend: () => void; onRules: () => void; isScanning: boolean }) {
   const actions = [
     { label: isScanning ? "Scanning anomalies..." : "Detect anomalies", icon: ShieldAlert, onClick: onDetect, tone: "from-rose-500 to-amber-500" },
@@ -322,6 +332,7 @@ function FinanceActions({ onDetect, onRecommend, onRules, isScanning }: { onDete
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function FinanceMetrics({ signal }: { signal: FinanceSignal }) {
   const metrics = [
     { label: "Revenue trend", value: signal.revenueTrend, icon: TrendingUp, detail: "balance strength" },
@@ -358,6 +369,7 @@ function FinanceMetrics({ signal }: { signal: FinanceSignal }) {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 export default function AccountantDashboard() {
   const { data: summary } = useGetFinanceSummary();
   const { data: records = [] } = useGetFinanceRecords();
@@ -374,6 +386,7 @@ export default function AccountantDashboard() {
     };
   }, [records, summary?.anomalyCount, summary?.balance]);
 
+  // Role: Lance un traitement metier ou IA.
   const runAnomalyScan = () => {
     detectAnomaly.mutate(records.map((record) => record.amount));
   };

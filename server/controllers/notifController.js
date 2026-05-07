@@ -3,6 +3,7 @@ import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // GET /api/notifications
+// Role: Recupere les donnees necessaires.
 export const getNotifications = asyncHandler(async (req, res) => {
   const { page = 1, limit = 'all', unreadOnly } = req.query;
   const filter = { userId: req.user._id };
@@ -28,6 +29,7 @@ export const getNotifications = asyncHandler(async (req, res) => {
 });
 
 // PATCH /api/notifications/:id/read
+// Role: Enregistre une modification.
 export const markRead = asyncHandler(async (req, res) => {
   const notif = await Notification.findOneAndUpdate(
     { _id: req.params.id, userId: req.user._id },
@@ -39,12 +41,14 @@ export const markRead = asyncHandler(async (req, res) => {
 });
 
 // PATCH /api/notifications/read-all
+// Role: Enregistre une modification.
 export const markAllRead = asyncHandler(async (req, res) => {
   await Notification.updateMany({ userId: req.user._id, isRead: false }, { isRead: true });
   return res.json(new ApiResponse(200, {}, 'All notifications marked as read'));
 });
 
 // DELETE /api/notifications/:id
+// Role: Supprime ou reinitialise des donnees.
 export const deleteNotification = asyncHandler(async (req, res) => {
   const notif = await Notification.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
   if (!notif) throw new ApiError(404, 'Notification not found');
@@ -52,6 +56,7 @@ export const deleteNotification = asyncHandler(async (req, res) => {
 });
 
 // DELETE /api/notifications/clear-all
+// Role: Supprime ou reinitialise des donnees.
 export const clearAll = asyncHandler(async (req, res) => {
   await Notification.deleteMany({ userId: req.user._id, isRead: true });
   return res.json(new ApiResponse(200, {}, 'Read notifications cleared'));

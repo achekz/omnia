@@ -83,6 +83,7 @@ const SECTION_CONTENT = {
   },
 } as const;
 
+// Role: Affiche et organise cet ecran.
 export default function EmployeeSectionPage() {
   const { user } = useAuth();
   const [pathname] = useLocation();

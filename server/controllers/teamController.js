@@ -3,6 +3,7 @@ import ActivityLog from '../models/ActivityLog.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+// Role: Recupere les donnees necessaires.
 export const getTeamMembers = asyncHandler(async (req, res) => {
   if (!req.tenantId) {
     return res.json(new ApiResponse(200, []));

@@ -6,6 +6,7 @@ let schedulerHandle = null;
 let ruleSchedulerHandle = null;
 let insightSchedulerHandle = null;
 
+// Role: Lance un traitement metier ou IA.
 async function runRecommendationJob() {
   try {
     console.log("[CRON] Running weekly recommendation job...");
@@ -16,6 +17,7 @@ async function runRecommendationJob() {
   }
 }
 
+// Role: Lance un traitement metier ou IA.
 async function runInsightJob() {
   try {
     console.log("[CRON] Running daily AI insight snapshot...");
@@ -26,6 +28,7 @@ async function runInsightJob() {
   }
 }
 
+// Role: Decrit la logique startRecommendationScheduler.
 export async function startRecommendationScheduler() {
   if (schedulerHandle) {
     return schedulerHandle;

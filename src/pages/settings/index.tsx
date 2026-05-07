@@ -33,6 +33,7 @@ const notificationPreferencesList: Array<{
   { key: "marketingUpdates", title: "Marketing Updates", desc: "Receive news about new features and promotions" },
 ];
 
+// Role: Affiche et organise cet ecran.
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -62,6 +63,7 @@ export default function SettingsPage() {
     return null;
   }
 
+  // Role: Decrit la logique showSuccess.
   const showSuccess = (key: SuccessKey) => {
     setSuccessMessages((prev) => ({ ...prev, [key]: true }));
     window.setTimeout(() => {
@@ -69,6 +71,7 @@ export default function SettingsPage() {
     }, 3000);
   };
 
+  // Role: Traite une action utilisateur.
   const handleSaveProfile = async () => {
     try {
       const response = await fetch("/api/users/profile", {
@@ -87,6 +90,7 @@ export default function SettingsPage() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleSendEmailCode = async () => {
     if (!newEmail || !newEmail.includes("@")) {
       alert("Please enter a valid email");
@@ -114,6 +118,7 @@ export default function SettingsPage() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleVerifyEmailCode = async () => {
     if (!emailVerificationCode) {
       alert("Please enter the verification code");
@@ -144,6 +149,7 @@ export default function SettingsPage() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleSaveNotifications = async () => {
     try {
       const response = await fetch("/api/users/notification-preferences", {
@@ -162,6 +168,7 @@ export default function SettingsPage() {
     }
   };
 
+  // Role: Traite une action utilisateur.
   const handleChangePassword = async () => {
     if (!passwords.current || !passwords.new || !passwords.confirm) {
       alert("Please fill all password fields");

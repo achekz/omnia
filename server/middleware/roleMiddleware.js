@@ -1,5 +1,6 @@
 import { normalizeRole } from "../utils/roleNormalization.js";
 
+// Role: Decrit la logique authorize.
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {

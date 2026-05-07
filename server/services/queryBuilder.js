@@ -8,6 +8,7 @@
 /**
  * Build advanced MongoDB aggregation pipeline for complex queries
  */
+// Role: Construit des donnees derivees.
 export const buildAdvancedPipeline = (filters, options = {}) => {
   const pipeline = [];
 
@@ -81,6 +82,7 @@ export const buildAdvancedPipeline = (filters, options = {}) => {
 /**
  * Build sort stage for aggregation pipeline
  */
+// Role: Construit des donnees derivees.
 const buildSortStage = (sortBy, hasSearch = false) => {
   const sortOptions = {
     'date': { createdAt: -1 },
@@ -101,6 +103,7 @@ const buildSortStage = (sortBy, hasSearch = false) => {
 /**
  * Build analytics aggregation pipeline
  */
+// Role: Construit des donnees derivees.
 export const buildAnalyticsPipeline = (userId, tenantId, groupBy = 'day') => {
   const dateFormat = {
     'day': '%Y-%m-%d',
@@ -137,6 +140,7 @@ export const buildAnalyticsPipeline = (userId, tenantId, groupBy = 'day') => {
 /**
  * Build category aggregation for finance records
  */
+// Role: Construit des donnees derivees.
 export const buildCategoryAnalyticsPipeline = (userId, tenantId) => {
   return [
     {
@@ -170,6 +174,7 @@ export const buildCategoryAnalyticsPipeline = (userId, tenantId) => {
 /**
  * Build status distribution aggregation (for tasks)
  */
+// Role: Construit des donnees derivees.
 export const buildStatusDistributionPipeline = (userId) => {
   return [
     {
@@ -200,6 +205,7 @@ export const buildStatusDistributionPipeline = (userId) => {
 /**
  * Build faceted search pipeline (multiple filters at once)
  */
+// Role: Construit des donnees derivees.
 export const buildFacetedSearchPipeline = (searchTerm, userId) => {
   return [
     {
@@ -234,6 +240,7 @@ export const buildFacetedSearchPipeline = (searchTerm, userId) => {
 /**
  * Build time-series aggregation
  */
+// Role: Construit des donnees derivees.
 export const buildTimeSeriesPipeline = (userId, tenantId, metric = 'count', days = 30) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -263,6 +270,7 @@ export const buildTimeSeriesPipeline = (userId, tenantId, metric = 'count', days
 /**
  * Build comparison aggregation (compare periods)
  */
+// Role: Construit des donnees derivees.
 export const buildComparisonPipeline = (userId, tenantId, metric = 'amount', periodDays = 30) => {
   const now = new Date();
   const currentStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);

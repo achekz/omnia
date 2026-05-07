@@ -7,6 +7,7 @@ import { useGetFinanceRecords, useGetFinanceSummary } from "@/lib/api-client";
 import type { FinancialRecord } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
+// Role: Affiche et organise cet ecran.
 export default function CabinetDashboard() {
   const { data: summary } = useGetFinanceSummary();
   const { data: records = [], isLoading: recLoading } = useGetFinanceRecords();

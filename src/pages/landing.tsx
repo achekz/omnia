@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 
+// Role: Affiche et organise cet ecran.
 export default function LandingPage() {
   const features = [
     {
@@ -248,6 +249,7 @@ export default function LandingPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function BriefcaseIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>

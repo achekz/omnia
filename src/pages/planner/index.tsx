@@ -4,12 +4,14 @@ import { useGetTasks } from "@/lib/api-client";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Role: Recupere les donnees necessaires.
 function getTaskDate(task: Task) {
   const value = task.startTime || task.plannedStartAt || task.dueDate || task.createdAt;
   const date = value ? new Date(value) : new Date();
   return Number.isNaN(date.getTime()) ? new Date() : date;
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
 function formatTimeWindow(task: Task) {
   const start = getTaskDate(task);
   const minutes = task.estimatedMinutes || task.estimatedDurationMinutes || 60;
@@ -17,6 +19,7 @@ function formatTimeWindow(task: Task) {
   return `${start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+// Role: Decrit la logique statusLabel.
 function statusLabel(status: Task["status"]) {
   if (status === "in_progress") return "In progress";
   if (status === "done") return "Done";
@@ -25,6 +28,7 @@ function statusLabel(status: Task["status"]) {
   return "Planned";
 }
 
+// Role: Decrit la logique statusTone.
 function statusTone(status: Task["status"]) {
   if (status === "done") return "bg-emerald-100 text-emerald-700";
   if (status === "in_progress") return "bg-sky-100 text-sky-700";
@@ -32,6 +36,7 @@ function statusTone(status: Task["status"]) {
   return "bg-blue-100 text-blue-700";
 }
 
+// Role: Affiche et organise cet ecran.
 export default function PlannerPage() {
   const { data: tasks = [], isLoading } = useGetTasks({ query: { refetchInterval: 30000 } });
   const now = new Date();
@@ -121,6 +126,7 @@ export default function PlannerPage() {
   );
 }
 
+// Role: Affiche et organise cet ecran.
 function TaskScheduleCard({ task }: { task: Task }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/60">
