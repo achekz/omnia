@@ -107,4 +107,18 @@ router.post(
   adminController.optimizeSystemRules
 );
 
+router.get(
+  '/recommendations/weekly',
+  protect,
+  authorize('ADMIN'),
+  adminController.getWeeklyRecommendations
+);
+
+router.post(
+  '/recommendations/weekly/generate',
+  protect,
+  authorize('ADMIN'),
+  adminController.generateWeeklyRecommendation
+);
+
 export default router;

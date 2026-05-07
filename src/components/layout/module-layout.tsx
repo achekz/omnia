@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  Lightbulb,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
@@ -106,6 +107,7 @@ const MODULES: NavModule[] = [
       { id: "presences", label: "Presences", icon: <Calendar className="w-4 h-4" />, path: "/admin/presences" },
       { id: "admin-tasks", label: "Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/admin/tasks" },
       { id: "rules", label: "Rule Engine", icon: <ShieldCheck className="w-4 h-4" />, path: "/admin/rules" },
+      { id: "recommendations", label: "Recommendations", icon: <Lightbulb className="w-4 h-4" />, path: "/admin/recommendations" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
       { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
     ],

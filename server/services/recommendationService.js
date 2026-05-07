@@ -2,10 +2,76 @@ import User from "../models/User.js";
 import Task from "../models/Task.js";
 import PerformanceLog from "../models/PerformanceLog.js";
 import Recommendation from "../models/Recommendation.js";
+import ActivityLog from "../models/ActivityLog.js";
+import Attendance from "../models/Attendance.js";
 import { fetchRecommendations, predictPerformance } from "./aiService.js";
 import { normalizeRole } from "../utils/roleNormalization.js";
 
 const WINDOW_DAYS = 6;
+
+// Role: Construit la periode hebdomadaire analysee.
+function getWeeklyWindow(referenceDate = new Date()) {
+  const windowEnd = new Date(referenceDate);
+  const day = windowEnd.getDay();
+  const daysSinceMonday = (day + 6) % 7;
+  const windowStart = new Date(windowEnd);
+  windowStart.setDate(windowEnd.getDate() - daysSinceMonday);
+  windowStart.setHours(0, 0, 0, 0);
+
+  const year = windowStart.getFullYear();
+  const month = String(windowStart.getMonth() + 1).padStart(2, "0");
+  const date = String(windowStart.getDate()).padStart(2, "0");
+
+  return {
+    windowStart,
+    windowEnd,
+    weekKey: `${year}-${month}-${date}`,
+  };
+}
+
+// Role: Prepare une valeur pour l affichage ou l API.
+function getUserName(user) {
+  return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Compte";
+}
+
+// Role: Construit des donnees derivees.
+function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords }) {
+  const completedTasks = tasks.filter((task) => task.status === "done").length;
+  const activeTasks = tasks.filter((task) => ["todo", "in_progress", "overdue", "done"].includes(task.status)).length;
+  const delayedTasks = tasks.filter((task) => task.status === "overdue" || task.isDelayed).length;
+  const completionRate = activeTasks ? completedTasks / activeTasks : 0;
+  const avgActivityScore = activityLogs.length
+    ? activityLogs.reduce((sum, log) => sum + Number(log.score || 0), 0) / activityLogs.length
+    : 0;
+  const presentDays = attendanceRecords.filter((record) => ["present", "on_time", "late", "very_late"].includes(record.status)).length;
+  const lateDays = attendanceRecords.filter((record) => ["late", "very_late"].includes(record.status)).length;
+  const punctualityRate = presentDays ? Math.max(0, (presentDays - lateDays) / presentDays) : 0.5;
+  const workloadBonus = Math.min(15, completedTasks * 3);
+  const delayPenalty = Math.min(35, delayedTasks * 12);
+  const score = Math.round(
+    completionRate * 45 +
+      punctualityRate * 25 +
+      Math.min(100, avgActivityScore) * 0.2 +
+      workloadBonus -
+      delayPenalty,
+  );
+
+  return {
+    userId: user._id,
+    name: getUserName(user),
+    email: user.email,
+    role: normalizeRole(user.role, user.profileType || "employee"),
+    score: Math.max(0, Math.min(100, score)),
+    completedTasks,
+    activeTasks,
+    delayedTasks,
+    presentDays,
+    lateDays,
+    avgActivityScore: Math.round(avgActivityScore),
+    completionRate: Number((completionRate * 100).toFixed(1)),
+    punctualityRate: Number((punctualityRate * 100).toFixed(1)),
+  };
+}
 
 // Role: Recupere les donnees necessaires.
 function getWindowStart() {
@@ -106,4 +172,142 @@ export async function refreshRecommendationsForScope({ tenantId, userIds, trigge
   });
 
   return recommendation;
+}
+
+// Role: Lance un traitement metier ou IA.
+export async function generateWeeklyEffectivenessRecommendation({
+  tenantId,
+  trigger = "weekly-saturday-10",
+  referenceDate = new Date(),
+  force = false,
+} = {}) {
+  const { windowStart, windowEnd, weekKey } = getWeeklyWindow(referenceDate);
+  const scopedTenant = tenantId || null;
+
+  if (!force) {
+    const existing = await Recommendation.findOne({
+      tenantId: scopedTenant,
+      kind: "weekly_effectiveness",
+      weekKey,
+    }).sort({ createdAt: -1 });
+
+    if (existing) {
+      return existing;
+    }
+  } else {
+    await Recommendation.deleteMany({
+      tenantId: scopedTenant,
+      kind: "weekly_effectiveness",
+      weekKey,
+    });
+  }
+
+  const userFilter = {
+    role: { $ne: "admin" },
+    ...(scopedTenant ? { tenantId: scopedTenant } : {}),
+    isActive: true,
+  };
+
+  const users = await User.find(userFilter)
+    .select("_id name firstName lastName email role profileType tenantId")
+    .sort({ role: 1, name: 1 });
+
+  if (!users.length) {
+    return Recommendation.create({
+      tenantId: scopedTenant,
+      kind: "weekly_effectiveness",
+      weekKey,
+      generatedBy: trigger,
+      windowStart,
+      windowEnd,
+      summary: "Aucun compte actif a comparer cette semaine.",
+      recommendations: ["Ajouter des comptes actifs pour generer une comparaison hebdomadaire."],
+      ranking: null,
+      score: null,
+      meta: { userScores: [], source: "local-ml-effectiveness", weekKey },
+    });
+  }
+
+  const userIds = users.map((user) => user._id);
+  const baseScope = scopedTenant ? { tenantId: scopedTenant } : {};
+
+  const [tasks, activityLogs, attendanceRecords] = await Promise.all([
+    Task.find({
+      ...baseScope,
+      assignedTo: { $in: userIds },
+      createdAt: { $gte: windowStart, $lte: windowEnd },
+    }).lean(),
+    ActivityLog.find({
+      ...baseScope,
+      userId: { $in: userIds },
+      date: { $gte: windowStart, $lte: windowEnd },
+    }).lean(),
+    Attendance.find({
+      ...baseScope,
+      userId: { $in: userIds },
+      date: { $gte: windowStart, $lte: windowEnd },
+    }).lean(),
+  ]);
+
+  const userScores = users
+    .map((user) =>
+      scoreUserEffectiveness({
+        user,
+        tasks: tasks.filter((task) => String(task.assignedTo) === String(user._id)),
+        activityLogs: activityLogs.filter((log) => String(log.userId) === String(user._id)),
+        attendanceRecords: attendanceRecords.filter((record) => String(record.userId) === String(user._id)),
+      }),
+    )
+    .sort((a, b) => b.score - a.score);
+
+  const best = userScores[0] || null;
+  const delayedUsers = userScores.filter((entry) => entry.delayedTasks > 0);
+  const weakUsers = userScores.filter((entry) => entry.score < 50);
+  const averageScore = userScores.length
+    ? Math.round(userScores.reduce((sum, entry) => sum + entry.score, 0) / userScores.length)
+    : 0;
+
+  const recommendations = [
+    best
+      ? `${best.name} est le compte le plus efficace cette semaine avec un score de ${best.score}/100.`
+      : "Aucun meilleur compte detecte cette semaine.",
+    delayedUsers.length
+      ? `Suivre ${delayedUsers[0].name}: ${delayedUsers[0].delayedTasks} tache(s) en retard cette semaine.`
+      : "Aucun retard critique detecte dans les taches cette semaine.",
+    weakUsers.length
+      ? `Prevoir un accompagnement pour ${weakUsers[0].name}, score hebdomadaire ${weakUsers[0].score}/100.`
+      : "L efficacite globale de l equipe est stable cette semaine.",
+  ];
+
+  return Recommendation.create({
+    tenantId: scopedTenant,
+    kind: "weekly_effectiveness",
+    weekKey,
+    generatedBy: trigger,
+    windowStart,
+    windowEnd,
+    summary: best
+      ? `${best.name} est efficace cette semaine. Score moyen equipe: ${averageScore}/100.`
+      : "Recommandation hebdomadaire generee sans donnees suffisantes.",
+    recommendations,
+    ranking: best ? 1 : null,
+    score: best?.score ?? null,
+    effectiveUser: best
+      ? {
+          userId: best.userId,
+          name: best.name,
+          email: best.email,
+          role: best.role,
+          score: best.score,
+        }
+      : undefined,
+    meta: {
+      source: "local-ml-effectiveness",
+      weekKey,
+      averageScore,
+      userScores,
+      delayedUsers,
+      generatedAtRule: "Chaque samedi a 10:00",
+    },
+  });
 }

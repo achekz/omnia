@@ -1,4 +1,4 @@
-import { refreshRecommendationsForScope } from "./recommendationService.js";
+import { generateWeeklyEffectivenessRecommendation } from "./recommendationService.js";
 import { ruleEngine } from "./ruleEngine.js";
 import { generateInsightSnapshot } from "./insightService.js";
 
@@ -9,8 +9,8 @@ let insightSchedulerHandle = null;
 // Role: Lance un traitement metier ou IA.
 async function runRecommendationJob() {
   try {
-    console.log("[CRON] Running weekly recommendation job...");
-    await refreshRecommendationsForScope({ trigger: "weekly-cron" });
+    console.log("[CRON] Running Saturday 10:00 weekly effectiveness recommendation job...");
+    await generateWeeklyEffectivenessRecommendation({ trigger: "weekly-saturday-10" });
     console.log("[CRON] Weekly recommendation job completed.");
   } catch (error) {
     console.error("[CRON] Weekly recommendation job failed:", error.message);
@@ -37,9 +37,13 @@ export async function startRecommendationScheduler() {
   try {
     const cronModule = await import("node-cron");
     const cron = cronModule.default || cronModule;
-    schedulerHandle = cron.schedule("0 8 * * 1", () => {
-      void runRecommendationJob();
-    });
+    schedulerHandle = cron.schedule(
+      "0 10 * * 6",
+      () => {
+        void runRecommendationJob();
+      },
+      { timezone: process.env.CRON_TIMEZONE || "Africa/Tunis" },
+    );
     ruleSchedulerHandle = cron.schedule("*/15 * * * *", () => {
       void ruleEngine.run({ trigger: "scheduled" });
     });

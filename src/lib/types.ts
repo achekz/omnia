@@ -239,6 +239,46 @@ export interface MlRecommendation {
   recommendations?: string[];
 }
 
+export interface WeeklyRecommendationUserScore {
+  userId?: string;
+  name: string;
+  email?: string;
+  role?: UserRole | string;
+  score: number;
+  completedTasks?: number;
+  activeTasks?: number;
+  delayedTasks?: number;
+  presentDays?: number;
+  lateDays?: number;
+  avgActivityScore?: number;
+  completionRate?: number;
+  punctualityRate?: number;
+}
+
+export interface WeeklyRecommendation {
+  _id?: string;
+  tenantId?: string | null;
+  kind?: "weekly_effectiveness";
+  weekKey?: string;
+  generatedBy?: string;
+  windowStart: string;
+  windowEnd: string;
+  summary: string;
+  recommendations: string[];
+  score?: number | null;
+  effectiveUser?: WeeklyRecommendationUserScore;
+  meta?: {
+    averageScore?: number;
+    userScores?: WeeklyRecommendationUserScore[];
+    delayedUsers?: WeeklyRecommendationUserScore[];
+    generatedAtRule?: string;
+    source?: string;
+    weekKey?: string;
+    [key: string]: unknown;
+  };
+  createdAt?: string;
+}
+
 export interface InsightKpi {
   key: string;
   label: string;

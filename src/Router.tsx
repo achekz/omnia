@@ -33,6 +33,7 @@ import AdminUserTaskDetailsPage from "./pages/admin/user-task-details";
 import AdminPresencesPage from "./pages/admin/presences";
 import AdminPresenceDayPage from "./pages/admin/presence-day";
 import AdminTasksPage from "./pages/admin/tasks";
+import AdminRecommendationsPage from "./pages/admin/recommendations";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
 import FinanceReportsPage from "./pages/reports/finance-reports";
@@ -135,6 +136,7 @@ const routes: AppRoute[] = [
   { path: "/admin/presences/:date", component: AdminPresenceDayPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },
   { path: "/admin/tasks", component: AdminTasksPage, protected: true, roles: ["admin"] },
+  { path: "/admin/recommendations", component: AdminRecommendationsPage, protected: true, roles: ["admin"] },
 
   { path: "/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },
   { path: "/admin/rules", component: RuleEnginePage, protected: true, roles: ["admin"] },

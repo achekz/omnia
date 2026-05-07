@@ -21,6 +21,7 @@ import type {
   TeamMemberSummary,
   UpdateTaskInput,
   User,
+  WeeklyRecommendation,
 } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -782,6 +783,33 @@ export function useGenerateRecommendations() {
       return unwrapData(response.data, {});
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+    },
+  });
+}
+
+export function useGetWeeklyRecommendations(options?: QueryHookOptions) {
+  return useQuery<WeeklyRecommendation[]>({
+    queryKey: ["admin-weekly-recommendations"],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/recommendations/weekly");
+      return unwrapCollection<WeeklyRecommendation>(response.data, "records", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    initialData: [],
+  });
+}
+
+export function useGenerateWeeklyRecommendation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<WeeklyRecommendation, unknown, boolean | undefined>({
+    mutationFn: async (force = true) => {
+      const response = await apiClient.post("/admin/recommendations/weekly/generate", { force });
+      return unwrapEntity<WeeklyRecommendation>(response.data, "recommendation", {} as WeeklyRecommendation);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-weekly-recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
     },
   });

@@ -18,6 +18,17 @@ const recommendationSchema = new Schema(
       type: String,
       default: "system",
     },
+    kind: {
+      type: String,
+      enum: ["general", "weekly_effectiveness"],
+      default: "general",
+      index: true,
+    },
+    weekKey: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     windowStart: {
       type: Date,
       required: true,
@@ -43,6 +54,13 @@ const recommendationSchema = new Schema(
       type: Number,
       default: null,
     },
+    effectiveUser: {
+      userId: { type: Schema.Types.ObjectId, ref: "User" },
+      name: String,
+      email: String,
+      role: String,
+      score: Number,
+    },
     meta: {
       type: Schema.Types.Mixed,
       default: {},
@@ -53,5 +71,8 @@ const recommendationSchema = new Schema(
     collection: "recommendations",
   },
 );
+
+recommendationSchema.index({ tenantId: 1, kind: 1, weekKey: 1 });
+recommendationSchema.index({ tenantId: 1, kind: 1, createdAt: -1 });
 
 export default mongoose.model("Recommendation", recommendationSchema);

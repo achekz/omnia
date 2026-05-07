@@ -15,7 +15,7 @@ import { normalizeRole } from '../utils/roleNormalization.js';
 import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
 import { ruleEngine } from '../services/ruleEngine.js';
-import { refreshRecommendationsForScope } from '../services/recommendationService.js';
+import { generateWeeklyEffectivenessRecommendation, refreshRecommendationsForScope } from '../services/recommendationService.js';
 
 // Role: Construit des donnees derivees.
 function buildScopeFilter(req) {
@@ -326,6 +326,31 @@ export const optimizeSystemRules = asyncHandler(async (req, res) => {
   }, 'System rules optimized'));
 });
 
+// Role: Recupere l historique des recommandations hebdomadaires.
+export const getWeeklyRecommendations = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const limit = Math.min(52, Math.max(1, Number(req.query.limit || 20)));
+  const records = await Recommendation.find({
+    ...scopeFilter,
+    kind: 'weekly_effectiveness',
+  })
+    .sort({ windowStart: -1, createdAt: -1 })
+    .limit(limit);
+
+  res.json(new ApiResponse(200, { records }, 'Weekly recommendations retrieved'));
+});
+
+// Role: Genere manuellement la recommandation hebdomadaire.
+export const generateWeeklyRecommendation = asyncHandler(async (req, res) => {
+  const recommendation = await generateWeeklyEffectivenessRecommendation({
+    tenantId: req.user?.tenantId || req.tenantId,
+    trigger: 'admin-manual-weekly',
+    force: Boolean(req.body?.force),
+  });
+
+  res.status(201).json(new ApiResponse(201, { recommendation }, 'Weekly recommendation generated'));
+});
+
 // Role: Recupere les donnees necessaires.
 export const getAllUsers = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
@@ -512,4 +537,6 @@ export default {
   detectGlobalAnomalies,
   monitorUserRisks,
   optimizeSystemRules,
+  getWeeklyRecommendations,
+  generateWeeklyRecommendation,
 };
