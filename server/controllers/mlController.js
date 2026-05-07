@@ -7,6 +7,36 @@ import { refreshRecommendationsForScope } from '../services/recommendationServic
 import Recommendation from '../models/Recommendation.js';
 import * as mlService from '../services/mlService.js';
 import Attendance from '../models/Attendance.js';
+import { normalizeRole } from '../utils/roleNormalization.js';
+import User from '../models/User.js';
+
+const PRIVILEGED_ANALYTICS_ROLES = ['admin', 'comptable'];
+
+function canInspectOtherUsers(user) {
+  return PRIVILEGED_ANALYTICS_ROLES.includes(normalizeRole(user?.role, user?.role));
+}
+
+async function resolveAnalyticsUserId(req, requestedUserId) {
+  const ownUserId = req.user._id;
+  const targetUserId = requestedUserId || ownUserId;
+
+  if (String(targetUserId) !== String(ownUserId) && !canInspectOtherUsers(req.user)) {
+    throw new ApiError(403, 'Not authorized to analyze another user');
+  }
+
+  if (req.tenantId && String(targetUserId) !== String(ownUserId)) {
+    const targetUser = await User
+      .findOne({ _id: targetUserId, tenantId: req.tenantId })
+      .select('_id')
+      .lean();
+
+    if (!targetUser) {
+      throw new ApiError(404, 'User not found');
+    }
+  }
+
+  return targetUserId;
+}
 
 function normalizeRiskScore(score) {
   const numericScore = Number(score || 0);
@@ -103,6 +133,7 @@ export const recommend = asyncHandler(async (req, res) => {
 
   const pendingTasks = await (await import('../models/Task.js')).default.countDocuments({
     assignedTo: req.user._id,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
     status: { $in: ['todo', 'in_progress'] },
   });
 
@@ -188,7 +219,7 @@ export const anomaly = asyncHandler(async (req, res) => {
 });
 
 export const predictDelay = asyncHandler(async (req, res) => {
-  const userId = req.body?.userId || req.user._id;
+  const userId = await resolveAnalyticsUserId(req, req.body?.userId);
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
   const records = await Attendance.find({
     userId,
@@ -228,7 +259,7 @@ export const predictDelay = asyncHandler(async (req, res) => {
 });
 
 export const presenceAnomaly = asyncHandler(async (req, res) => {
-  const userId = req.body?.userId || req.user._id;
+  const userId = await resolveAnalyticsUserId(req, req.body?.userId);
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   const records = await Attendance.find({
     userId,
@@ -264,7 +295,10 @@ export const presenceAnomaly = asyncHandler(async (req, res) => {
 
 // GET /api/ml/history
 export const history = asyncHandler(async (req, res) => {
-  const records = await MLPrediction.find({ userId: req.user._id })
+  const records = await MLPrediction.find({
+    userId: req.user._id,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+  })
     .sort({ createdAt: -1 })
     .limit(10);
 
@@ -273,20 +307,25 @@ export const history = asyncHandler(async (req, res) => {
 
 // GET /api/ml/insights
 export const insights = asyncHandler(async (req, res) => {
+  const scopeFilter = {
+    userId: req.user._id,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+  };
+
   const [latestPrediction, latestRecommendation, anomalies] =
     await Promise.all([
       MLPrediction.findOne({
-        userId: req.user._id,
+        ...scopeFilter,
         modelType: 'prediction',
       }).sort({ createdAt: -1 }),
 
       MLPrediction.findOne({
-        userId: req.user._id,
+        ...scopeFilter,
         modelType: 'recommendation',
       }).sort({ createdAt: -1 }),
 
       MLPrediction.find({
-        userId: req.user._id,
+        ...scopeFilter,
         modelType: 'anomaly',
         isAnomaly: true,
       })
@@ -304,7 +343,15 @@ export const insights = asyncHandler(async (req, res) => {
 });
 
 export const recommendations = asyncHandler(async (req, res) => {
-  const scopeFilter = req.tenantId ? { tenantId: req.tenantId } : {};
+  const role = normalizeRole(req.user?.role, req.user?.role);
+  const scopeFilter = role === 'admin'
+    ? (req.tenantId ? { tenantId: req.tenantId } : {})
+    : role === 'comptable' && req.tenantId
+      ? { tenantId: req.tenantId }
+      : {
+          generatedFor: req.user._id,
+          ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+        };
 
   const records = await Recommendation.find(scopeFilter)
     .sort({ createdAt: -1 })

@@ -203,6 +203,11 @@ export const createTask = asyncHandler(async (req, res) => {
     estimatedDurationMinutes,
     startTime,
   } = req.body;
+
+  if (!ADMIN_ROLES.includes(normalizeRole(req.user.role, req.user.role))) {
+    throw new ApiError(403, 'Only admin can plan and assign tasks');
+  }
+
   if (!title) throw new ApiError(400, 'Title is required');
 
   const normalizedEstimatedMinutes = Number(estimatedMinutes || estimatedDurationMinutes || estimatedDuration || 0) || undefined;
@@ -223,27 +228,22 @@ export const createTask = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
   };
 
-  if (isEmployeeLikeRole(req.user.role)) {
-    taskData.assignedTo = req.user._id;
-    taskData.assignedRole = normalizeRole(req.user.role, 'employee');
-  } else {
-    if (!assignedTo) {
-      throw new ApiError(400, 'Assigned user is required');
-    }
-
-    const assignedUser = await User.findOne(scopedUserLookup(req, assignedTo)).select('_id email name firstName lastName role tenantId');
-    if (!assignedUser) {
-      throw new ApiError(404, 'Assigned user not found');
-    }
-    const normalizedAssignedRole = normalizeRole(assignedUser.role, 'employee');
-    if (!ASSIGNABLE_ROLES.includes(normalizedAssignedRole)) {
-      throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+  if (!assignedTo) {
+    throw new ApiError(400, 'Assigned user is required');
   }
 
-    taskData.assignedTo = assignedUser._id;
-    taskData.assignedRole = normalizedAssignedRole;
-    taskData.tenantId = req.tenantId || assignedUser.tenantId;
+  const assignedUser = await User.findOne(scopedUserLookup(req, assignedTo)).select('_id email name firstName lastName role tenantId');
+  if (!assignedUser) {
+    throw new ApiError(404, 'Assigned user not found');
   }
+  const normalizedAssignedRole = normalizeRole(assignedUser.role, 'employee');
+  if (!ASSIGNABLE_ROLES.includes(normalizedAssignedRole)) {
+    throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
+  }
+
+  taskData.assignedTo = assignedUser._id;
+  taskData.assignedRole = normalizedAssignedRole;
+  taskData.tenantId = req.tenantId || assignedUser.tenantId;
 
   const task = await Task.create(taskData);
   await populateTask(task);
