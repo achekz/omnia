@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 "use client"
 
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"

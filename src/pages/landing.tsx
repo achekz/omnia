@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { motion } from "framer-motion";
 import {
   ArrowRight,

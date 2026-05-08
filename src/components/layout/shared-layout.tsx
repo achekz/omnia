@@ -1,3 +1,4 @@
+// Role du fichier: structure la mise en page et la navigation globale.
 import { useState, type ReactNode, type SVGProps } from "react";
 import { Link, useLocation } from "wouter";
 import {

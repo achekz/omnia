@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import { getLatestInsightSnapshot, generateInsightSnapshot } from "../services/insightService.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";

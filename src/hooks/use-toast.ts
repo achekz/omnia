@@ -1,3 +1,4 @@
+// Role du fichier: fournit un hook React partage.
 import * as React from "react"
 
 import type {

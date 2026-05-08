@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import Task from "../models/Task.js";
 import ActivityLog from "../models/ActivityLog.js";
 import { normalizeRole } from "../utils/roleNormalization.js";

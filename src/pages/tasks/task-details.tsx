@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { ArrowLeft, CalendarClock, CheckCircle2, Clock, PlayCircle, Sparkles, XCircle } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";

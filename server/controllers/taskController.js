@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import Task from '../models/Task.js';
 import ActivityLog from '../models/ActivityLog.js';
 import MLPrediction from '../models/MLPrediction.js';
@@ -96,6 +97,82 @@ function buildTaskAiRecommendation(task) {
   };
 }
 
+// Role: Construit des donnees derivees.
+function calculateProductivityScore(tasks = []) {
+  if (!tasks.length) return 0;
+  const completed = tasks.filter((task) => task.status === 'done').length;
+  const overdue = tasks.filter((task) => task.status === 'overdue' || task.isDelayed).length;
+  const inProgress = tasks.filter((task) => task.status === 'in_progress').length;
+  const completionScore = (completed / tasks.length) * 70;
+  const progressScore = (inProgress / tasks.length) * 15;
+  const delayPenalty = (overdue / tasks.length) * 35;
+  return Math.max(0, Math.min(100, Math.round(completionScore + progressScore + 15 - delayPenalty)));
+}
+
+// Role: Construit des donnees derivees.
+function calculateDelayScore(tasks = []) {
+  if (!tasks.length) return 0;
+  const risky = tasks.filter((task) => task.status === 'overdue' || task.isDelayed || Number(task.delayDays || 0) > 0).length;
+  return Math.round((risky / tasks.length) * 100);
+}
+
+// Role: Construit des donnees derivees.
+function buildProductivityEvolution(tasks = []) {
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+
+  return days.map((date) => {
+    const next = new Date(date);
+    next.setDate(date.getDate() + 1);
+    const dayTasks = tasks.filter((task) => {
+      const completedAt = task.completedAt || task.actualFinishedAt || task.updatedAt || task.createdAt;
+      const value = completedAt ? new Date(completedAt) : null;
+      return value && value >= date && value < next;
+    });
+    return {
+      day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      completed: dayTasks.filter((task) => task.status === 'done').length,
+      overdue: dayTasks.filter((task) => task.status === 'overdue' || task.isDelayed).length,
+      productivity: calculateProductivityScore(dayTasks),
+    };
+  });
+}
+
+// Role: Construit des donnees derivees.
+function buildTaskStats(tasks = []) {
+  const total = tasks.length;
+  const completed = tasks.filter((task) => task.status === 'done').length;
+  const pending = tasks.filter((task) => ['todo', 'in_progress'].includes(task.status)).length;
+  const overdue = tasks.filter((task) => task.status === 'overdue' || task.isDelayed).length;
+  const productivityScore = calculateProductivityScore(tasks);
+  const delayScore = calculateDelayScore(tasks);
+  return {
+    total,
+    completed,
+    pending,
+    overdue,
+    productivityScore,
+    delayScore,
+    completionRate: total ? Math.round((completed / total) * 100) : 0,
+    productivityEvolution: buildProductivityEvolution(tasks),
+  };
+}
+
+// Role: Construit des donnees derivees.
+function mapTaskWithAi(task) {
+  const raw = typeof task.toObject === 'function' ? task.toObject() : task;
+  return {
+    ...raw,
+    progress: raw.progress ?? (raw.status === 'done' ? 100 : raw.status === 'in_progress' ? 45 : 0),
+    delayRisk: raw.delayRisk ?? Math.max(0, Math.min(1, Number(raw.delayDays || 0) / 5)),
+    aiRecommendation: raw.aiRecommendation?.recommendation ? raw.aiRecommendation : buildTaskAiRecommendation(raw),
+  };
+}
+
 // Role: Envoie un message ou une notification.
 async function sendTaskAssignmentEmail(task, assignedUser) {
   if (!assignedUser?.email) return;
@@ -180,6 +257,100 @@ export const getTasks = asyncHandler(async (req, res) => {
   return res.json(new ApiResponse(200, { tasks, total, page: parseInt(page), limit: parseInt(limit) }));
 });
 
+// GET /api/tasks/users
+// Role: Recupere les comptes avec statistiques de taches.
+export const getTaskUsers = asyncHandler(async (req, res) => {
+  const { role } = req.query;
+  const scope = req.tenantId ? { tenantId: req.tenantId } : {};
+  const normalizedRole = role && role !== 'all' ? normalizeRole(role, role) : null;
+  const users = await User.find({
+    ...scope,
+    role: normalizedRole || { $in: ASSIGNABLE_ROLES },
+    isActive: true,
+  })
+    .select('_id name firstName lastName email avatar role profileType tenantId lastLogin isActive')
+    .sort({ role: 1, name: 1 })
+    .lean();
+
+  const userIds = users.map((user) => user._id);
+  const tasks = await Task.find({
+    ...scope,
+    assignedTo: { $in: userIds },
+  }).lean();
+
+  const usersWithStats = users.map((user) => {
+    const userTasks = tasks.filter((task) => String(task.assignedTo) === String(user._id));
+    const stats = buildTaskStats(userTasks);
+    return {
+      ...user,
+      fullName: getDisplayName(user),
+      isOnline: Boolean(user.lastLogin && Date.now() - new Date(user.lastLogin).getTime() < 15 * 60 * 1000),
+      pendingTasks: stats.pending,
+      productivityScore: stats.productivityScore,
+      taskStats: stats,
+    };
+  });
+
+  res.json(new ApiResponse(200, { users: usersWithStats }, 'Task users retrieved'));
+});
+
+// GET /api/tasks/user/:userId
+// Role: Recupere les taches d un compte choisi.
+export const getTasksByUser = asyncHandler(async (req, res) => {
+  const { status, priority, deadline } = req.query;
+  const user = await User.findOne(scopedUserLookup(req, req.params.userId)).select('_id name firstName lastName email avatar role profileType');
+  if (!user) throw new ApiError(404, 'User not found');
+
+  const filter = {
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+    assignedTo: user._id,
+  };
+
+  if (status && status !== 'all') filter.status = status;
+  if (priority && priority !== 'all') filter.priority = priority;
+
+  if (deadline && deadline !== 'all') {
+    const now = new Date();
+    if (deadline === 'today') {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+      filter.dueDate = { $gte: start, $lte: end };
+    } else if (deadline === 'week') {
+      const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      filter.dueDate = { $gte: now, $lte: end };
+    } else if (deadline === 'overdue') {
+      filter.dueDate = { $lt: now };
+      filter.status = { $ne: 'done' };
+    }
+  }
+
+  const tasks = await Task.find(filter)
+    .populate('assignedTo', 'name firstName lastName email avatar role profileType')
+    .populate('createdBy', 'name firstName lastName email avatar role profileType')
+    .populate('completedBy', 'name firstName lastName email avatar role profileType')
+    .sort({ status: 1, dueDate: 1, createdAt: -1 });
+
+  res.json(new ApiResponse(200, {
+    user,
+    tasks: tasks.map(mapTaskWithAi),
+    stats: buildTaskStats(tasks),
+  }, 'User tasks retrieved'));
+});
+
+// GET /api/tasks/user/:userId/stats
+// Role: Recupere les statistiques taches d un compte.
+export const getUserTaskStats = asyncHandler(async (req, res) => {
+  const user = await User.findOne(scopedUserLookup(req, req.params.userId)).select('_id');
+  if (!user) throw new ApiError(404, 'User not found');
+
+  const tasks = await Task.find({
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+    assignedTo: user._id,
+  }).lean();
+
+  res.json(new ApiResponse(200, { stats: buildTaskStats(tasks) }, 'User task stats retrieved'));
+});
+
 // GET /api/tasks/:id
 // Role: Recupere les donnees necessaires.
 export const getTaskById = asyncHandler(async (req, res) => {
@@ -237,7 +408,9 @@ export const createTask = asyncHandler(async (req, res) => {
     plannedStartAt: normalizedStartTime,
     startTime: normalizedStartTime,
     createdBy: req.user._id,
+    assignedBy: req.user._id,
     tenantId: req.tenantId,
+    progress: 0,
   };
 
   if (!assignedTo) {
@@ -255,6 +428,7 @@ export const createTask = asyncHandler(async (req, res) => {
 
   taskData.assignedTo = assignedUser._id;
   taskData.assignedRole = normalizedAssignedRole;
+  taskData.role = normalizedAssignedRole;
   taskData.tenantId = req.tenantId || assignedUser.tenantId;
 
   const task = await Task.create(taskData);
@@ -323,6 +497,7 @@ export const updateTask = asyncHandler(async (req, res) => {
     'endTime',
     'actualMinutes',
     'lateReason',
+    'progress',
   ];
   if (req.body.assignedTo !== undefined) {
   const assignedUser = await User.findOne(scopedUserLookup(req, req.body.assignedTo))
@@ -335,6 +510,7 @@ export const updateTask = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Task can only be assigned to an employee, stagiaire, or comptable');
   }
   task.assignedRole = normalizedAssignedRole;
+  task.role = normalizedAssignedRole;
   task.tenantId = req.tenantId || task.tenantId || assignedUser.tenantId;
 }
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
@@ -380,7 +556,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 // PATCH /api/tasks/:id/status
 // Role: Enregistre une modification.
 export const updateTaskStatus = asyncHandler(async (req, res) => {
-  const { status, declineReason, lateReason } = req.body;
+  const { status, declineReason, lateReason, progress } = req.body;
   if (!status) throw new ApiError(400, 'status is required');
   if (!TASK_STATUSES.includes(status)) {
     throw new ApiError(400, 'Invalid task status');
@@ -422,6 +598,8 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   if (status === 'in_progress') {
     if (!task.acceptedAt) task.acceptedAt = now;
     if (!task.actualStartedAt) task.actualStartedAt = now;
+    if (!task.startedAt) task.startedAt = now;
+    task.progress = Math.max(Number(progress || task.progress || 35), 35);
     task.declinedAt = undefined;
     task.declineReason = undefined;
   }
@@ -431,6 +609,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     task.declineReason = String(declineReason || '').trim();
     task.completedAt = undefined;
     task.actualFinishedAt = undefined;
+    task.progress = 0;
   }
 
   if (status === 'done') {
@@ -440,6 +619,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     task.completedAt = finishedAt;
     task.actualFinishedAt = finishedAt;
     task.completedBy = req.user._id;
+    task.progress = 100;
     if (String(lateReason || '').trim()) {
       task.lateReason = String(lateReason).trim();
     }
@@ -454,6 +634,9 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
       { upsert: true }
     );
     await calculateScore(req.user._id);
+  }
+  if (progress !== undefined && status !== 'done') {
+    task.progress = Math.max(0, Math.min(100, Number(progress) || 0));
   }
   await task.save();
   await populateTask(task);

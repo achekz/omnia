@@ -1,3 +1,4 @@
+// Role du fichier: affiche un tableau de bord adapte au role utilisateur.
 import { useMemo } from "react";
 import {
   AlertCircle,

@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import ActivityLog from '../models/ActivityLog.js';
 import MLPrediction from '../models/MLPrediction.js';
 import * as notifService from '../services/notifService.js';
@@ -9,6 +10,7 @@ import * as mlService from '../services/mlService.js';
 import Attendance from '../models/Attendance.js';
 import { normalizeRole } from '../utils/roleNormalization.js';
 import User from '../models/User.js';
+import Task from '../models/Task.js';
 
 const PRIVILEGED_ANALYTICS_ROLES = ['admin', 'comptable'];
 
@@ -47,6 +49,30 @@ function normalizeRiskScore(score) {
   return numericScore > 1
     ? Math.max(0, Math.min(1, numericScore / 100))
     : Math.max(0, Math.min(1, numericScore));
+}
+
+// Role: Construit des signaux ML pour les taches.
+function buildTaskRiskFeatures(tasks = []) {
+  const total = tasks.length;
+  const completed = tasks.filter((task) => task.status === 'done').length;
+  const overdue = tasks.filter((task) => task.status === 'overdue' || task.isDelayed).length;
+  const inProgress = tasks.filter((task) => task.status === 'in_progress').length;
+  const avgProgress = total ? tasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) / total : 0;
+  const completionRate = total ? completed / total : 0;
+  const overdueRate = total ? overdue / total : 0;
+  const productivityScore = Math.max(0, Math.min(100, Math.round(completionRate * 70 + (inProgress / Math.max(total, 1)) * 20 + avgProgress * 0.1 - overdueRate * 40)));
+
+  return {
+    total,
+    completed,
+    overdue,
+    inProgress,
+    avgProgress,
+    completionRate,
+    overdueRate,
+    productivityScore,
+    riskScore: Math.max(0, Math.min(1, overdueRate * 0.65 + (1 - completionRate) * 0.25 + (avgProgress < 30 && total > 0 ? 0.1 : 0))),
+  };
 }
 
 // Role: Decrit la logique throwIfMlUnavailable.
@@ -370,4 +396,64 @@ export const recommendations = asyncHandler(async (req, res) => {
     .limit(10);
 
   return res.json(new ApiResponse(200, { records }));
+});
+
+// POST /api/ml/task-risk
+// Role: Predire le risque de retard et la productivite taches.
+export const taskRisk = asyncHandler(async (req, res) => {
+  const userId = await resolveAnalyticsUserId(req, req.body?.userId);
+  const tasks = await Task.find({
+    assignedTo: userId,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+  }).sort({ createdAt: -1 }).limit(100).lean();
+
+  const features = buildTaskRiskFeatures(tasks);
+  const saved = await MLPrediction.create({
+    userId,
+    tenantId: req.tenantId,
+    modelType: 'task_risk',
+    input: { taskCount: tasks.length },
+    output: features,
+    riskLevel: features.riskScore >= 0.7 ? 'high' : features.riskScore >= 0.4 ? 'medium' : 'low',
+    riskScore: features.riskScore,
+    confidence: 0.78,
+  });
+
+  return res.json(new ApiResponse(200, { prediction: saved, ...features }));
+});
+
+// POST /api/ml/task-recommendation
+// Role: Generer des recommandations intelligentes pour les taches.
+export const taskRecommendation = asyncHandler(async (req, res) => {
+  const userId = await resolveAnalyticsUserId(req, req.body?.userId);
+  const tasks = await Task.find({
+    assignedTo: userId,
+    ...(req.tenantId ? { tenantId: req.tenantId } : {}),
+  }).sort({ dueDate: 1, createdAt: -1 }).limit(100).lean();
+
+  const features = buildTaskRiskFeatures(tasks);
+  const urgentTasks = tasks.filter((task) => ['overdue', 'in_progress', 'todo'].includes(task.status) && ['high', 'critical'].includes(task.priority));
+  const recommendations = [
+    urgentTasks.length
+      ? `Prioritize "${urgentTasks[0].title}" because it has high priority or delay risk.`
+      : 'No urgent priority shift needed now.',
+    features.overdue > 0
+      ? `Reorganize workload: ${features.overdue} overdue task(s) need manager follow-up.`
+      : 'Current workload is on track with no overdue task concentration.',
+    features.productivityScore < 55
+      ? 'Suggest a shorter schedule block and reduce parallel tasks for this user.'
+      : 'User productivity is acceptable; keep planned schedule and monitor progress.',
+  ];
+
+  await MLPrediction.create({
+    userId,
+    tenantId: req.tenantId,
+    modelType: 'task_recommendation',
+    input: features,
+    output: { recommendations, urgentTasks: urgentTasks.slice(0, 5) },
+    recommendations,
+    riskScore: features.riskScore,
+  });
+
+  return res.json(new ApiResponse(200, { recommendations, urgentTasks, features }));
 });

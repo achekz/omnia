@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant React reutilisable.
 import { AlertCircle, AlertTriangle, BrainCircuit, CheckCircle2, Info, Loader2, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useGenerateRecommendations, useMlInsights, useRunRiskPrediction } from "@/lib/api-client";

@@ -1,3 +1,4 @@
+// Role du fichier: gere une page du parcours authentification et inscription.
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "wouter";
 import type { AxiosError } from "axios";

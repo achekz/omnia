@@ -1,3 +1,4 @@
+// Role du fichier: centralise les types TypeScript partages.
 export type UserRole = "admin" | "employee" | "stagiaire" | "comptable";
 export type UserGender = "male" | "female";
 export type VerificationMethod = "email";
@@ -107,6 +108,11 @@ export interface Task {
   completedBy?: Partial<User> | string;
   completedAt?: string;
   isDelayed?: boolean;
+  assignedBy?: Partial<User> | string;
+  role?: UserRole;
+  startedAt?: string;
+  progress?: number;
+  delayRisk?: number;
   aiRecommendation?: {
     shouldRescheduleToday: boolean;
     recommendation: string;
@@ -119,6 +125,30 @@ export interface Task {
     createdAt?: string;
   }>;
   createdAt?: string;
+}
+
+export interface TaskUserSummary extends Partial<User> {
+  fullName?: string;
+  isOnline?: boolean;
+  pendingTasks: number;
+  productivityScore: number;
+  taskStats?: TaskStats;
+}
+
+export interface TaskStats {
+  total: number;
+  completed: number;
+  pending: number;
+  overdue: number;
+  productivityScore: number;
+  delayScore: number;
+  completionRate: number;
+  productivityEvolution?: Array<{
+    day: string;
+    completed: number;
+    overdue: number;
+    productivity: number;
+  }>;
 }
 
 export type AttendanceStatus = "present" | "absent" | "late" | "very_late" | "on_time";
@@ -245,14 +275,38 @@ export interface WeeklyRecommendationUserScore {
   email?: string;
   role?: UserRole | string;
   score: number;
+  sessions?: number;
   completedTasks?: number;
   activeTasks?: number;
   delayedTasks?: number;
   presentDays?: number;
   lateDays?: number;
+  absentDays?: number;
   avgActivityScore?: number;
   completionRate?: number;
   punctualityRate?: number;
+  efficiencyLevel?: "high" | "medium" | "low";
+  reasons?: string[];
+  trend?: WeeklyRecommendationTrendPoint[];
+  taskDetails?: Array<{
+    id?: string;
+    title?: string;
+    status?: string;
+    isDelayed?: boolean;
+    completedAt?: string | null;
+    dueDate?: string | null;
+  }>;
+}
+
+export interface WeeklyRecommendationTrendPoint {
+  date: string;
+  day: string;
+  present: number;
+  late: number;
+  absent: number;
+  status?: string;
+  delayMinutes?: number;
+  reason?: string;
 }
 
 export interface WeeklyRecommendation {
@@ -274,6 +328,11 @@ export interface WeeklyRecommendation {
     generatedAtRule?: string;
     source?: string;
     weekKey?: string;
+    saturdayDate?: string;
+    chart?: {
+      labels?: string[];
+      bestUserTrend?: WeeklyRecommendationTrendPoint[];
+    };
     [key: string]: unknown;
   };
   createdAt?: string;

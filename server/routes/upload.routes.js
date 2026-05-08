@@ -1,3 +1,4 @@
+// Role du fichier: definit les routes API et relie les endpoints aux controles backend.
 /**
  * ==========================================
  * FILE UPLOAD ROUTES

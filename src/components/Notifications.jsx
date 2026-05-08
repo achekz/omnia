@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant React reutilisable.
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 

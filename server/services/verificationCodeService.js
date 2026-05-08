@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import VerificationCode from "../models/VerificationCode.js";
 import { deliverVerificationCode } from "./otpDeliveryService.js";
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";

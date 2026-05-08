@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import User from "../models/User.js";
 
 // Role: Recupere les donnees necessaires.

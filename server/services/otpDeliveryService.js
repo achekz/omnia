@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import { sendEmailVerificationCode } from "./emailService.js";
 
 // Role: Envoie un message ou une notification.

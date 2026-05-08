@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant React reutilisable.
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { AlertTriangle, Bell, Bot, CheckCheck, Circle, Coins, Loader2, Trash2, X } from "lucide-react";

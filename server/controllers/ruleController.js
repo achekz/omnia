@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import Rule from '../models/Rule.js';
 import { ruleEngine } from '../services/ruleEngine.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';

@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2, Pencil, Play, Plus, Trash2, Zap } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";

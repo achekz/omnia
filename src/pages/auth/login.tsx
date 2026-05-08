@@ -1,3 +1,4 @@
+// Role du fichier: gere une page du parcours authentification et inscription.
 import { useState, type FormEvent, type SVGProps } from "react";
 import { Link } from "wouter";
 import apiClient from "@/lib/api-client";

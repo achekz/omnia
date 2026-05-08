@@ -1,3 +1,4 @@
+// Role du fichier: affiche un tableau de bord adapte au role utilisateur.
 import { Line, LineChart, ResponsiveContainer, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 import { Activity, AlertTriangle, Briefcase, CheckCircle2, Minus, Users } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";

@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";

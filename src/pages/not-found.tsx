@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 

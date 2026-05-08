@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,

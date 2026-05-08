@@ -1,3 +1,4 @@
+// Role du fichier: fournit des helpers frontend partages.
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 

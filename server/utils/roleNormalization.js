@@ -1,3 +1,4 @@
+// Role du fichier: fournit des fonctions utilitaires partagees.
 const canonicalRoles = ["admin", "employee", "stagiaire", "comptable"];
 const legacyRoleAliases = {
   accountant: "comptable",

@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page reservee au compte admin.
 import { Eye, Trash2, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";

@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";

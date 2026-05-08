@@ -1,3 +1,4 @@
+// Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 import { normalizeRole } from "../utils/roleNormalization.js";
 
 // Role: Decrit la logique authorize.

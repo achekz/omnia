@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

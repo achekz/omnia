@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 

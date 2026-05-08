@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { Bell, CheckCheck } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGetNotifications, useMarkNotificationRead } from "@/lib/api-client";

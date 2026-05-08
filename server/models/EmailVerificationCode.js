@@ -1,3 +1,4 @@
+// Role du fichier: definit le schema MongoDB et la structure des donnees.
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { getAllowedRoles, normalizeRole } from "../utils/roleNormalization.js";

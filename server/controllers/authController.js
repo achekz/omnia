@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import User from "../models/User.js";
 import VerificationCode from "../models/VerificationCode.js";
 import mongoose from "mongoose";

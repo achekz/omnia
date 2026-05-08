@@ -1,3 +1,4 @@
+// Role du fichier: fournit un contexte React global.
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,6 +63,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
@@ -69,6 +72,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
@@ -77,6 +82,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });
@@ -84,6 +91,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
         queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task-users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['task-details'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       });

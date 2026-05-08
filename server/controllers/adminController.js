@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import User from '../models/User.js';
 import Organization from '../models/Organization.js';
 import ActivityLog from '../models/ActivityLog.js';
@@ -334,7 +335,7 @@ export const getWeeklyRecommendations = asyncHandler(async (req, res) => {
     ...scopeFilter,
     kind: 'weekly_effectiveness',
   })
-    .sort({ windowStart: -1, createdAt: -1 })
+    .sort({ weekKey: -1, windowEnd: -1, createdAt: -1 })
     .limit(limit);
 
   res.json(new ApiResponse(200, { records }, 'Weekly recommendations retrieved'));

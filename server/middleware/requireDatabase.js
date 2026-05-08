@@ -1,3 +1,4 @@
+// Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 import mongoose from 'mongoose';
 
 // Role: Decrit la logique requireDatabase.

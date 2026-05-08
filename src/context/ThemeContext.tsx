@@ -1,3 +1,4 @@
+// Role du fichier: fournit un contexte React global.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ThemeType = 'light' | 'dark';

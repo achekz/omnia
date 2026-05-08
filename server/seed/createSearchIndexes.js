@@ -1,3 +1,4 @@
+// Role du fichier: prepare ou repare des donnees initiales de demonstration.
 /**
  * ==========================================
  * MONGODB TEXT INDEXES SETUP

@@ -1,3 +1,4 @@
+// Role du fichier: fournit des fonctions utilitaires partagees.
 import { body, param, query, validationResult } from "express-validator";
 import { ApiError } from "./ApiResponse.js";
 import { getAllowedRoles } from "./roleNormalization.js";

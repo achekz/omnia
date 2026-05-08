@@ -1,3 +1,4 @@
+// Role du fichier: prepare ou repare des donnees initiales de demonstration.
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 

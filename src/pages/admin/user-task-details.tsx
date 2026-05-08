@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page reservee au compte admin.
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, Clock, MessageSquare, Timer, UserRound } from "lucide-react";
 import { useLocation, useRoute } from "wouter";

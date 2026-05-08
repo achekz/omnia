@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { Loader2Icon } from "lucide-react"
 
 import { cn } from "@/lib/utils"

@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 /**
  * Build a dynamic prompt that will be sent to the AI model
  * This creates context for real, intelligent responses

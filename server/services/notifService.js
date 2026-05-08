@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import Notification from '../models/Notification.js';
 import { emitToUser } from '../config/socket.js';
 

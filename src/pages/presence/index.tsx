@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, LogOut, ShieldCheck, Timer } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";

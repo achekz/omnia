@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant React reutilisable.
 import {
   DragDropContext,
   Droppable,

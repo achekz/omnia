@@ -1,3 +1,4 @@
+// Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 /**
  * ==========================================
  * RATE LIMITING MIDDLEWARE

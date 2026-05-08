@@ -1,3 +1,4 @@
+// Role du fichier: assemble les providers React et le routeur principal.
 import { Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";

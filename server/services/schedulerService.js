@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import { generateWeeklyEffectivenessRecommendation } from "./recommendationService.js";
 import { ruleEngine } from "./ruleEngine.js";
 import { generateInsightSnapshot } from "./insightService.js";

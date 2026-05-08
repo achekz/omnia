@@ -1,3 +1,4 @@
+// Role du fichier: normalise les roles et redirections utilisateur.
 import type { UserRole } from "./types";
 
 export const CANONICAL_ROLES: UserRole[] = ["admin", "employee", "stagiaire", "comptable"];

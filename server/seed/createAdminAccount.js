@@ -1,3 +1,4 @@
+// Role du fichier: prepare ou repare des donnees initiales de demonstration.
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";

@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 const CITY_RULES = [
   { city: "tunisia", aliases: ["tunisia", "tunis", "sfax", "sousse", "nabeul", "monastir", "gabes"], dialCode: "+216" },
   { city: "france", aliases: ["france", "paris", "lyon", "marseille", "nice", "toulouse", "lille"], dialCode: "+33" },

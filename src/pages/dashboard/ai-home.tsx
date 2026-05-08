@@ -1,3 +1,4 @@
+// Role du fichier: affiche un tableau de bord adapte au role utilisateur.
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, ChevronRight, FileText, History, Mic, Paperclip, Send, ShoppingCart, Sparkles, TrendingUp, Users } from "lucide-react";

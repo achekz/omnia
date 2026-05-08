@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, X } from "lucide-react";
 import { useState } from "react";

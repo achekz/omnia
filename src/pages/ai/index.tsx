@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {

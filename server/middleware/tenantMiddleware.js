@@ -1,3 +1,4 @@
+// Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 import { ApiError } from '../utils/ApiResponse.js';
 
 // Multi-Tenant Isolation Middleware - CRITICAL SECURITY

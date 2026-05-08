@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { motion } from "framer-motion";
 import { BrainCircuit, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";

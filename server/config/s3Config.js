@@ -1,3 +1,4 @@
+// Role du fichier: configure les connexions et services techniques.
 /**
  * ==========================================
  * AWS S3 CONFIGURATION & UTILITIES

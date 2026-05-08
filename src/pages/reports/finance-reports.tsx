@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { AlertTriangle, Download, FileText, PieChart, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";

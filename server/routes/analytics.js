@@ -1,3 +1,4 @@
+// Role du fichier: definit les routes API et relie les endpoints aux controles backend.
 import express from 'express';
 import { getActivity, getScore, getTeamAnalytics, logActivity } from '../controllers/analyticsController.js';
 import { protect } from '../middleware/auth.js';

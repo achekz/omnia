@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Activity,

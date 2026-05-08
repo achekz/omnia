@@ -1,3 +1,4 @@
+// Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { ApiError } from '../utils/ApiResponse.js';

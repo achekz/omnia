@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique du module typecheck.
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";

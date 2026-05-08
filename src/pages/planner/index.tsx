@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { CalendarDays, CheckCircle2, Clock3, ListChecks, TimerReset } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGetTasks } from "@/lib/api-client";

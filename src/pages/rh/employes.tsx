@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import React from "react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";

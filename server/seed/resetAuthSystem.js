@@ -1,3 +1,4 @@
+// Role du fichier: prepare ou repare des donnees initiales de demonstration.
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";

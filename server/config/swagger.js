@@ -1,3 +1,4 @@
+// Role du fichier: configure les connexions et services techniques.
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 

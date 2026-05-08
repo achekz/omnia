@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useState } from "react";
 import { Link } from "wouter";
 import { CalendarClock, CheckCircle2, Clock, Eye, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";

@@ -1,3 +1,4 @@
+// Role du fichier: configure les connexions et services techniques.
 /**
  * Redis Client with In-Memory Fallback
  * Production-ready caching layer + rate limiter support

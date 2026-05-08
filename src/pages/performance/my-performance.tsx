@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { AlertCircle, Award, CheckCircle2, Presentation, Target, TrendingUp } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ModuleLayout } from "@/components/layout/module-layout";

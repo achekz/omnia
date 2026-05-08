@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique du module hash.
 import bcrypt from 'bcryptjs';
 
 const run = async () => {

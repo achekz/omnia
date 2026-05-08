@@ -1,3 +1,4 @@
+// Role du fichier: initialise Express, MongoDB, Socket.io et les routes principales.
 import express from 'express';
 import http from 'http';
 import cors from 'cors';

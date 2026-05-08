@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import nodemailer from "nodemailer";
 
 const transporters = new Map();

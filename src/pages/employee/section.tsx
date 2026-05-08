@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { Briefcase, Building2, ClipboardList, LineChart, Target, UserPlus, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";

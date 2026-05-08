@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import User from "../models/User.js";
 import Task from "../models/Task.js";
 import PerformanceLog from "../models/PerformanceLog.js";
@@ -11,21 +12,25 @@ const WINDOW_DAYS = 6;
 
 // Role: Construit la periode hebdomadaire analysee.
 function getWeeklyWindow(referenceDate = new Date()) {
-  const windowEnd = new Date(referenceDate);
-  const day = windowEnd.getDay();
-  const daysSinceMonday = (day + 6) % 7;
-  const windowStart = new Date(windowEnd);
-  windowStart.setDate(windowEnd.getDate() - daysSinceMonday);
+  const saturday = new Date(referenceDate);
+  const daysSinceSaturday = (saturday.getDay() + 1) % 7;
+  saturday.setDate(saturday.getDate() - daysSinceSaturday);
+  saturday.setHours(10, 0, 0, 0);
+
+  const windowEnd = new Date(saturday);
+  const windowStart = new Date(saturday);
+  windowStart.setDate(saturday.getDate() - 6);
   windowStart.setHours(0, 0, 0, 0);
 
-  const year = windowStart.getFullYear();
-  const month = String(windowStart.getMonth() + 1).padStart(2, "0");
-  const date = String(windowStart.getDate()).padStart(2, "0");
+  const year = saturday.getFullYear();
+  const month = String(saturday.getMonth() + 1).padStart(2, "0");
+  const date = String(saturday.getDate()).padStart(2, "0");
 
   return {
     windowStart,
     windowEnd,
     weekKey: `${year}-${month}-${date}`,
+    saturday,
   };
 }
 
@@ -34,8 +39,84 @@ function getUserName(user) {
   return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Compte";
 }
 
+// Role: Prepare une valeur pour l affichage ou l API.
+function dateKeyFromDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Role: Construit les points du graphique hebdomadaire.
+function buildAttendanceTrend(attendanceRecords, windowStart, windowEnd) {
+  const recordsByDate = new Map(attendanceRecords.map((record) => [record.dateKey || dateKeyFromDate(new Date(record.date)), record]));
+  const points = [];
+  const cursor = new Date(windowStart);
+
+  while (cursor <= windowEnd) {
+    const dateKey = dateKeyFromDate(cursor);
+    const record = recordsByDate.get(dateKey);
+    const isLate = ["late", "very_late"].includes(record?.status);
+    const isPresent = ["present", "on_time", "late", "very_late"].includes(record?.status);
+
+    points.push({
+      date: dateKey,
+      day: String(cursor.getDate()).padStart(2, "0"),
+      present: isPresent && !isLate ? 1 : 0,
+      late: isLate ? 1 : 0,
+      absent: record ? 0 : 1,
+      status: record?.status || "absent",
+      delayMinutes: Number(record?.delayMinutes || 0),
+      reason: record?.reason || "",
+    });
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return points;
+}
+
+// Role: Explique pourquoi le compte a ce score.
+function buildEffectivenessReasons({ completedTasks, activeTasks, delayedTasks, presentDays, lateDays, completionRate, punctualityRate, avgActivityScore, score }) {
+  const reasons = [];
+
+  if (activeTasks > 0) {
+    reasons.push(`${completedTasks}/${activeTasks} taches terminees (${completionRate}%).`);
+  } else {
+    reasons.push("Aucune tache active cette semaine, score base surtout sur presence et activite.");
+  }
+
+  if (delayedTasks > 0) {
+    reasons.push(`${delayedTasks} tache(s) en retard ont reduit le score.`);
+  } else {
+    reasons.push("Aucune tache en retard detectee.");
+  }
+
+  if (presentDays > 0) {
+    reasons.push(`${presentDays} seance(s) de presence, ponctualite ${punctualityRate}%.`);
+  } else {
+    reasons.push("Aucune seance de presence enregistree cette semaine.");
+  }
+
+  if (lateDays > 0) {
+    reasons.push(`${lateDays} retard(s) de presence detecte(s).`);
+  }
+
+  reasons.push(`Score activite moyen: ${avgActivityScore}/100.`);
+
+  if (score >= 75) {
+    reasons.push("Compte considere efficace cette semaine grace a une execution stable.");
+  } else if (score >= 50) {
+    reasons.push("Compte moyennement efficace, quelques axes d amelioration existent.");
+  } else {
+    reasons.push("Compte a accompagner: efficacite hebdomadaire faible.");
+  }
+
+  return reasons;
+}
+
 // Role: Construit des donnees derivees.
-function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords }) {
+function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords, windowStart, windowEnd }) {
   const completedTasks = tasks.filter((task) => task.status === "done").length;
   const activeTasks = tasks.filter((task) => ["todo", "in_progress", "overdue", "done"].includes(task.status)).length;
   const delayedTasks = tasks.filter((task) => task.status === "overdue" || task.isDelayed).length;
@@ -55,21 +136,50 @@ function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords }
       workloadBonus -
       delayPenalty,
   );
+  const normalizedScore = Math.max(0, Math.min(100, score));
+  const completionRatePct = Number((completionRate * 100).toFixed(1));
+  const punctualityRatePct = Number((punctualityRate * 100).toFixed(1));
+  const roundedActivityScore = Math.round(avgActivityScore);
+  const trend = buildAttendanceTrend(attendanceRecords, windowStart, windowEnd);
+  const reasons = buildEffectivenessReasons({
+    completedTasks,
+    activeTasks,
+    delayedTasks,
+    presentDays,
+    lateDays,
+    completionRate: completionRatePct,
+    punctualityRate: punctualityRatePct,
+    avgActivityScore: roundedActivityScore,
+    score: normalizedScore,
+  });
 
   return {
     userId: user._id,
     name: getUserName(user),
     email: user.email,
     role: normalizeRole(user.role, user.profileType || "employee"),
-    score: Math.max(0, Math.min(100, score)),
+    score: normalizedScore,
     completedTasks,
     activeTasks,
     delayedTasks,
     presentDays,
     lateDays,
-    avgActivityScore: Math.round(avgActivityScore),
-    completionRate: Number((completionRate * 100).toFixed(1)),
-    punctualityRate: Number((punctualityRate * 100).toFixed(1)),
+    absentDays: trend.filter((point) => point.absent > 0).length,
+    sessions: presentDays,
+    avgActivityScore: roundedActivityScore,
+    completionRate: completionRatePct,
+    punctualityRate: punctualityRatePct,
+    efficiencyLevel: normalizedScore >= 75 ? "high" : normalizedScore >= 50 ? "medium" : "low",
+    reasons,
+    trend,
+    taskDetails: tasks.map((task) => ({
+      id: task._id?.toString?.(),
+      title: task.title,
+      status: task.status,
+      isDelayed: Boolean(task.isDelayed || task.status === "overdue"),
+      completedAt: task.completedAt || task.actualFinishedAt || null,
+      dueDate: task.dueDate || null,
+    })),
   };
 }
 
@@ -181,7 +291,7 @@ export async function generateWeeklyEffectivenessRecommendation({
   referenceDate = new Date(),
   force = false,
 } = {}) {
-  const { windowStart, windowEnd, weekKey } = getWeeklyWindow(referenceDate);
+  const { windowStart, windowEnd, weekKey, saturday } = getWeeklyWindow(referenceDate);
   const scopedTenant = tenantId || null;
 
   if (!force) {
@@ -256,6 +366,8 @@ export async function generateWeeklyEffectivenessRecommendation({
         tasks: tasks.filter((task) => String(task.assignedTo) === String(user._id)),
         activityLogs: activityLogs.filter((log) => String(log.userId) === String(user._id)),
         attendanceRecords: attendanceRecords.filter((record) => String(record.userId) === String(user._id)),
+        windowStart,
+        windowEnd,
       }),
     )
     .sort((a, b) => b.score - a.score);
@@ -304,10 +416,15 @@ export async function generateWeeklyEffectivenessRecommendation({
     meta: {
       source: "local-ml-effectiveness",
       weekKey,
+      saturdayDate: saturday,
       averageScore,
       userScores,
       delayedUsers,
       generatedAtRule: "Chaque samedi a 10:00",
+      chart: {
+        labels: userScores[0]?.trend?.map((point) => point.day) || [],
+        bestUserTrend: userScores[0]?.trend || [],
+      },
     },
   });
 }

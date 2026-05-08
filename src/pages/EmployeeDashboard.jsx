@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import AnalyticsChart from "../components/AnalyticsChart";

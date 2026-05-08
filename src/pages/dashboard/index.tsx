@@ -1,3 +1,4 @@
+// Role du fichier: affiche un tableau de bord adapte au role utilisateur.
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";

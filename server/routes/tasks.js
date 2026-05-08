@@ -1,3 +1,4 @@
+// Role du fichier: definit les routes API et relie les endpoints aux controles backend.
 import express from 'express';
 import {
   acceptTask,
@@ -7,6 +8,9 @@ import {
   getTaskById,
   getTaskStats,
   getTasks,
+  getTasksByUser,
+  getTaskUsers,
+  getUserTaskStats,
   rescheduleTaskToday,
   sendTaskLater,
   updateTask,
@@ -37,6 +41,9 @@ router.use(protect, tenantIsolation);
  *         description: Task statistics
  */
 router.get('/stats', getTaskStats);
+router.get('/users', getTaskUsers);
+router.get('/user/:userId/stats', getUserTaskStats);
+router.get('/user/:userId', getTasksByUser);
 
 /**
  * @swagger

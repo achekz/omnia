@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import { generateResponse } from "../services/geminiService.js";
 import { ApiError } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";

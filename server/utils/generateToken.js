@@ -1,3 +1,4 @@
+// Role du fichier: fournit des fonctions utilitaires partagees.
 import jwt from 'jsonwebtoken';
 
 // Role: Decrit la logique generateAccessToken.

@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import ActivityLog from "../models/ActivityLog.js";
 import Attendance from "../models/Attendance.js";
 import FinancialRecord from "../models/FinancialRecord.js";

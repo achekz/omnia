@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useState, type FormEvent } from "react";
 import { AlertTriangle, PiggyBank, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";

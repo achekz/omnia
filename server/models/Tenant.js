@@ -1,3 +1,4 @@
+// Role du fichier: definit le schema MongoDB et la structure des donnees.
 import mongoose from 'mongoose';
 
 const tenantSchema = new mongoose.Schema(

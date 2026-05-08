@@ -1,3 +1,4 @@
+// Role du fichier: definit les routes API et relie les endpoints aux controles backend.
 /**
  * ==========================================
  * SEARCH & ADVANCED FILTER ROUTES

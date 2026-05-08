@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page reservee au compte admin.
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft, CalendarDays, Clock, Search, Users, UserX } from "lucide-react";
 import { Link, useRoute } from "wouter";

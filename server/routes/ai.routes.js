@@ -1,3 +1,4 @@
+// Role du fichier: definit les routes API et relie les endpoints aux controles backend.
 import express from "express";
 import Task from "../models/Task.js";
 import { chatWithAI } from "../controllers/aiController.js";

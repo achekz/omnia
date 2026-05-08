@@ -1,3 +1,4 @@
+// Role du fichier: configure les connexions et services techniques.
 import { Server } from 'socket.io';
 import { normalizeRole } from '../utils/roleNormalization.js';
 

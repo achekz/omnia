@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique du module routes.test.
 import { normalizeRole } from '../utils/roleNormalization.js';
 import * as mlService from '../services/mlService.js';
 import Rule from '../models/Rule.js';

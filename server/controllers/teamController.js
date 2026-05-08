@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import User from '../models/User.js';
 import ActivityLog from '../models/ActivityLog.js';
 import { ApiResponse } from '../utils/ApiResponse.js';

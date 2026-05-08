@@ -1,3 +1,4 @@
+// Role du fichier: centralise les appels API et hooks React Query.
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
@@ -18,6 +19,8 @@ import type {
   Rule,
   Task,
   TaskQueryParams,
+  TaskStats,
+  TaskUserSummary,
   TeamMemberSummary,
   UpdateTaskInput,
   User,
@@ -461,6 +464,8 @@ export function useCreateTask() {
     onSuccess: (createdTask) => {
       queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) => [createdTask, ...current]);
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -483,6 +488,8 @@ export function useUpdateTask() {
         }),
       );
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
@@ -493,14 +500,16 @@ export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, declineReason, lateReason }: { id: string; status: Task["status"]; declineReason?: string; lateReason?: string }) => {
-      const response = await apiClient.patch(`/tasks/${id}/status`, { status, declineReason, lateReason });
+    mutationFn: async ({ id, status, declineReason, lateReason, progress }: { id: string; status: Task["status"]; declineReason?: string; lateReason?: string; progress?: number }) => {
+      const response = await apiClient.patch(`/tasks/${id}/status`, { status, declineReason, lateReason, progress });
       return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
     },
@@ -533,6 +542,8 @@ export function useRescheduleTaskToday() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-details", task._id || task.id] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -551,6 +562,8 @@ export function useAddTaskComment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
@@ -590,6 +603,33 @@ export function useSendAssignedTaskLater() {
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
+  });
+}
+
+export function useGetTaskUsers(params?: { role?: string }, options?: QueryHookOptions) {
+  return useQuery<TaskUserSummary[]>({
+    queryKey: ["task-users", params?.role || "all"],
+    queryFn: async () => {
+      const response = await apiClient.get("/tasks/users", { params: params?.role && params.role !== "all" ? params : {} });
+      return unwrapCollection<TaskUserSummary>(response.data, "users", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: [],
+  });
+}
+
+export function useGetUserTasks(userId?: string, params?: { status?: string; priority?: string; deadline?: string }, options?: QueryHookOptions) {
+  return useQuery<{ user: User | null; tasks: Task[]; stats: TaskStats | null }>({
+    queryKey: ["user-tasks", userId, params || {}],
+    queryFn: async () => {
+      if (!userId) return { user: null, tasks: [], stats: null };
+      const response = await apiClient.get(`/tasks/user/${userId}`, { params });
+      return unwrapData(response.data, { user: null, tasks: [], stats: null });
+    },
+    enabled: Boolean(userId) && (options?.query?.enabled ?? true),
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: { user: null, tasks: [], stats: null },
   });
 }
 

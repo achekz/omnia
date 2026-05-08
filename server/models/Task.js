@@ -1,3 +1,4 @@
+// Role du fichier: definit le schema MongoDB et la structure des donnees.
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
@@ -35,6 +36,16 @@ const taskSchema = new Schema(
     tenantId: { type: Schema.Types.ObjectId, ref: 'Organization' },
     dueDate: { type: Date },
     completedAt: { type: Date },
+    assignedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    role: { type: String, enum: ['employee', 'stagiaire', 'comptable'], index: true },
+    startedAt: { type: Date },
+    progress: { type: Number, default: 0, min: 0, max: 100 },
+    aiRecommendation: {
+      recommendation: { type: String, trim: true },
+      priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+      shouldRescheduleToday: { type: Boolean, default: false },
+    },
+    delayRisk: { type: Number, default: 0, min: 0, max: 1 },
     tags: [{ type: String }],
     estimatedMinutes: { type: Number },
     estimatedDurationMinutes: { type: Number },
@@ -52,6 +63,9 @@ const taskSchema = new Schema(
 
 taskSchema.index({ tenantId: 1, assignedTo: 1, status: 1 });
 taskSchema.index({ tenantId: 1, assignedRole: 1, status: 1 });
+taskSchema.index({ assignedTo: 1 });
+taskSchema.index({ tenantId: 1 });
+taskSchema.index({ status: 1 });
 
 taskSchema.virtual('assignedToId').get(function getAssignedToId() {
   return this.assignedTo?._id?.toString?.() || this.assignedTo?.toString?.() || null;
@@ -92,12 +106,44 @@ taskSchema.pre('save', function planAndScoreTask(next) {
     this.estimatedDurationMinutes = this.estimatedMinutes;
   }
 
+  if (!this.assignedBy && this.createdBy) {
+    this.assignedBy = this.createdBy;
+  }
+
+  if (!this.role && this.assignedRole) {
+    this.role = this.assignedRole;
+  }
+
   if (this.startTime && this.estimatedMinutes && !this.endTime) {
     this.endTime = new Date(this.startTime.getTime() + this.estimatedMinutes * 60 * 1000);
   }
 
+  if (!this.startedAt && this.actualStartedAt) {
+    this.startedAt = this.actualStartedAt;
+  }
+
   if (this.actualFinishedAt && this.endTime) {
     this.isDelayed = this.actualFinishedAt.getTime() > this.endTime.getTime();
+  }
+
+  if (this.status === 'done') {
+    this.progress = 100;
+  } else if (this.status === 'in_progress' && this.progress < 10) {
+    this.progress = 35;
+  } else if (this.status === 'todo' && this.progress > 95) {
+    this.progress = 0;
+  }
+
+  this.delayRisk = Math.max(0, Math.min(1, (this.delayDays || 0) / 5 + (this.priority === 'critical' ? 0.2 : 0)));
+
+  if (!this.aiRecommendation?.recommendation) {
+    this.aiRecommendation = {
+      shouldRescheduleToday: this.status === 'overdue' || this.isDelayed || (this.delayDays || 0) > 0,
+      recommendation: this.status === 'overdue' || this.isDelayed || (this.delayDays || 0) > 0
+        ? 'Cette tâche risque de retarder le planning, prioriser ou replanifier aujourd’hui.'
+        : 'No urgent action. Continue current execution plan.',
+      priority: this.status === 'overdue' || (this.delayDays || 0) > 1 ? 'high' : 'low',
+    };
   }
 
   next();

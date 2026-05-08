@@ -1,3 +1,4 @@
+// Role du fichier: fournit des fonctions utilitaires partagees.
 // Role: Decrit la logique asyncHandler.
 export const asyncHandler = (fn) => {
   return (req, res, next) => {

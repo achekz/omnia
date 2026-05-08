@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import Task from '../models/Task.js';
 import ActivityLog from '../models/ActivityLog.js';
 import FinancialRecord from '../models/FinancialRecord.js';

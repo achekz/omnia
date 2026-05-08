@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import ActivityLog from '../models/ActivityLog.js';
 
 // Role: Construit des donnees derivees.

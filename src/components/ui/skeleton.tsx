@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { cn } from "@/lib/utils"
 
 function Skeleton({

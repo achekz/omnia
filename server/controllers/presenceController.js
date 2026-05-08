@@ -1,3 +1,4 @@
+// Role du fichier: contient la logique backend des requetes et reponses API.
 import Attendance from "../models/Attendance.js";
 import User from "../models/User.js";
 import { emitToRole, emitToTenant, emitToUser } from "../config/socket.js";

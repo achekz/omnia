@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"

@@ -1,3 +1,4 @@
+// Role du fichier: declare les routes frontend et les protections par role.
 import { useEffect, type ComponentType } from "react";
 import { Redirect, Route, Switch, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -135,6 +136,7 @@ const routes: AppRoute[] = [
   { path: "/admin/users/:id/tasks", component: AdminUserTaskDetailsPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences/:date", component: AdminPresenceDayPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },
+  { path: "/admin/tasks/:userId", component: AdminTasksPage, protected: true, roles: ["admin"] },
   { path: "/admin/tasks", component: AdminTasksPage, protected: true, roles: ["admin"] },
   { path: "/admin/recommendations", component: AdminRecommendationsPage, protected: true, roles: ["admin"] },
 

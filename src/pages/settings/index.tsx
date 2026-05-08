@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page React de l application.
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Bell, Briefcase, Building, Camera, Check, Key, Mail, Shield, User } from "lucide-react";

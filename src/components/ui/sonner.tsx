@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 "use client"
 
 import { useTheme } from "next-themes"

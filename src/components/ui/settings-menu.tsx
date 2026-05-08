@@ -1,3 +1,4 @@
+// Role du fichier: fournit un composant UI reutilisable.
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { 

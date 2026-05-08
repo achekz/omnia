@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import axios from "axios";
 import { predict, recommend } from "./mlService.js";
 import * as notifService from "./notifService.js";

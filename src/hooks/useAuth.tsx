@@ -1,3 +1,4 @@
+// Role du fichier: fournit un hook React partage.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { AxiosError } from "axios";

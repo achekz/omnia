@@ -1,3 +1,4 @@
+// Role du fichier: affiche une page reservee au compte admin.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarCheck2, ChevronLeft, ChevronRight, Clock, Users, UserX } from "lucide-react";

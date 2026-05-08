@@ -1,3 +1,4 @@
+// Role du fichier: configure les connexions et services techniques.
 import mongoose from 'mongoose';
 
 let reconnectTimer = null;

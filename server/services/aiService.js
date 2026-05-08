@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import axios from "axios";
 
 const FLASK_AI_URL = process.env.FLASK_AI_URL || "http://localhost:5000";

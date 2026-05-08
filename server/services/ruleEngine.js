@@ -1,3 +1,4 @@
+// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import Rule from '../models/Rule.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
