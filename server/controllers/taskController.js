@@ -148,6 +148,7 @@ function buildTaskStats(tasks = []) {
   const completed = tasks.filter((task) => task.status === 'done').length;
   const pending = tasks.filter((task) => ['todo', 'in_progress'].includes(task.status)).length;
   const overdue = tasks.filter((task) => task.status === 'overdue' || task.isDelayed).length;
+  const later = tasks.filter((task) => task.status === 'declined').length;
   const productivityScore = calculateProductivityScore(tasks);
   const delayScore = calculateDelayScore(tasks);
   return {
@@ -155,6 +156,7 @@ function buildTaskStats(tasks = []) {
     completed,
     pending,
     overdue,
+    later,
     productivityScore,
     delayScore,
     completionRate: total ? Math.round((completed / total) * 100) : 0,

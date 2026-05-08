@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useRoute } from "wouter";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Bot, CalendarClock, CheckCircle2, Clock, Filter, Gauge, ListTodo, Plus, Search, Timer, UserCircle2, Zap } from "lucide-react";
+import { AlertTriangle, Bot, CalendarClock, CheckCircle2, Filter, Gauge, ListTodo, Plus, Search, Timer, Zap } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useCreateTask, useGetTaskUsers, useGetUserTasks, useUpdateTaskStatus } from "@/lib/api-client";
+import { useCreateTask, useGetTaskUsers, useGetUserTasks, useRescheduleTaskToday, useUpdateTaskStatus } from "@/lib/api-client";
 import { useSocket } from "@/context/SocketContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Task, TaskPriority, TaskStatus, TaskUserSummary, User } from "@/lib/types";
@@ -85,10 +85,12 @@ export default function AdminTasksPage() {
   );
   const createTask = useCreateTask();
   const updateStatus = useUpdateTaskStatus();
+  const resendTask = useRescheduleTaskToday();
 
-  const selectedUser = users.find((user) => getUserId(user) === selectedUserId) || userTaskPayload.user;
+  const selectedUserSummary = users.find((user) => getUserId(user) === selectedUserId);
+  const selectedUser = selectedUserSummary || userTaskPayload.user;
   const tasks = userTaskPayload.tasks || [];
-  const stats = userTaskPayload.stats || selectedUser?.taskStats || null;
+  const stats = userTaskPayload.stats || selectedUserSummary?.taskStats || null;
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -155,6 +157,17 @@ export default function AdminTasksPage() {
     updateStatus.mutate({ id, status, progress });
   };
 
+  const resendLaterTask = async (task: Task) => {
+    const id = task._id || task.id;
+    if (!id) return;
+    try {
+      await resendTask.mutateAsync({ id, status: "todo" });
+      toast({ title: "Task sent again", description: "The Plus tard task was returned to the selected account." });
+    } catch (error: any) {
+      toast({ title: "Could not resend task", description: error?.response?.data?.message || "Please try again.", variant: "destructive" });
+    }
+  };
+
   return (
     <ModuleLayout activeItem="admin-tasks">
       <div className="min-h-full bg-gray-950 p-4 text-gray-100 lg:p-6">
@@ -193,7 +206,7 @@ export default function AdminTasksPage() {
               {isLoading ? (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-gray-400">Loading user tasks...</div>
               ) : tasks.length ? (
-                tasks.map((task, index) => <TaskCard key={task._id || task.id || index} task={task} onStatus={quickStatus} />)
+                tasks.map((task, index) => <TaskCard key={task._id || task.id || index} task={task} onStatus={quickStatus} onResend={resendLaterTask} isResending={resendTask.isPending} />)
               ) : (
                 <div className="rounded-2xl border border-dashed border-gray-700 bg-gray-900 p-8 text-center text-gray-400">No tasks for this account.</div>
               )}
@@ -305,7 +318,7 @@ function FilterBar({ status, priority, deadline, onStatus, onPriority, onDeadlin
   );
 }
 
-function TaskCard({ task, onStatus }: { task: Task; onStatus: (task: Task, status: TaskStatus, progress?: number) => void }) {
+function TaskCard({ task, onStatus, onResend, isResending }: { task: Task; onStatus: (task: Task, status: TaskStatus, progress?: number) => void; onResend: (task: Task) => void; isResending?: boolean }) {
   const meta = statusMeta[task.status] || statusMeta.todo;
   const progress = taskProgress(task);
   return (
@@ -331,6 +344,11 @@ function TaskCard({ task, onStatus }: { task: Task; onStatus: (task: Task, statu
           <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-400"><span>Progress</span><span>{progress}%</span></div>
           <div className="h-3 overflow-hidden rounded-full bg-gray-800"><div className={cn("h-full rounded-full", meta.bar)} style={{ width: `${progress}%` }} /></div>
           <div className="mt-4 flex flex-wrap gap-2">
+            {task.status === "declined" && (
+              <button disabled={isResending} onClick={() => onResend(task)} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-500 disabled:opacity-50">
+                Renvoyer
+              </button>
+            )}
             {task.status === "todo" && <button onClick={() => onStatus(task, "in_progress", 35)} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white">Start</button>}
             {task.status !== "done" && <button onClick={() => onStatus(task, "done", 100)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Complete</button>}
             {task.status === "in_progress" && <button onClick={() => onStatus(task, "in_progress", Math.min(95, progress + 15))} className="rounded-lg bg-gray-800 px-3 py-2 text-xs font-bold text-gray-100">+15%</button>}

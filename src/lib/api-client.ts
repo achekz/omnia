@@ -581,6 +581,9 @@ export function useAcceptAssignedTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -599,6 +602,9 @@ export function useSendAssignedTaskLater() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });

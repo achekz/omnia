@@ -32,11 +32,39 @@ function roleLabel(role?: string) {
 // Role: Prepare les donnees du graphique.
 function buildChartData(account?: WeeklyRecommendationUserScore | null) {
   const trend = account?.trend || [];
-  return trend.map((point) => ({
-    ...point,
-    label: point.day,
-    total: Number(point.present || 0) + Number(point.late || 0) + Number(point.absent || 0),
-  }));
+  const taskDetails = account?.taskDetails || [];
+  return trend.map((point) => {
+    const tasksDone =
+      point.tasksDone ??
+      taskDetails.filter((task) => task.status === "done" && dayFromTaskDate(task.completedAt || task.dueDate) === point.day).length;
+    const tasksLater =
+      point.tasksLater ??
+      taskDetails.filter((task) => task.status === "declined" && dayFromTaskDate(task.completedAt || task.dueDate) === point.day).length;
+    const taskDelay =
+      point.taskDelay ??
+      taskDetails.filter((task) => task.isDelayed && dayFromTaskDate(task.completedAt || task.dueDate) === point.day).length;
+
+    return {
+      ...point,
+      label: point.day,
+      tasksDone,
+      tasksLater,
+      taskDelay,
+      total:
+        Number(point.present || 0) +
+        Number(point.late || 0) +
+        Number(point.absent || 0) +
+        Number(tasksDone || 0) +
+        Number(tasksLater || 0) +
+        Number(taskDelay || 0),
+    };
+  });
+}
+
+// Role: Prepare une valeur pour l affichage ou l API.
+function dayFromTaskDate(value?: string | null) {
+  if (!value) return "";
+  return String(new Date(value).getDate()).padStart(2, "0");
 }
 
 // Role: Retourne un etat booleen.
@@ -210,11 +238,23 @@ function HeroRecommendation({ record, account }: { record: WeeklyRecommendation;
 
 // Role: Affiche le graphique present late absent.
 function TrendChart({ account, data }: { account?: WeeklyRecommendationUserScore | null; data: WeeklyRecommendationTrendPoint[] }) {
+  const maxValue = Math.max(
+    1,
+    ...data.flatMap((point) => [
+      Number(point.present || 0),
+      Number(point.late || 0),
+      Number(point.absent || 0),
+      Number(point.tasksDone || 0),
+      Number(point.tasksLater || 0),
+      Number(point.taskDelay || 0),
+    ]),
+  );
+
   return (
     <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
       <div className="mb-5">
         <h2 className="text-xl font-bold text-gray-100">Monthly trend</h2>
-        <p className="mt-1 text-sm text-gray-400">Present, absents et retards par jour pour {account?.name || "ce compte"}.</p>
+        <p className="mt-1 text-sm text-gray-400">Présence, absences, retards, Plus tard et tâches faites pour {account?.name || "ce compte"}.</p>
       </div>
 
       <div className="h-[360px]">
@@ -222,11 +262,14 @@ function TrendChart({ account, data }: { account?: WeeklyRecommendationUserScore
           <AreaChart data={data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="4 4" stroke="#cbd5e1" opacity={0.55} />
             <XAxis dataKey="label" stroke="#9ca3af" tickLine={false} axisLine={false} />
-            <YAxis stroke="#9ca3af" tickLine={false} axisLine={false} domain={[0, 1]} ticks={[0, 1]} />
+            <YAxis stroke="#9ca3af" tickLine={false} axisLine={false} allowDecimals={false} domain={[0, Math.max(1, maxValue)]} />
             <Tooltip content={<TrendTooltip />} />
             <Area type="linear" dataKey="absent" stroke="#ef4444" fill="#ef4444" fillOpacity={0.35} name="absent" />
             <Area type="linear" dataKey="late" stroke="#f97316" fill="#f97316" fillOpacity={0.35} name="late" />
             <Area type="linear" dataKey="present" stroke="#10b981" fill="#10b981" fillOpacity={0.45} name="present" />
+            <Area type="linear" dataKey="tasksLater" stroke="#a855f7" fill="#a855f7" fillOpacity={0.28} name="plus tard" />
+            <Area type="linear" dataKey="taskDelay" stroke="#facc15" fill="#facc15" fillOpacity={0.22} name="retard tâche" />
+            <Area type="linear" dataKey="tasksDone" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.28} name="tâches faites" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -245,6 +288,9 @@ function TrendTooltip({ active, payload, label }: any) {
       <p className="font-semibold text-emerald-400">present : {values.present || 0}</p>
       <p className="font-semibold text-orange-400">late : {values.late || 0}</p>
       <p className="font-semibold text-red-400">absent : {values.absent || 0}</p>
+      <p className="font-semibold text-violet-300">plus tard : {values.tasksLater || 0}</p>
+      <p className="font-semibold text-yellow-300">retard tâche : {values.taskDelay || 0}</p>
+      <p className="font-semibold text-sky-300">tâches faites : {values.tasksDone || 0}</p>
     </div>
   );
 }
@@ -266,6 +312,9 @@ function AccountRanking({ ranking, selected, onSelect }: { ranking: WeeklyRecomm
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Sessions</th>
               <th className="px-4 py-3">Late</th>
+              <th className="px-4 py-3">Retard tâches</th>
+              <th className="px-4 py-3">Plus tard</th>
+              <th className="px-4 py-3">Faites</th>
               <th className="px-4 py-3">Efficiency</th>
               <th className="px-4 py-3">Score</th>
             </tr>
@@ -292,7 +341,10 @@ function RankingRow({ entry, index, active, onClick }: { entry: WeeklyRecommenda
       </td>
       <td className="px-4 py-4">{roleLabel(String(entry.role || ""))}</td>
       <td className="px-4 py-4">{entry.sessions ?? entry.presentDays ?? 0}</td>
-      <td className="px-4 py-4">{entry.lateDays || entry.delayedTasks || 0}</td>
+      <td className="px-4 py-4">{entry.lateDays || 0}</td>
+      <td className="px-4 py-4">{entry.taskDelay ?? entry.delayedTasks ?? 0}</td>
+      <td className="px-4 py-4">{entry.tasksLater ?? entry.laterTasks ?? 0}</td>
+      <td className="px-4 py-4">{entry.tasksDone ?? entry.completedTasks ?? 0}</td>
       <td className="px-4 py-4">{entry.completionRate ?? 0}%</td>
       <td className="px-4 py-4">
         <span className="rounded-full bg-gray-800 px-3 py-1 font-bold text-white">{entry.score}/100</span>
@@ -322,6 +374,8 @@ function AccountDetails({ account }: { account?: WeeklyRecommendationUserScore |
       <div className="grid grid-cols-2 gap-3">
         <DetailMetric label="Séances" value={String(account.sessions ?? account.presentDays ?? 0)} />
         <DetailMetric label="Retards" value={String(account.lateDays || 0)} />
+        <DetailMetric label="Retard tâches" value={String(account.taskDelay ?? account.delayedTasks ?? 0)} />
+        <DetailMetric label="Plus tard" value={String(account.tasksLater ?? account.laterTasks ?? 0)} />
         <DetailMetric label="Absences" value={String(account.absentDays || 0)} />
         <DetailMetric label="Tâches finies" value={`${account.completedTasks || 0}/${account.activeTasks || 0}`} />
         <DetailMetric label="Efficacité" value={`${account.completionRate ?? 0}%`} />

@@ -140,6 +140,7 @@ export interface TaskStats {
   completed: number;
   pending: number;
   overdue: number;
+  later?: number;
   productivityScore: number;
   delayScore: number;
   completionRate: number;
@@ -279,6 +280,10 @@ export interface WeeklyRecommendationUserScore {
   completedTasks?: number;
   activeTasks?: number;
   delayedTasks?: number;
+  laterTasks?: number;
+  tasksDone?: number;
+  tasksLater?: number;
+  taskDelay?: number;
   presentDays?: number;
   lateDays?: number;
   absentDays?: number;
@@ -304,6 +309,9 @@ export interface WeeklyRecommendationTrendPoint {
   present: number;
   late: number;
   absent: number;
+  tasksDone?: number;
+  tasksLater?: number;
+  taskDelay?: number;
   status?: string;
   delayMinutes?: number;
   reason?: string;

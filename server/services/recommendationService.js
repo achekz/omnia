@@ -48,7 +48,7 @@ function dateKeyFromDate(date) {
 }
 
 // Role: Construit les points du graphique hebdomadaire.
-function buildAttendanceTrend(attendanceRecords, windowStart, windowEnd) {
+function buildAttendanceTrend(attendanceRecords, tasks, windowStart, windowEnd) {
   const recordsByDate = new Map(attendanceRecords.map((record) => [record.dateKey || dateKeyFromDate(new Date(record.date)), record]));
   const points = [];
   const cursor = new Date(windowStart);
@@ -58,6 +58,13 @@ function buildAttendanceTrend(attendanceRecords, windowStart, windowEnd) {
     const record = recordsByDate.get(dateKey);
     const isLate = ["late", "very_late"].includes(record?.status);
     const isPresent = ["present", "on_time", "late", "very_late"].includes(record?.status);
+    const next = new Date(cursor);
+    next.setDate(cursor.getDate() + 1);
+    const dayTasks = tasks.filter((task) => {
+      const taskDate = task.completedAt || task.actualFinishedAt || task.declinedAt || task.updatedAt || task.createdAt;
+      const value = taskDate ? new Date(taskDate) : null;
+      return value && value >= cursor && value < next;
+    });
 
     points.push({
       date: dateKey,
@@ -65,6 +72,9 @@ function buildAttendanceTrend(attendanceRecords, windowStart, windowEnd) {
       present: isPresent && !isLate ? 1 : 0,
       late: isLate ? 1 : 0,
       absent: record ? 0 : 1,
+      tasksDone: dayTasks.filter((task) => task.status === "done").length,
+      tasksLater: dayTasks.filter((task) => task.status === "declined").length,
+      taskDelay: dayTasks.filter((task) => task.status === "overdue" || task.isDelayed || Number(task.delayDays || 0) > 0).length,
       status: record?.status || "absent",
       delayMinutes: Number(record?.delayMinutes || 0),
       reason: record?.reason || "",
@@ -77,7 +87,7 @@ function buildAttendanceTrend(attendanceRecords, windowStart, windowEnd) {
 }
 
 // Role: Explique pourquoi le compte a ce score.
-function buildEffectivenessReasons({ completedTasks, activeTasks, delayedTasks, presentDays, lateDays, completionRate, punctualityRate, avgActivityScore, score }) {
+function buildEffectivenessReasons({ completedTasks, activeTasks, delayedTasks, laterTasks, presentDays, lateDays, completionRate, punctualityRate, avgActivityScore, score }) {
   const reasons = [];
 
   if (activeTasks > 0) {
@@ -90,6 +100,10 @@ function buildEffectivenessReasons({ completedTasks, activeTasks, delayedTasks, 
     reasons.push(`${delayedTasks} tache(s) en retard ont reduit le score.`);
   } else {
     reasons.push("Aucune tache en retard detectee.");
+  }
+
+  if (laterTasks > 0) {
+    reasons.push(`${laterTasks} tache(s) marquees Plus tard doivent etre renvoyees ou replannifiees.`);
   }
 
   if (presentDays > 0) {
@@ -119,7 +133,8 @@ function buildEffectivenessReasons({ completedTasks, activeTasks, delayedTasks, 
 function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords, windowStart, windowEnd }) {
   const completedTasks = tasks.filter((task) => task.status === "done").length;
   const activeTasks = tasks.filter((task) => ["todo", "in_progress", "overdue", "done"].includes(task.status)).length;
-  const delayedTasks = tasks.filter((task) => task.status === "overdue" || task.isDelayed).length;
+  const delayedTasks = tasks.filter((task) => task.status === "overdue" || task.isDelayed || Number(task.delayDays || 0) > 0).length;
+  const laterTasks = tasks.filter((task) => task.status === "declined").length;
   const completionRate = activeTasks ? completedTasks / activeTasks : 0;
   const avgActivityScore = activityLogs.length
     ? activityLogs.reduce((sum, log) => sum + Number(log.score || 0), 0) / activityLogs.length
@@ -140,11 +155,12 @@ function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords, 
   const completionRatePct = Number((completionRate * 100).toFixed(1));
   const punctualityRatePct = Number((punctualityRate * 100).toFixed(1));
   const roundedActivityScore = Math.round(avgActivityScore);
-  const trend = buildAttendanceTrend(attendanceRecords, windowStart, windowEnd);
+  const trend = buildAttendanceTrend(attendanceRecords, tasks, windowStart, windowEnd);
   const reasons = buildEffectivenessReasons({
     completedTasks,
     activeTasks,
     delayedTasks,
+    laterTasks,
     presentDays,
     lateDays,
     completionRate: completionRatePct,
@@ -165,6 +181,9 @@ function scoreUserEffectiveness({ user, tasks, activityLogs, attendanceRecords, 
     presentDays,
     lateDays,
     absentDays: trend.filter((point) => point.absent > 0).length,
+    tasksDone: completedTasks,
+    tasksLater: laterTasks,
+    taskDelay: delayedTasks,
     sessions: presentDays,
     avgActivityScore: roundedActivityScore,
     completionRate: completionRatePct,
