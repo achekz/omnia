@@ -218,6 +218,23 @@ export interface Notification {
   createdAt: string;
 }
 
+export type RoleChangeRequestStatus = "pending" | "approved" | "rejected";
+
+export interface RoleChangeRequest {
+  _id?: string;
+  id?: string;
+  userId?: Partial<User> | string;
+  tenantId?: string | null;
+  currentRole: UserRole;
+  requestedRole: UserRole;
+  status: RoleChangeRequestStatus;
+  decidedBy?: Partial<User> | string | null;
+  decidedAt?: string | null;
+  decisionReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface DashboardChartPoint {
   day?: string;
   month?: string;

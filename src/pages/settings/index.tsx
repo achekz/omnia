@@ -1,13 +1,22 @@
 // Role du fichier: affiche une page React de l application.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Bell, Briefcase, Building, Camera, Check, Eye, EyeOff, Key, Mail, Shield, User } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
-import { useChangePasswordWithCode, useSendPasswordChangeCode, useSendSelfEmailCode, useVerifySelfEmailChange } from "@/lib/api-client";
+import {
+  useChangePasswordWithCode,
+  useGetOwnRoleChangeRequest,
+  useRequestRoleChange,
+  useSendPasswordChangeCode,
+  useSendRoleChangeCode,
+  useSendSelfEmailCode,
+  useVerifySelfEmailChange,
+} from "@/lib/api-client";
+import type { UserRole } from "@/lib/types";
 
 type SettingsTab = "profile" | "security" | "notifications";
-type SuccessKey = "profile" | "email" | "notifications" | "password";
+type SuccessKey = "profile" | "email" | "notifications" | "password" | "role";
 type NotificationPreferenceKey =
   | "emailNotifications"
   | "inAppMentions"
@@ -35,6 +44,12 @@ const notificationPreferencesList: Array<{
   { key: "marketingUpdates", title: "Marketing Updates", desc: "Receive news about new features and promotions" },
 ];
 
+const roleOptions: Array<{ value: Exclude<UserRole, "admin">; label: string }> = [
+  { value: "employee", label: "Employee" },
+  { value: "comptable", label: "Comptable" },
+  { value: "stagiaire", label: "Stagiaire" },
+];
+
 // Role: Affiche et organise cet ecran.
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -56,17 +71,28 @@ export default function SettingsPage() {
   });
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [passwordVerificationCode, setPasswordVerificationCode] = useState("");
+  const [selectedRole, setSelectedRole] = useState<Exclude<UserRole, "admin">>((user?.role === "admin" ? "employee" : user?.role) || "employee");
+  const [roleVerificationCode, setRoleVerificationCode] = useState("");
   const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirm: false, email: false });
   const sendSelfEmailCode = useSendSelfEmailCode();
   const verifySelfEmailChange = useVerifySelfEmailChange();
   const sendPasswordChangeCode = useSendPasswordChangeCode();
   const changePasswordWithCode = useChangePasswordWithCode();
+  const { data: roleRequest } = useGetOwnRoleChangeRequest({ query: { enabled: !!user } });
+  const sendRoleChangeCode = useSendRoleChangeCode();
+  const requestRoleChange = useRequestRoleChange();
   const [successMessages, setSuccessMessages] = useState<Record<SuccessKey, boolean>>({
     profile: false,
     email: false,
     notifications: false,
     password: false,
+    role: false,
   });
+
+  useEffect(() => {
+    if (!user || user.role === "admin") return;
+    setSelectedRole(user.role);
+  }, [user]);
 
   if (!user) {
     return null;
@@ -205,6 +231,38 @@ export default function SettingsPage() {
       setPasswordVerificationCode("");
     } catch (error: any) {
       alert(error?.response?.data?.message || "Failed to change password");
+    }
+  };
+
+  const handleSendRoleCode = async () => {
+    if (!user || user.role === "admin") return;
+    if (selectedRole === user.role) {
+      alert("Choose a different role first");
+      return;
+    }
+
+    try {
+      const result = await sendRoleChangeCode.mutateAsync({ requestedRole: selectedRole });
+      if (result.devCode) setRoleVerificationCode(result.devCode);
+      alert(`Verification code sent to ${user.email}`);
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to send verification code");
+    }
+  };
+
+  const handleRequestRoleChange = async () => {
+    if (!roleVerificationCode) {
+      alert("Please enter the verification code");
+      return;
+    }
+
+    try {
+      await requestRoleChange.mutateAsync({ requestedRole: selectedRole, code: roleVerificationCode });
+      showSuccess("role");
+      setRoleVerificationCode("");
+      alert("Role change request sent to admin");
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to send role change request");
     }
   };
 
@@ -382,25 +440,82 @@ export default function SettingsPage() {
 
                 <hr className="border-gray-100" />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Role</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-                        <Briefcase className="w-4 h-4" />
+                <div className="space-y-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  {successMessages.role && (
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
+                      Role change request sent to admin.
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700">Current Role</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+                          <Briefcase className="w-4 h-4" />
+                        </div>
+                        <input type="text" value={user.role} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
                       </div>
-                      <input type="text" value={user.role} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700">Requested Role</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+                          <Building className="w-4 h-4" />
+                        </div>
+                        <select
+                          value={selectedRole}
+                          disabled={user.role === "admin"}
+                          onChange={(event) => setSelectedRole(event.target.value as Exclude<UserRole, "admin">)}
+                          className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-gray-900 outline-none transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                          {roleOptions.map((role) => (
+                            <option key={role.value} value={role.value}>{role.label}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Profile Type</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-                        <Building className="w-4 h-4" />
-                      </div>
-                      <input type="text" value={user.profileType} disabled className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 focus:outline-none cursor-not-allowed capitalize" />
+
+                  {roleRequest && (
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+                      Latest request: <span className="font-bold capitalize">{roleRequest.status}</span>
+                      {" "}from <span className="font-bold capitalize">{roleRequest.currentRole}</span>
+                      {" "}to <span className="font-bold capitalize">{roleRequest.requestedRole}</span>.
                     </div>
-                  </div>
+                  )}
+
+                  {user.role !== "admin" && selectedRole !== user.role && (
+                    <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                      <p className="text-xs font-semibold text-amber-800">
+                        A code will be sent to {user.email}. After verification, an admin must approve this role change.
+                      </p>
+                      <input
+                        value={roleVerificationCode}
+                        onChange={(event) => setRoleVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="6-digit code"
+                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-center text-sm font-bold tracking-[0.35em] text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={handleSendRoleCode}
+                          disabled={sendRoleChangeCode.isPending}
+                          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700 disabled:opacity-60"
+                        >
+                          {sendRoleChangeCode.isPending ? "Sending..." : "Send Code"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRequestRoleChange}
+                          disabled={requestRoleChange.isPending}
+                          className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-60"
+                        >
+                          {requestRoleChange.isPending ? "Sending request..." : "Send Request"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-4 flex justify-end">

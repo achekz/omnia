@@ -24,6 +24,27 @@ router.get(
 );
 
 router.get(
+  '/role-change-requests',
+  protect,
+  authorize('ADMIN'),
+  adminController.getRoleChangeRequests
+);
+
+router.patch(
+  '/role-change-requests/:id/approve',
+  protect,
+  authorize('ADMIN'),
+  adminController.approveRoleChangeRequest
+);
+
+router.patch(
+  '/role-change-requests/:id/reject',
+  protect,
+  authorize('ADMIN'),
+  adminController.rejectRoleChangeRequest
+);
+
+router.get(
   '/users/:id/tasks',
   protect,
   authorize('ADMIN'),

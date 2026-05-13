@@ -1,13 +1,38 @@
 // Role du fichier: affiche une page React de l application.
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, X } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useGetNotifications, useMarkNotificationRead } from "@/lib/api-client";
-import type { Notification } from "@/lib/types";
+import { useApproveRoleChangeRequest, useGetAdminRoleChangeRequests, useGetNotifications, useMarkNotificationRead, useRejectRoleChangeRequest } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import type { Notification, RoleChangeRequest } from "@/lib/types";
 
 // Role: Affiche et organise cet ecran.
 export default function NotificationsPage() {
+  const { user } = useAuth();
   const { data: notifications = [], isFetching } = useGetNotifications({ query: { refetchInterval: 30000 } });
+  const { data: pendingRoleRequests = [] } = useGetAdminRoleChangeRequests("pending", { query: { enabled: user?.role === "admin", refetchInterval: 30000 } });
   const markRead = useMarkNotificationRead();
+  const approveRoleRequest = useApproveRoleChangeRequest();
+  const rejectRoleRequest = useRejectRoleChangeRequest();
+  const { toast } = useToast();
+
+  const handleApprove = async (id: string) => {
+    try {
+      await approveRoleRequest.mutateAsync(id);
+      toast({ title: "Demande acceptée", description: "Le rôle du compte a été modifié." });
+    } catch (error: any) {
+      toast({ title: "Action échouée", description: error?.response?.data?.message || "Impossible d'accepter cette demande.", variant: "destructive" });
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      await rejectRoleRequest.mutateAsync({ id });
+      toast({ title: "Demande refusée", description: "L'utilisateur a été notifié." });
+    } catch (error: any) {
+      toast({ title: "Action échouée", description: error?.response?.data?.message || "Impossible de refuser cette demande.", variant: "destructive" });
+    }
+  };
 
   return (
     <ModuleLayout activeItem="notifications">
@@ -26,6 +51,10 @@ export default function NotificationsPage() {
               <NotificationRow
                 key={notification._id || notification.id}
                 notification={notification}
+                pendingRoleRequests={pendingRoleRequests}
+                isRoleActionBusy={approveRoleRequest.isPending || rejectRoleRequest.isPending}
+                onApproveRoleRequest={handleApprove}
+                onRejectRoleRequest={handleReject}
                 onRead={(id) => markRead.mutate(id)}
               />
             ))
@@ -43,8 +72,24 @@ export default function NotificationsPage() {
 }
 
 // Role: Affiche et organise cet ecran.
-function NotificationRow({ notification, onRead }: { notification: Notification; onRead: (id: string) => void }) {
+function NotificationRow({
+  notification,
+  pendingRoleRequests,
+  isRoleActionBusy,
+  onApproveRoleRequest,
+  onRejectRoleRequest,
+  onRead,
+}: {
+  notification: Notification;
+  pendingRoleRequests: RoleChangeRequest[];
+  isRoleActionBusy: boolean;
+  onApproveRoleRequest: (id: string) => void;
+  onRejectRoleRequest: (id: string) => void;
+  onRead: (id: string) => void;
+}) {
   const id = notification._id || notification.id;
+  const roleRequestId = typeof notification.metadata?.roleChangeRequestId === "string" ? notification.metadata.roleChangeRequestId : "";
+  const pendingRoleRequest = pendingRoleRequests.find((request) => (request._id || request.id) === roleRequestId);
 
   return (
     <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -58,6 +103,28 @@ function NotificationRow({ notification, onRead }: { notification: Notification;
           <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
           {(notification.redirectTarget || notification.actionUrl) && (
             <p className="mt-2 text-xs font-semibold text-gray-400">{notification.redirectTarget || notification.actionUrl}</p>
+          )}
+          {pendingRoleRequest && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={isRoleActionBusy}
+                onClick={() => onApproveRoleRequest(roleRequestId)}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <Check className="h-4 w-4" />
+                Accepter
+              </button>
+              <button
+                type="button"
+                disabled={isRoleActionBusy}
+                onClick={() => onRejectRoleRequest(roleRequestId)}
+                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
+              >
+                <X className="h-4 w-4" />
+                Refuser
+              </button>
+            </div>
           )}
         </div>
         {!notification.isRead && id && (

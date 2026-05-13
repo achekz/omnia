@@ -5,6 +5,7 @@ import ActivityLog from '../models/ActivityLog.js';
 import Attendance from '../models/Attendance.js';
 import MLPrediction from '../models/MLPrediction.js';
 import Notification from '../models/Notification.js';
+import RoleChangeRequest from '../models/RoleChangeRequest.js';
 import Task from '../models/Task.js';
 import Presence from '../models/Presence.js';
 import PerformanceLog from '../models/PerformanceLog.js';
@@ -360,6 +361,104 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 // Role: Recupere les donnees necessaires.
+export const getRoleChangeRequests = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const status = String(req.query.status || "pending").trim().toLowerCase();
+  const filter = {
+    ...scopeFilter,
+    ...(status && status !== "all" ? { status } : {}),
+  };
+
+  const requests = await RoleChangeRequest.find(filter)
+    .populate("userId", "name firstName lastName email role profileType isActive")
+    .populate("decidedBy", "name email")
+    .sort({ createdAt: -1 })
+    .limit(200);
+
+  res.json(new ApiResponse(200, { requests }, "Role change requests retrieved"));
+});
+
+// Role: Enregistre une modification.
+export const approveRoleChangeRequest = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const request = await RoleChangeRequest.findOne({
+    _id: req.params.id,
+    ...scopeFilter,
+    status: "pending",
+  }).populate("userId", "name firstName lastName email role profileType tenantId");
+
+  if (!request) {
+    throw new ApiError(404, "Pending role change request not found");
+  }
+
+  const user = await User.findOne({ _id: request.userId._id, ...scopeFilter, role: { $ne: "admin" } });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  user.role = request.requestedRole;
+  user.profileType = request.requestedRole;
+  user.refreshToken = undefined;
+  await user.save();
+
+  request.status = "approved";
+  request.decidedBy = req.user._id;
+  request.decidedAt = new Date();
+  await request.save();
+
+  await notifService.create(user._id, user.tenantId || req.user?.tenantId || null, {
+    type: "success",
+    title: "Changement de rôle accepté",
+    message: `Votre rôle est maintenant ${request.requestedRole}. Reconnectez-vous pour appliquer tous les accès.`,
+    source: "system",
+    actionUrl: "/profile",
+    metadata: { roleChangeRequestId: request._id.toString(), requestedRole: request.requestedRole },
+  });
+
+  const populatedRequest = await RoleChangeRequest.findById(request._id)
+    .populate("userId", "name firstName lastName email role profileType isActive")
+    .populate("decidedBy", "name email");
+
+  res.json(new ApiResponse(200, { request: populatedRequest, user }, "Role change request approved"));
+});
+
+// Role: Enregistre une modification.
+export const rejectRoleChangeRequest = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const request = await RoleChangeRequest.findOne({
+    _id: req.params.id,
+    ...scopeFilter,
+    status: "pending",
+  }).populate("userId", "name firstName lastName email role profileType tenantId");
+
+  if (!request) {
+    throw new ApiError(404, "Pending role change request not found");
+  }
+
+  const reason = String(req.body.reason || "").trim();
+  request.status = "rejected";
+  request.decidedBy = req.user._id;
+  request.decidedAt = new Date();
+  request.decisionReason = reason;
+  await request.save();
+
+  await notifService.create(request.userId._id, request.userId.tenantId || req.user?.tenantId || null, {
+    type: "info",
+    title: "Changement de rôle refusé",
+    message: reason || `Votre demande pour le rôle ${request.requestedRole} a été refusée.`,
+    source: "system",
+    actionUrl: "/profile",
+    metadata: { roleChangeRequestId: request._id.toString(), requestedRole: request.requestedRole },
+  });
+
+  const populatedRequest = await RoleChangeRequest.findById(request._id)
+    .populate("userId", "name firstName lastName email role profileType isActive")
+    .populate("decidedBy", "name email");
+
+  res.json(new ApiResponse(200, { request: populatedRequest }, "Role change request rejected"));
+});
+
+// Role: Recupere les donnees necessaires.
 export const getUserTaskDetails = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
   const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } })
@@ -559,13 +658,14 @@ export const deleteUserAccount = asyncHandler(async (req, res) => {
 
   const userId = user._id;
 
-  const [tasks, attendance, activityLogs, performanceLogs, mlPredictions, notifications] = await Promise.all([
+  const [tasks, attendance, activityLogs, performanceLogs, mlPredictions, notifications, roleRequests] = await Promise.all([
     Task.deleteMany({ ...scopeFilter, $or: [{ assignedTo: userId }, { createdBy: userId }, { completedBy: userId }] }),
     Attendance.deleteMany({ ...scopeFilter, userId }),
     ActivityLog.deleteMany({ ...scopeFilter, userId }),
     PerformanceLog.deleteMany({ ...scopeFilter, userId }),
     MLPrediction.deleteMany({ ...scopeFilter, userId }),
     Notification.deleteMany({ ...scopeFilter, userId }),
+    RoleChangeRequest.deleteMany({ ...scopeFilter, userId }),
   ]);
 
   await user.deleteOne();
@@ -579,6 +679,7 @@ export const deleteUserAccount = asyncHandler(async (req, res) => {
       performanceLogs: performanceLogs.deletedCount || 0,
       mlPredictions: mlPredictions.deletedCount || 0,
       notifications: notifications.deletedCount || 0,
+      roleRequests: roleRequests.deletedCount || 0,
     },
   }, 'User account deleted'));
 });
@@ -685,6 +786,9 @@ export const getAIInsights = asyncHandler(async (req, res) => {
 export default {
   getAdminDashboard,
   getAllUsers,
+  getRoleChangeRequests,
+  approveRoleChangeRequest,
+  rejectRoleChangeRequest,
   getUserTaskDetails,
   updateUserAccount,
   sendAdminUserPasswordCode,

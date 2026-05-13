@@ -15,7 +15,10 @@ import {
   verifyEmailChange,
   updateNotificationPreferences,
   changePassword,
-  sendPasswordChangeCode
+  sendPasswordChangeCode,
+  sendRoleChangeCode,
+  requestRoleChange,
+  getOwnRoleChangeRequest
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -161,6 +164,9 @@ router.put("/notification-preferences", protect, updateNotificationPreferences);
  */
 router.post("/change-password", protect, changePassword);
 router.post("/send-password-change-code", protect, sendPasswordChangeCode);
+router.post("/send-role-change-code", protect, sendRoleChangeCode);
+router.post("/request-role-change", protect, requestRoleChange);
+router.get("/role-change-request", protect, getOwnRoleChangeRequest);
 
 /**
  * @swagger

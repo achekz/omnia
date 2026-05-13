@@ -13,6 +13,7 @@ import type {
   PresenceCalendarResponse,
   PresenceDetailResponse,
   QueryHookOptions,
+  RoleChangeRequest,
   Rule,
   Task,
   TaskQueryParams,
@@ -761,6 +762,90 @@ export function useSendSelfEmailCode() {
     mutationFn: async (data: { newEmail: string; currentPassword: string }) => {
       const response = await apiClient.post("/users/send-email-verification", data);
       return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useGetOwnRoleChangeRequest(options?: QueryHookOptions) {
+  return useQuery<RoleChangeRequest | null>({
+    queryKey: ["own-role-change-request"],
+    queryFn: async () => {
+      const response = await apiClient.get("/users/role-change-request");
+      return unwrapEntity<RoleChangeRequest | null>(response.data, "request", null);
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: null,
+  });
+}
+
+export function useSendRoleChangeCode() {
+  return useMutation({
+    mutationFn: async (data: { requestedRole: string }) => {
+      const response = await apiClient.post("/users/send-role-change-code", data);
+      return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useRequestRoleChange() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { requestedRole: string; code: string }) => {
+      const response = await apiClient.post("/users/request-role-change", data);
+      return unwrapEntity<RoleChangeRequest>(response.data, "request", {} as RoleChangeRequest);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["own-role-change-request"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useGetAdminRoleChangeRequests(status = "pending", options?: QueryHookOptions) {
+  return useQuery<RoleChangeRequest[]>({
+    queryKey: ["admin-role-change-requests", status],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/role-change-requests", { params: { status } });
+      return unwrapCollection<RoleChangeRequest>(response.data, "requests", []);
+    },
+    enabled: options?.query?.enabled ?? true,
+    refetchInterval: options?.query?.refetchInterval,
+    initialData: [],
+  });
+}
+
+export function useApproveRoleChangeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.patch(`/admin/role-change-requests/${id}/approve`);
+      return unwrapEntity<RoleChangeRequest>(response.data, "request", {} as RoleChangeRequest);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-role-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useRejectRoleChangeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const response = await apiClient.patch(`/admin/role-change-requests/${id}/reject`, { reason });
+      return unwrapEntity<RoleChangeRequest>(response.data, "request", {} as RoleChangeRequest);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-role-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
