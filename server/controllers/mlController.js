@@ -207,16 +207,6 @@ export const recommend = asyncHandler(async (req, res) => {
 export const anomaly = asyncHandler(async (req, res) => {
   let { values } = req.body;
 
-  if (!values) {
-    const records = await (await import('../models/FinancialRecord.js')).default
-      .find(req.tenantId ? { tenantId: req.tenantId } : {})
-      .sort({ date: -1 })
-      .limit(100)
-      .select('amount');
-
-    values = records.map((r) => r.amount).reverse();
-  }
-
   if (!Array.isArray(values)) {
     throw new ApiError(400, 'values array required');
   }
@@ -244,7 +234,7 @@ export const anomaly = asyncHandler(async (req, res) => {
       title: '🚨 Anomaly Detected',
       message: `Score: ${(result.anomaly_score || 0).toFixed(2)}`,
       source: 'ml',
-      actionUrl: '/finance',
+      actionUrl: '/insights',
     });
   }
 

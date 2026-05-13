@@ -13,9 +13,6 @@ const ruleConditionSchema = new Schema(
         'task.delayDays',
         'task.priorityScore',
         'task.status',
-        'finance.expensesThisMonth',
-        'finance.balanceThisMonth',
-        'finance.recordAmount',
       ],
     },
     operator: {
@@ -52,13 +49,13 @@ const ruleSchema = new Schema(
     description: { type: String, trim: true },
     trigger: {
       type: String,
-      enum: ['scheduled', 'task', 'finance'],
+      enum: ['scheduled', 'task'],
       default: 'scheduled',
       index: true,
     },
     resource: {
       type: String,
-      enum: ['task', 'finance', 'stagiaire'],
+      enum: ['task', 'stagiaire'],
       required: true,
     },
     roles: [{ type: String }],

@@ -234,33 +234,6 @@ export const validateUpdateTask = [
     .withMessage("Invalid status"),
 ];
 
-export const validateCreateFinanceRecord = [
-  body("description")
-    .optional()
-    .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage("Description must be 3-200 characters"),
-  body("amount")
-    .isFloat({ min: 0.01 })
-    .withMessage("Amount must be positive number"),
-  body("category")
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 80 })
-    .withMessage("Invalid category"),
-  body("date")
-    .optional()
-    .isISO8601()
-    .withMessage("Invalid date format"),
-  body("type")
-    .isIn(["income", "expense"])
-    .withMessage("Type must be income or expense"),
-  body("budgetLimit")
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage("Budget limit must be positive"),
-];
-
 export const validateSearch = [
   query("q")
     .trim()
@@ -276,7 +249,7 @@ export const validateSearch = [
     .withMessage("Limit must be 1-100"),
   query("sort")
     .optional()
-    .isIn(["date", "relevance", "name", "amount"])
+    .isIn(["date", "relevance", "name"])
     .withMessage("Invalid sort option"),
 ];
 

@@ -65,8 +65,8 @@ export default function AIDashboard() {
   }
 
   const suggestions = [
-    "Analyser mes ventes",
-    "Optimiser mes dépenses",
+    "Analyser mes tâches",
+    "Optimiser mon planning",
     "Gérer mon équipe",
     "Automatiser mon CRM",
   ];

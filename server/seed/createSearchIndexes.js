@@ -10,7 +10,6 @@
 import mongoose from 'mongoose';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
-import FinancialRecord from '../models/FinancialRecord.js';
 
 /**
  * Create all required text indexes for search functionality
@@ -27,23 +26,12 @@ export const createSearchIndexes = async () => {
     await User.collection.createIndex({ name: 'text', email: 'text' });
     console.log('✅ User text index created (name, email)');
 
-    // Financial Record indexes - search by description
-    await FinancialRecord.collection.createIndex({ description: 'text' });
-    console.log('✅ FinancialRecord text index created (description)');
-
     // Additional compound indexes for better performance
     await Task.collection.createIndex({ userId: 1, status: 1, priority: 1 });
     console.log('✅ Task compound index created (userId, status, priority)');
 
     await Task.collection.createIndex({ userId: 1, dueDate: 1 });
     console.log('✅ Task date index created (userId, dueDate)');
-
-    await FinancialRecord.collection.createIndex({ 
-      tenantId: 1, 
-      userId: 1, 
-      createdAt: -1 
-    });
-    console.log('✅ FinancialRecord compound index created');
 
     console.log('✅ All text indexes created successfully!');
     return true;
@@ -60,14 +48,12 @@ export const getIndexInfo = async () => {
   try {
     const taskIndexes = await Task.collection.getIndexes();
     const userIndexes = await User.collection.getIndexes();
-    const financeIndexes = await FinancialRecord.collection.getIndexes();
 
     console.log('\n📊 Current Indexes:\n');
     console.log('Task Indexes:', Object.keys(taskIndexes));
     console.log('User Indexes:', Object.keys(userIndexes));
-    console.log('Finance Indexes:', Object.keys(financeIndexes));
 
-    return { taskIndexes, userIndexes, financeIndexes };
+    return { taskIndexes, userIndexes };
   } catch (error) {
     console.error('Error fetching indexes:', error.message);
     return null;
@@ -82,7 +68,7 @@ export const dropSearchIndexes = async () => {
     console.log('🗑️  Dropping text indexes...');
 
     // Drop text indexes
-    const collections = [Task, User, FinancialRecord];
+    const collections = [Task, User];
     for (const Collection of collections) {
       const indexes = await Collection.collection.getIndexes();
       for (const [indexName, indexSpec] of Object.entries(indexes)) {

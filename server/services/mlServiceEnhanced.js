@@ -203,12 +203,11 @@ class MLServiceClient {
    * EXTRACT FEATURES
    * Get engineered features from raw data
    */
-  async extractFeatures(activityLogs, tasks, financialRecords = []) {
+  async extractFeatures(activityLogs, tasks) {
     try {
       const response = await this._requestWithRetry('/features/extract', 'POST', {
         activity_logs: activityLogs,
         tasks: tasks,
-        financial_records: financialRecords,
       });
 
       return {

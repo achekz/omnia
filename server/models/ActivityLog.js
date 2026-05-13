@@ -14,7 +14,6 @@ const activityLogSchema = new Schema(
     loginCount: { type: Number, default: 0 },
     overdueCount: { type: Number, default: 0 },
     score: { type: Number, default: 0, min: 0, max: 100 },
-    budgetSpent: { type: Number },
   },
   { timestamps: true }
 );

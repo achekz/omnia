@@ -12,7 +12,6 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   searchTasks,
   searchUsers,
-  searchFinanceRecords,
   globalSearch,
   getActivityAnalytics,
   getSuggestions
@@ -80,50 +79,6 @@ router.post('/tasks', protect, validateSearch, handleValidationErrors,
     };
     
     const results = await searchTasks(req.user.id, filters, pagination);
-    
-    res.status(200).json({
-      success: true,
-      data: results
-    });
-  })
-);
-
-/**
- * POST /api/search/finance
- * Search financial records with amount and date filters
- */
-router.post('/finance', protect, validateSearch, handleValidationErrors,
-  asyncHandler(async (req, res) => {
-    const {
-      q,
-      category,
-      minAmount,
-      maxAmount,
-      sort,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 15
-    } = req.body;
-    
-    const pagination = validatePagination(page, limit);
-    
-    const filters = {
-      q,
-      category,
-      minAmount,
-      maxAmount,
-      sort,
-      startDate,
-      endDate
-    };
-    
-    const results = await searchFinanceRecords(
-      req.user.id,
-      req.user.tenantId,
-      filters,
-      pagination
-    );
     
     res.status(200).json({
       success: true,
@@ -249,26 +204,15 @@ router.get('/export', protect,
     if (type === 'tasks') {
       const results = await searchTasks(req.user.id, {}, { skip: 0, limit: 1000 });
       data = results.tasks;
-    } else if (type === 'finance') {
-      const results = await searchFinanceRecords(req.user.id, req.user.tenantId, {}, { skip: 0, limit: 1000 });
-      data = results.records;
     }
     
     if (format === 'csv') {
       // Convert to CSV
-      let csv = type === 'tasks' 
-        ? 'Title,Status,Priority,Due Date\n'
-        : 'Category,Amount,Type,Date\n';
+      let csv = 'Title,Status,Priority,Due Date\n';
       
-      if (type === 'tasks') {
-        data.forEach(item => {
-          csv += `"${item.title}","${item.status}","${item.priority}","${item.dueDate}"\n`;
-        });
-      } else {
-        data.forEach(item => {
-          csv += `"${item.category}","${item.amount}","${item.type}","${item.createdAt}"\n`;
-        });
-      }
+      data.forEach(item => {
+        csv += `"${item.title}","${item.status}","${item.priority}","${item.dueDate}"\n`;
+      });
       
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${type}-export.csv"`);

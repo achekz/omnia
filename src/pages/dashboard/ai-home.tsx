@@ -1,20 +1,20 @@
 // Role du fichier: affiche un tableau de bord adapte au role utilisateur.
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, ChevronRight, FileText, History, Mic, Paperclip, Send, ShoppingCart, Sparkles, TrendingUp, Users } from "lucide-react";
+import { BarChart3, ChevronRight, FileText, History, Mic, Paperclip, Send, Sparkles, Target, Users } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import apiClient from "@/lib/api-client";
 
 const QUICK_CHIPS = [
-  { label: "Ventes", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+  { label: "Tasks", icon: <Target className="w-3.5 h-3.5" /> },
   { label: "Employee", icon: <Users className="w-3.5 h-3.5" /> },
-  { label: "CRM", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
+  { label: "CRM", icon: <Users className="w-3.5 h-3.5" /> },
   { label: "Analyses", icon: <BarChart3 className="w-3.5 h-3.5" /> },
 ];
 
 const SUGGESTIONS = [
-  "Analyser mes ventes",
-  "Optimiser mes dépenses",
+  "Analyser mes tâches",
+  "Optimiser mon planning",
   "Gérer mon équipe",
   "Automatiser mon CRM",
 ];
@@ -29,7 +29,7 @@ export default function AIHome() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeModule, setActiveModule] = useState("tresorerie");
+  const [activeModule, setActiveModule] = useState("workspace");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Role: Traite une action utilisateur.

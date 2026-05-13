@@ -29,13 +29,13 @@ const faqItems: FAQItem[] = [
     category: "Getting Started",
     question: "What are the different profile types?",
     answer:
-      "Stagiaire: For assigned tasks, presence and performance tracking. Employee: For performance tracking and task management. Company: For team management and financial oversight. Cabinet: For professional service providers.",
+      "Stagiaire: For assigned tasks, presence and performance tracking. Employee: For performance tracking and task management. Company: For team management and operational oversight. Cabinet: For professional service providers.",
   },
   {
     category: "Features",
     question: "What is AI Insight?",
     answer:
-      "AI Insight is our machine learning feature that analyzes your data to provide predictive insights, anomaly detection in finances, and personalized recommendations to help you make better decisions.",
+      "AI Insight is our machine learning feature that analyzes your data to provide predictive insights, anomaly detection, and personalized recommendations to help you make better decisions.",
   },
   {
     category: "Security",
@@ -54,12 +54,6 @@ const faqItems: FAQItem[] = [
     question: "What is a private account?",
     answer:
       "A private account means only people you approve can see your profile and activity. Public accounts can be viewed by anyone. You can toggle this in Settings > Privacy.",
-  },
-  {
-    category: "Privacy",
-    question: "Who can see my financial information?",
-    answer:
-      "Only you can see your financial data by default. If you're part of a company, managers can see relevant financial data based on your role and permissions set by your administrator.",
   },
   {
     category: "Troubleshooting",

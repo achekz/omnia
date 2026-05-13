@@ -2,7 +2,6 @@
 import Rule from '../models/Rule.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
-import FinancialRecord from '../models/FinancialRecord.js';
 import * as notifService from './notifService.js';
 import { normalizeRole } from '../utils/roleNormalization.js';
 
@@ -56,7 +55,6 @@ function buildRedirectTarget(rule, context) {
 
 // Role: Decrit la logique defaultRedirectForResource.
 function defaultRedirectForResource(resource) {
-  if (resource === 'finance') return '/finance';
   return '/tasks';
 }
 
@@ -138,26 +136,6 @@ async function metricValue(rule, condition, context) {
     return context.task?.status;
   }
 
-  if (condition.metric === 'finance.recordAmount') {
-    return context.record?.amount || 0;
-  }
-
-  if (condition.metric === 'finance.expensesThisMonth' || condition.metric === 'finance.balanceThisMonth') {
-    const start = new Date();
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-
-    const financeFilter = { date: { $gte: start } };
-    if (context.tenantId) financeFilter.tenantId = context.tenantId;
-
-    const records = await FinancialRecord.find(financeFilter).select('type amount');
-
-    const income = records.filter((record) => record.type === 'income').reduce((sum, record) => sum + record.amount, 0);
-    const expense = records.filter((record) => record.type === 'expense').reduce((sum, record) => sum + record.amount, 0);
-
-    return condition.metric === 'finance.expensesThisMonth' ? expense : income - expense;
-  }
-
   return undefined;
 }
 
@@ -198,22 +176,6 @@ async function contextsForRule(rule, scopeTenantId) {
     }));
   }
 
-  if (rule.resource === 'finance') {
-    const records = await FinancialRecord.find(baseFilter).sort({ createdAt: -1 }).limit(100);
-    const tenants = [...new Set(records.map((record) => record.tenantId?.toString()).filter(Boolean))];
-    const adminsByTenant = new Map();
-
-    for (const tenantId of tenants) {
-      adminsByTenant.set(tenantId, await getTenantAdmins(tenantId));
-    }
-
-    return records.map((record) => ({
-      record,
-      tenantId: record.tenantId,
-      user: adminsByTenant.get(record.tenantId?.toString())?.[0],
-    }));
-  }
-
   return [];
 }
 
@@ -231,10 +193,6 @@ class RuleEngine {
       Rule.updateMany(
         { tenantId: { $exists: false }, name: 'Task delay alert' },
         { $set: { redirectTarget: '/tasks/{taskId}', 'action.redirectTarget': '/tasks/{taskId}', 'action.actionUrl': '/tasks/{taskId}' } },
-      ),
-      Rule.updateMany(
-        { tenantId: { $exists: false }, name: 'High expense anomaly guard' },
-        { $set: { redirectTarget: '/finance', 'action.redirectTarget': '/finance', 'action.actionUrl': '/finance' } },
       ),
     ]);
 
@@ -256,25 +214,6 @@ class RuleEngine {
           actionUrl: '/tasks/{taskId}',
         },
         redirectTarget: '/tasks/{taskId}',
-        cooldownMinutes: 720,
-      },
-      {
-        name: 'High expense anomaly guard',
-        description: 'IF monthly expenses are high THEN notify tenant admins',
-        trigger: 'scheduled',
-        resource: 'finance',
-        roles: ['admin', 'comptable'],
-        conditions: [{ metric: 'finance.expensesThisMonth', operator: 'gt', value: 10000 }],
-        action: {
-          type: 'notify',
-          target: 'tenantAdmins',
-          severity: 'danger',
-          title: 'Budget alert',
-          message: 'Monthly expenses exceeded the configured safety threshold.',
-          redirectTarget: '/finance',
-          actionUrl: '/finance',
-        },
-        redirectTarget: '/finance',
         cooldownMinutes: 720,
       },
     ];

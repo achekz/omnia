@@ -15,10 +15,7 @@ import rateLimiter from './middleware/rateLimiter.js';
 import requireDatabase from './middleware/requireDatabase.js';
 import { startRecommendationScheduler } from './services/schedulerService.js';
 import { protect } from './middleware/auth.js';
-import { tenantIsolation } from './middleware/tenant.js';
-import { authorize } from './middleware/rbac.js';
 import { chatWithAI } from './controllers/aiController.js';
-import { getAnomalies } from './controllers/financeController.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -28,7 +25,6 @@ import attendanceRoutes from './routes/attendance.js';
 import analyticsRoutes from './routes/analytics.js';
 import aiRoutes from './routes/ai.routes.js';
 import dashboardRoutes from './routes/dashboard.js';
-import financeRoutes from './routes/finance.js';
 import insightRoutes from './routes/insights.js';
 import mlRoutes from './routes/ml.js';
 import notificationRoutes from './routes/notifications.js';
@@ -168,9 +164,7 @@ app.use('/api/analytics', requireDatabase, analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.post('/api/ai-assistant', requireDatabase, protect, chatWithAI);
 app.use('/api/dashboard', requireDatabase, dashboardRoutes);
-app.use('/api/finance', requireDatabase, financeRoutes);
 app.use('/api/insights', requireDatabase, insightRoutes);
-app.get('/api/anomalies', requireDatabase, protect, tenantIsolation, authorize('admin', 'comptable'), getAnomalies);
 app.use('/api/ml', requireDatabase, mlRoutes);
 app.use('/api/notifications', requireDatabase, notificationRoutes);
 app.use('/api/tasks', requireDatabase, taskRoutes);

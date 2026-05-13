@@ -18,7 +18,6 @@ export const buildAdvancedPipeline = (filters, options = {}) => {
     tenantId,
     searchTerm,
     dateRange = {},
-    amountRange = {},
     sortBy = 'date',
     limit = 15,
     skip = 0
@@ -51,17 +50,6 @@ export const buildAdvancedPipeline = (filters, options = {}) => {
     }
   }
 
-  // Stage 4: Amount range filtering
-  if (amountRange.min || amountRange.max) {
-    matchStage.amount = {};
-    if (amountRange.min) {
-      matchStage.amount.$gte = parseFloat(amountRange.min);
-    }
-    if (amountRange.max) {
-      matchStage.amount.$lte = parseFloat(amountRange.max);
-    }
-  }
-
   // Add match stage if there are any conditions
   if (Object.keys(matchStage).length > 0) {
     pipeline.unshift({ $match: matchStage });
@@ -90,8 +78,6 @@ const buildSortStage = (sortBy, hasSearch = false) => {
     'date_asc': { createdAt: 1 },
     'relevance': hasSearch ? { score: -1 } : { createdAt: -1 },
     'priority': { priority: -1 },
-    'amount': { amount: -1 },
-    'amount_asc': { amount: 1 },
     'title': { title: 1 },
     'status': { status: 1 },
     'popular': { views: -1 }
@@ -126,48 +112,11 @@ export const buildAnalyticsPipeline = (userId, tenantId, groupBy = 'day') => {
           }
         },
         count: { $sum: 1 },
-        totalAmount: { $sum: '$amount' },
-        avgAmount: { $avg: '$amount' },
-        minAmount: { $min: '$amount' },
-        maxAmount: { $max: '$amount' }
+        count: { $sum: 1 }
       }
     },
     {
       $sort: { _id: -1 }
-    }
-  ];
-};
-
-/**
- * Build category aggregation for finance records
- */
-// Role: Construit des donnees derivees.
-export const buildCategoryAnalyticsPipeline = (userId, tenantId) => {
-  return [
-    {
-      $match: { userId, tenantId }
-    },
-    {
-      $group: {
-        _id: '$category',
-        total: { $sum: '$amount' },
-        count: { $sum: 1 },
-        avgAmount: { $avg: '$amount' },
-        latestDate: { $max: '$createdAt' }
-      }
-    },
-    {
-      $sort: { total: -1 }
-    },
-    {
-      $project: {
-        _id: 1,
-        category: '$_id',
-        total: 1,
-        count: 1,
-        avgAmount: 1,
-        latestDate: 1
-      }
     }
   ];
 };
@@ -242,7 +191,7 @@ export const buildFacetedSearchPipeline = (searchTerm, userId) => {
  * Build time-series aggregation
  */
 // Role: Construit des donnees derivees.
-export const buildTimeSeriesPipeline = (userId, tenantId, metric = 'count', days = 30) => {
+export const buildTimeSeriesPipeline = (userId, tenantId, days = 30) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
@@ -257,9 +206,7 @@ export const buildTimeSeriesPipeline = (userId, tenantId, metric = 'count', days
     {
       $group: {
         _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-        value: metric === 'amount' 
-          ? { $sum: '$amount' }
-          : { $sum: 1 }
+        value: { $sum: 1 }
       }
     },
     {
@@ -272,7 +219,7 @@ export const buildTimeSeriesPipeline = (userId, tenantId, metric = 'count', days
  * Build comparison aggregation (compare periods)
  */
 // Role: Construit des donnees derivees.
-export const buildComparisonPipeline = (userId, tenantId, metric = 'amount', periodDays = 30) => {
+export const buildComparisonPipeline = (userId, tenantId, periodDays = 30) => {
   const now = new Date();
   const currentStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
   const previousStart = new Date(currentStart.getTime() - periodDays * 24 * 60 * 60 * 1000);
@@ -292,9 +239,7 @@ export const buildComparisonPipeline = (userId, tenantId, metric = 'amount', per
           {
             $group: {
               _id: null,
-              value: metric === 'amount' 
-                ? { $sum: '$amount' }
-                : { $sum: 1 },
+              value: { $sum: 1 },
               count: { $sum: 1 }
             }
           }
@@ -310,9 +255,7 @@ export const buildComparisonPipeline = (userId, tenantId, metric = 'amount', per
           {
             $group: {
               _id: null,
-              value: metric === 'amount' 
-                ? { $sum: '$amount' }
-                : { $sum: 1 },
+              value: { $sum: 1 },
               count: { $sum: 1 }
             }
           }
@@ -326,7 +269,6 @@ export default {
   buildAdvancedPipeline,
   buildSortStage,
   buildAnalyticsPipeline,
-  buildCategoryAnalyticsPipeline,
   buildStatusDistributionPipeline,
   buildFacetedSearchPipeline,
   buildTimeSeriesPipeline,

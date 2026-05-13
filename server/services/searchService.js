@@ -8,7 +8,6 @@
 
 import Task from '../models/Task.js';
 import User from '../models/User.js';
-import FinancialRecord from '../models/FinancialRecord.js';
 import ActivityLog from '../models/ActivityLog.js';
 
 /**
@@ -44,17 +43,6 @@ export const buildQuery = (filters) => {
     }
   }
   
-  // Amount range (for finance)
-  if (filters.minAmount || filters.maxAmount) {
-    query.amount = {};
-    if (filters.minAmount) {
-      query.amount.$gte = parseFloat(filters.minAmount);
-    }
-    if (filters.maxAmount) {
-      query.amount.$lte = parseFloat(filters.maxAmount);
-    }
-  }
-  
   // Category
   if (filters.category) {
     query.category = filters.category;
@@ -84,8 +72,6 @@ export const buildSort = (sortBy) => {
     'relevance': { score: { $meta: 'textScore' } },
     'priority': { priority: -1 },
     'status': { status: 1 },
-    'amount': { amount: -1 },
-    'amount_asc': { amount: 1 },
     'name': { name: 1 },
     'popular': { views: -1 }
   };
@@ -167,54 +153,6 @@ export const searchUsers = async (filters, pagination) => {
 };
 
 /**
- * Search Financial Records with advanced filtering
- */
-// Role: Decrit la logique searchFinanceRecords.
-export const searchFinanceRecords = async (userId, tenantId, filters, pagination) => {
-  const query = buildQuery({
-    ...filters,
-    userId,
-    tenantId
-  });
-  
-  const sort = buildSort(filters.sort || 'date');
-  const { skip, limit } = pagination;
-  
-  const [records, total] = await Promise.all([
-    FinancialRecord.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    
-    FinancialRecord.countDocuments(query)
-  ]);
-  
-  // Calculate totals by category
-  const categoryTotals = await FinancialRecord.aggregate([
-    { $match: query },
-    {
-      $group: {
-        _id: '$category',
-        total: { $sum: '$amount' },
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  
-  return {
-    records,
-    categoryTotals,
-    pagination: {
-      total,
-      page: Math.floor(skip / limit) + 1,
-      limit,
-      pages: Math.ceil(total / limit)
-    }
-  };
-};
-
-/**
  * Full-text search across multiple collections
  */
 // Role: Decrit la logique globalSearch.
@@ -222,7 +160,7 @@ export const globalSearch = async (userId, tenantId, searchQuery, pagination) =>
   const textSearchQuery = { $text: { $search: searchQuery } };
   const { skip, limit } = pagination;
   
-  const [tasks, users, records] = await Promise.all([
+  const [tasks, users] = await Promise.all([
     Task.find({ ...textSearchQuery, userId })
       .select('title description status priority')
       .skip(skip)
@@ -236,21 +174,14 @@ export const globalSearch = async (userId, tenantId, searchQuery, pagination) =>
       .limit(limit)
       .sort({ score: { $meta: 'textScore' } })
       .lean(),
-    
-    FinancialRecord.find({ ...textSearchQuery, tenantId })
-      .skip(skip)
-      .limit(limit)
-      .sort({ score: { $meta: 'textScore' } })
-      .lean()
   ]);
   
   return {
     results: {
       tasks,
-      users,
-      records
+      users
     },
-    total: tasks.length + users.length + records.length,
+    total: tasks.length + users.length,
     pagination: {
       page: Math.floor(skip / limit) + 1,
       limit

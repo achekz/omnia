@@ -13,7 +13,6 @@ import ForgotPasswordPage from "./pages/auth/forgot-password";
 import VerifyResetCodePage from "./pages/auth/verify-reset-code";
 import ResetPasswordPage from "./pages/auth/reset-password";
 import AdminDashboard from "./pages/AdminDashboard";
-import AccountantDashboard from "./pages/AccountantDashboard";
 import DashboardHub from "./pages/dashboard";
 import CompanyDashboard from "./pages/dashboard/company";
 import CabinetDashboard from "./pages/dashboard/cabinet";
@@ -25,7 +24,6 @@ import PresencePage from "./pages/presence";
 import MyTasksPage from "./pages/tasks/my-tasks";
 import TaskDetailsPage from "./pages/tasks/task-details";
 import SettingsPage from "./pages/settings";
-import BudgetPage from "./pages/budget/budget";
 import NotificationsPage from "./pages/notifications";
 import RuleEnginePage from "./pages/rules";
 import MyPerformancePage from "./pages/performance/my-performance";
@@ -37,7 +35,6 @@ import AdminTasksPage from "./pages/admin/tasks";
 import AdminRecommendationsPage from "./pages/admin/recommendations";
 import RHEmployeesPage from "./pages/rh/employes";
 import PaieDashboardPage from "./pages/paie/dashboard";
-import FinanceReportsPage from "./pages/reports/finance-reports";
 import HelpCenterPage from "./pages/help/center";
 import EmployeeSectionPage from "./pages/employee/section";
 
@@ -127,9 +124,6 @@ const routes: AppRoute[] = [
 
   { path: "/stagiaire/dashboard", component: StagiaireDashboard, protected: true, roles: ["stagiaire"] },
 
-  { path: "/dashboard/accountant", component: AccountantDashboard, protected: true },
-  { path: "/comptable/dashboard", component: AccountantDashboard, protected: true, roles: ["comptable"] },
-
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
@@ -151,7 +145,6 @@ const routes: AppRoute[] = [
   { path: "/tasks", component: MyTasksPage, protected: true },
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/profile", component: SettingsPage, protected: true },
-  { path: "/finance", component: BudgetPage, protected: true },
   { path: "/notifications", component: NotificationsPage, protected: true },
   { path: "/performance", component: MyPerformancePage, protected: true },
   { path: "/rh/employes", component: RHEmployeesPage, protected: true },
@@ -165,8 +158,6 @@ const routes: AppRoute[] = [
   { path: "/employee/projects", component: EmployeeSectionPage, protected: true },
 
   { path: "/paie/dashboard", component: PaieDashboardPage, protected: true },
-  { path: "/reports", component: FinanceReportsPage, protected: true, roles: ["comptable", "admin"] },
-  { path: "/comptable/reports", component: FinanceReportsPage, protected: true, roles: ["comptable"] },
   { path: "/help", component: HelpCenterPage, protected: true },
 ];
 

@@ -217,26 +217,10 @@ export interface Notification {
   createdAt: string;
 }
 
-export interface FinancialRecord {
-  _id?: string;
-  id?: string;
-  clientName?: string;
-  type: "income" | "expense";
-  amount: number;
-  category?: string;
-  description?: string;
-  date: string;
-  isAnomaly?: boolean;
-  anomalyScore?: number;
-  budgetLimit?: number;
-}
-
 export interface DashboardChartPoint {
   day?: string;
   month?: string;
   value?: number;
-  income?: number;
-  expense?: number;
 }
 
 export interface DashboardStats {
@@ -247,8 +231,6 @@ export interface DashboardStats {
   completedTasks?: number;
   overdueTasks?: number;
   streak?: number;
-  balance?: number;
-  anomalyCount?: number;
   weeklyActivity?: DashboardChartPoint[];
   byMonth?: DashboardChartPoint[];
 }
@@ -420,46 +402,10 @@ export interface AnalyticsScore {
   }>;
 }
 
-export interface FinanceSummary {
-  totalIncome?: number;
-  totalExpense?: number;
-  balance?: number;
-  anomalyCount?: number;
-  byMonth?: DashboardChartPoint[];
-  byCategory?: Array<{
-    category: string;
-    total: number;
-    budget?: number | null;
-    overBudget?: boolean;
-  }>;
-  recentAnomalies?: FinancialRecord[];
-}
-
-export interface FinanceReport {
-  generatedAt?: string;
-  period?: {
-    startDate?: string | null;
-    endDate?: string | null;
-  };
-  summary: FinanceSummary;
-  totalRecords: number;
-  topCategory?: {
-    category: string;
-    total: number;
-    budget?: number | null;
-    overBudget?: boolean;
-  } | null;
-  anomalyRate: number;
-  records: FinancialRecord[];
-}
-
 export type RuleMetric =
   | "task.delayDays"
   | "task.priorityScore"
-  | "task.status"
-  | "finance.expensesThisMonth"
-  | "finance.balanceThisMonth"
-  | "finance.recordAmount";
+  | "task.status";
 
 export type RuleOperator = "gt" | "gte" | "lt" | "lte" | "eq" | "neq" | "in" | "contains";
 
@@ -484,8 +430,8 @@ export interface Rule {
   id?: string;
   name: string;
   description?: string;
-  trigger: "scheduled" | "task" | "finance";
-  resource: "task" | "finance" | "stagiaire";
+  trigger: "scheduled" | "task";
+  resource: "task" | "stagiaire";
   roles?: string[];
   conditions: RuleCondition[];
   action: RuleAction;

@@ -26,7 +26,7 @@ function getRoleInstruction(role) {
     case "employee":
       return "User role is employee. Answer like a productivity assistant. Focus on execution, organization, and efficiency.";
     case "comptable":
-      return "User role is comptable. Answer like a finance assistant. Be precise, practical, and business-focused.";
+      return "User role is comptable. Answer like a productivity assistant. Be precise, practical, and business-focused.";
     case "stagiaire":
       return "User role is stagiaire. Answer like a productivity assistant for guided execution, learning, and follow-through.";
     default:

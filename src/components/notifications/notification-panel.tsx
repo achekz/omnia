@@ -1,7 +1,7 @@
 // Role du fichier: fournit un composant React reutilisable.
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { AlertTriangle, Bell, Bot, CheckCheck, Circle, Coins, Loader2, Trash2, X } from "lucide-react";
+import { AlertTriangle, Bell, Bot, CheckCheck, Circle, Loader2, Trash2, X } from "lucide-react";
 import {
   useClearReadNotifications,
   useGetNotifications,
@@ -12,7 +12,7 @@ import {
 import type { Notification, TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type NotificationCategory = "all" | "ml" | "tasks" | "finance";
+type NotificationCategory = "all" | "ml" | "tasks";
 
 interface NotificationPanelProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ export function getNotificationCategory(notification: Notification): Notificatio
   const text = `${notification.title} ${notification.message} ${notification.actionUrl || ""}`.toLowerCase();
 
   if (source === "ml" || text.includes("risk") || text.includes("anomaly") || text.includes("ai")) return "ml";
-  if (text.includes("finance") || text.includes("financial") || text.includes("budget") || text.includes("expense")) return "finance";
   if (text.includes("task") || text.includes("/tasks") || source === "rule_engine") return "tasks";
   return "all";
 }
@@ -141,7 +140,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 p-8 text-center">
               <Bell className="mb-3 h-10 w-10 text-slate-300" />
               <p className="font-semibold text-slate-900">No notifications here</p>
-              <p className="mt-1 text-sm text-slate-500">New ML, task and finance alerts will appear in this history.</p>
+              <p className="mt-1 text-sm text-slate-500">New ML and task alerts will appear in this history.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -190,7 +189,6 @@ function NotificationCard({
   const categoryMeta = {
     ml: { label: "Alerte ML", icon: <Bot className="h-4 w-4" />, tone: "bg-violet-50 text-violet-700 border-violet-100" },
     tasks: { label: "Task", icon: <Circle className="h-4 w-4" />, tone: "bg-sky-50 text-sky-700 border-sky-100" },
-    finance: { label: "Finance", icon: <Coins className="h-4 w-4" />, tone: "bg-emerald-50 text-emerald-700 border-emerald-100" },
     all: { label: "Système", icon: <Bell className="h-4 w-4" />, tone: "bg-slate-50 text-slate-700 border-slate-100" },
   }[category];
 

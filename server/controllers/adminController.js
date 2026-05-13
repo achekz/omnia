@@ -3,7 +3,6 @@ import User from '../models/User.js';
 import Organization from '../models/Organization.js';
 import ActivityLog from '../models/ActivityLog.js';
 import Attendance from '../models/Attendance.js';
-import FinancialRecord from '../models/FinancialRecord.js';
 import MLPrediction from '../models/MLPrediction.js';
 import Notification from '../models/Notification.js';
 import Task from '../models/Task.js';
@@ -214,20 +213,17 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
 export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
 
-  const [records, tasks, inactiveUsers] = await Promise.all([
-    FinancialRecord.find(scopeFilter).sort({ date: -1 }).limit(100).select('amount'),
+  const [tasks, inactiveUsers] = await Promise.all([
     Task.find(scopeFilter).sort({ createdAt: -1 }).limit(200).select('status priority delayDays priorityScore'),
     User.countDocuments({ ...scopeFilter, isActive: false }),
   ]);
 
-  const values = records.length
-    ? records.map((record) => record.amount).reverse()
-    : [
-        tasks.filter((task) => task.status === 'overdue').length,
-        tasks.filter((task) => task.priority === 'high' || task.priority === 'critical').length,
-        inactiveUsers,
-        tasks.reduce((sum, task) => sum + (task.delayDays || 0), 0),
-      ];
+  const values = [
+    tasks.filter((task) => task.status === 'overdue').length,
+    tasks.filter((task) => task.priority === 'high' || task.priority === 'critical').length,
+    inactiveUsers,
+    tasks.reduce((sum, task) => sum + (task.delayDays || 0), 0),
+  ];
 
   const result = await mlService.detectAnomaly(values);
   const fallbackScore = Math.min(1, (values.reduce((sum, value) => sum + Number(value || 0), 0) / Math.max(1, values.length)) / 100);
@@ -238,7 +234,7 @@ export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
     userId: req.user._id,
     tenantId: req.user?.tenantId || req.tenantId || null,
     modelType: 'anomaly',
-    input: { values, scope: records.length ? 'finance' : 'system' },
+    input: { values, scope: 'system' },
     output: { ...result, anomaly_score: anomalyScore, source: result.fallback ? 'local-fallback' : 'ml-service' },
     isAnomaly,
     riskScore: anomalyScore,
@@ -251,7 +247,7 @@ export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
       message: `OmniAI detected a global anomaly score of ${anomalyScore.toFixed(2)}.`,
       source: 'ml',
       actionUrl: '/admin/dashboard',
-      metadata: { predictionId: saved._id.toString(), scope: records.length ? 'finance' : 'system' },
+      metadata: { predictionId: saved._id.toString(), scope: 'system' },
     });
   }
 

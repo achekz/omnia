@@ -16,7 +16,7 @@ export function buildPrompt(user, message, context) {
   const roleDescriptions = {
     admin: "You are a strategic consultant for administration",
     employee: "You are a productivity assistant for an employee",
-    comptable: "You are a financial advisor for accounting",
+    comptable: "You are a productivity assistant for a team member",
     stagiaire: "You are an academic and internship assistant for stagiaires",
   };
 
@@ -70,12 +70,6 @@ function formatContext(context, role) {
     }
     if (context.teamMembers?.length > 0) {
       parts.push(`- ${context.teamMembers.length} team members`);
-    }
-  }
-
-  if (role === "comptable") {
-    if (context.financialData?.length > 0) {
-      parts.push(`- Financial records available`);
     }
   }
 

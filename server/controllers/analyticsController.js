@@ -60,14 +60,13 @@ export const getTeamAnalytics = asyncHandler(async (req, res) => {
 // POST /api/analytics/log
 // Role: Decrit la logique logActivity.
 export const logActivity = asyncHandler(async (req, res) => {
-  const { tasksCompleted, activeMinutes, loginEvent, budgetSpent } = req.body;
+  const { tasksCompleted, activeMinutes, loginEvent } = req.body;
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
   const update = { $setOnInsert: { tenantId: req.tenantId } };
   if (tasksCompleted) update.$inc = { ...(update.$inc || {}), tasksCompleted };
   if (activeMinutes) update.$inc = { ...(update.$inc || {}), activeMinutes };
   if (loginEvent) update.$inc = { ...(update.$inc || {}), loginCount: 1 };
-  if (budgetSpent !== undefined) update.$set = { ...update.$set, budgetSpent };
 
   const log = await ActivityLog.findOneAndUpdate(
     { userId: req.user._id, date: today },

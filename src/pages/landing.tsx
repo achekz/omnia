@@ -18,7 +18,7 @@ export default function LandingPage() {
   const features = [
     {
       title: "Machine Learning Prédictif",
-      desc: "Anticipez vos ventes et détectez les anomalies financières avant qu'elles n'arrivent.",
+      desc: "Anticipez les risques opérationnels et détectez les anomalies avant qu'elles n'arrivent.",
       icon: <Zap className="w-6 h-6 text-white" />,
     },
     {
@@ -51,7 +51,7 @@ export default function LandingPage() {
   const profiles = [
     {
       title: "Entreprises",
-      desc: "Pilotez vos opérations, suivez la trésorerie et gérez votre équipe efficacement.",
+      desc: "Pilotez vos opérations, suivez l'activité et gérez votre équipe efficacement.",
       icon: <Building2 className="w-8 h-8 text-purple-600" />,
     },
     {
@@ -66,7 +66,7 @@ export default function LandingPage() {
     },
     {
       title: "Étudiants",
-      desc: "Suivez votre budget, vos candidatures et organisez votre emploi du temps.",
+      desc: "Suivez vos tâches, vos candidatures et organisez votre emploi du temps.",
       icon: <BookOpen className="w-8 h-8 text-pink-600" />,
     },
   ];

@@ -50,7 +50,6 @@ def recommend_endpoint():
         elif profile == 'admin' or profile == 'comptable':
             recs = [
                 "Review outstanding pending approvals to unblock your team.",
-                "Check financial anomaly reports generated in the last 24h.",
                 "Schedule a quick 15-minute sync with underperforming employees."
             ]
         else: # employee

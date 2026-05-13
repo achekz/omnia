@@ -157,30 +157,6 @@ class FeatureEngineering:
         }
 
     @staticmethod
-    def extract_finance_features(records: List[Dict]) -> Dict[str, float]:
-        """Extract features from financial records"""
-        if not records:
-            return {
-                'total_records': 0.0,
-                'total_spending': 0.0,
-                'avg_transaction': 0.0,
-                'spending_variance': 0.0,
-                'spending_trend': 0.0,
-            }
-
-        amounts = [r.get('amount', 0) for r in records]
-        total_spending = sum(amounts)
-
-        return {
-            'total_records': float(len(records)),
-            'total_spending': float(total_spending),
-            'avg_transaction': float(np.mean(amounts)) if amounts else 0.0,
-            'spending_variance': float(np.var(amounts)) if amounts else 0.0,
-            'max_transaction': float(max(amounts)) if amounts else 0.0,
-            'min_transaction': float(min(amounts)) if amounts else 0.0,
-        }
-
-    @staticmethod
     def normalize_features(features: Dict[str, float]) -> Dict[str, float]:
         """Normalize features to 0-1 range"""
         normalized = {}
@@ -193,7 +169,6 @@ class FeatureEngineering:
             'total_login_count': (0, 30),
             'performance_score': (0, 100),
             'missed_deadline_ratio': (0, 1),
-            'total_spending': (0, 100000),
         }
 
         for key, value in features.items():

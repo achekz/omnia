@@ -40,10 +40,14 @@ export async function getContext(user) {
     }
 
     if (role === "comptable") {
+      const tasks = await Task.find({ assignedTo: user._id }).limit(5).catch(() => []);
+      const logs = await ActivityLog.find({ userId: user._id }).limit(5).catch(() => []);
+
       return {
         userType: "comptable",
         userRole: role,
-        message: "Financial data and client information available",
+        tasks: tasks || [],
+        activity: logs || [],
         timestamp: new Date(),
       };
     }

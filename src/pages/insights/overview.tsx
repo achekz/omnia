@@ -66,7 +66,7 @@ export default function InsightOverviewPage() {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Aperçu de l'analyse automatique</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{snapshot?.summary || "The system will generate an analysis from tasks, attendance, finance and activity logs."}</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{snapshot?.summary || "The system will generate an analysis from tasks, attendance, and activity logs."}</p>
             </div>
             <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">
               {snapshot?.createdAt ? `Generated ${new Date(snapshot.createdAt).toLocaleString()}` : isFetching ? "Loading..." : "No snapshot yet"}

@@ -12,9 +12,6 @@ const metricOptions: { value: RuleMetric; label: string }[] = [
   { value: "task.delayDays", label: "Task delay days" },
   { value: "task.priorityScore", label: "Task priority score" },
   { value: "task.status", label: "Task status" },
-  { value: "finance.expensesThisMonth", label: "Monthly expenses" },
-  { value: "finance.balanceThisMonth", label: "Monthly balance" },
-  { value: "finance.recordAmount", label: "Transaction amount" },
 ];
 
 const operatorOptions: { value: RuleOperator; label: string }[] = [
@@ -143,7 +140,7 @@ export default function RuleEnginePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">Automation</p>
             <h1 className="mt-2 text-3xl font-display font-bold text-gray-950">Rule Engine</h1>
             <p className="mt-2 max-w-2xl text-gray-500">
-              Create IF/THEN rules that automatically trigger notifications for task delays, budget alerts and operational risks.
+              Create IF/THEN rules that automatically trigger notifications for task delays and operational risks.
             </p>
           </div>
         </div>
@@ -210,7 +207,6 @@ export default function RuleEnginePage() {
                   <select value={form.trigger} onChange={(event) => setForm({ ...form, trigger: event.target.value as Rule["trigger"] })} className="form-input">
                     <option value="scheduled">Scheduled</option>
                     <option value="task">Task</option>
-                    <option value="finance">Finance</option>
                   </select>
                 </Field>
                 <Field label="Resource">
@@ -221,16 +217,11 @@ export default function RuleEnginePage() {
                       setForm({
                         ...form,
                         resource,
-                        action: {
-                          ...form.action,
-                          target: resource === "finance" && form.action.target === "assignedUser" ? "creator" : form.action.target,
-                        },
                       });
                     }}
                     className="form-input"
                   >
                     <option value="task">Task</option>
-                    <option value="finance">Finance</option>
                     <option value="stagiaire">Stagiaire</option>
                   </select>
                 </Field>

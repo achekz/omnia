@@ -2,7 +2,6 @@
 const canonicalRoles = ["admin", "employee", "stagiaire", "comptable"];
 const legacyRoleAliases = {
   accountant: "comptable",
-  accounting: "comptable",
   company_admin: "admin",
   cabinet_admin: "admin",
   manager: "admin",

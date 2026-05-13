@@ -29,12 +29,6 @@ export const createDatabaseIndexes = async () => {
     await mongoose.model('Task').collection.createIndex({ assignedTo: 1 });
     console.log('✅ Task indexes created');
 
-    // FinancialRecord indexes
-    await mongoose.model('FinancialRecord').collection.createIndex({ userId: 1, createdAt: -1 });
-    await mongoose.model('FinancialRecord').collection.createIndex({ tenantId: 1, category: 1 });
-    await mongoose.model('FinancialRecord').collection.createIndex({ amount: 1 });
-    console.log('✅ FinancialRecord indexes created');
-
     // ActivityLog indexes
     await mongoose.model('ActivityLog').collection.createIndex({ userId: 1, date: -1 });
     await mongoose.model('ActivityLog').collection.createIndex({ tenantId: 1 });
@@ -60,7 +54,6 @@ export const selectFields = {
   user: '-password -refreshTokens',
   userPublic: 'name email avatar role',
   task: 'title description status priority dueDate assignedTo',
-  finance: 'amount category type description createdAt',
   activityLog: 'activeMinutes tasksCompleted loginCount date'
 };
 

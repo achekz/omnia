@@ -50,7 +50,6 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         });
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
         queryClient.invalidateQueries({ queryKey: ['ml-insights'] });
-        queryClient.invalidateQueries({ queryKey: ['finance-summary'] });
         toast({
           title: notif.title,
           description: notif.message,

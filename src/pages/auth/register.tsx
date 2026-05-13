@@ -28,7 +28,7 @@ interface PasswordState {
 
 const roleOptions: Array<{ value: UserRole; label: string; description: string }> = [
   { value: "employee", label: "Employee", description: "Tasks, productivity, and workplace insights" },
-  { value: "comptable", label: "Comptable", description: "Financial operations and accounting workflows" },
+  { value: "comptable", label: "Comptable", description: "Tasks, productivity, and workplace insights" },
   { value: "stagiaire", label: "Stagiaire", description: "Training tasks, supervision, and onboarding support" },
 ];
 

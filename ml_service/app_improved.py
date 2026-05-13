@@ -401,12 +401,10 @@ def extract_features():
 
     activity_logs = data.get('activity_logs', [])
     tasks = data.get('tasks', [])
-    records = data.get('financial_records', [])
 
     features = {}
     features.update(FeatureEngineering.extract_activity_features(activity_logs))
     features.update(FeatureEngineering.extract_task_features(tasks))
-    features.update(FeatureEngineering.extract_finance_features(records))
 
     return jsonify({
         'status': 'success',

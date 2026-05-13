@@ -18,7 +18,6 @@ export const ROLE_ALIASES: Record<string, UserRole> = {
   hr: "employee",
   intern: "stagiaire",
   accountant: "comptable",
-  accounting: "comptable",
 };
 
 export const ROLE_REDIRECTS: Record<UserRole, string> = {

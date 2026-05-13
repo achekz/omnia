@@ -90,12 +90,6 @@ export const createRateLimiter = (type = 'general', options = {}) => {
       windowMs: 24 * 60 * 60 * 1000,
       maxRequests: 20,
       keyGenerator: (req) => `${req.user?._id}:ml`
-    },
-    // Finance: 50 requests per hour per user
-    'finance': {
-      windowMs: 60 * 60 * 1000,
-      maxRequests: 50,
-      keyGenerator: (req) => `${req.user?._id}:finance`
     }
   };
 

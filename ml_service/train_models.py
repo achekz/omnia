@@ -248,13 +248,6 @@ def recommendation_catalog() -> list[dict[str, str]]:
             "text": "stagiaire exam revision study planner learning schedule improving trend",
         },
         {
-            "id": "finance_review",
-            "category": "finance",
-            "priority": "medium",
-            "title": "Review financial anomalies",
-            "text": "comptable finance anomaly report transaction high amount deadline risk",
-        },
-        {
             "id": "maintain_routine",
             "category": "consistency",
             "priority": "low",

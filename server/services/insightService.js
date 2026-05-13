@@ -1,7 +1,6 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import ActivityLog from "../models/ActivityLog.js";
 import Attendance from "../models/Attendance.js";
-import FinancialRecord from "../models/FinancialRecord.js";
 import InsightSnapshot from "../models/InsightSnapshot.js";
 import Recommendation from "../models/Recommendation.js";
 import Task from "../models/Task.js";
@@ -54,12 +53,11 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
   const windowStart = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const scoped = scopeFilter(tenantId);
 
-  const [users, tasks, attendance, activityLogs, financeRecords, latestRecommendation] = await Promise.all([
+  const [users, tasks, attendance, activityLogs, latestRecommendation] = await Promise.all([
     User.find({ ...scoped, isActive: true }).select("_id role profileType").lean(),
     Task.find({ ...scoped, createdAt: { $gte: windowStart, $lte: windowEnd } }).lean(),
     Attendance.find({ ...scoped, date: { $gte: windowStart, $lte: windowEnd } }).lean(),
     ActivityLog.find({ ...scoped, date: { $gte: windowStart, $lte: windowEnd } }).lean(),
-    FinancialRecord.find({ ...scoped, date: { $gte: windowStart, $lte: windowEnd } }).lean(),
     Recommendation.findOne(scoped).sort({ createdAt: -1 }).lean(),
   ]);
 
@@ -81,10 +79,6 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
   const avgActivityScore = activityLogs.length
     ? Math.round(activityLogs.reduce((sum, log) => sum + Number(log.score || 0), 0) / activityLogs.length)
     : 0;
-  const income = financeRecords.filter((record) => record.type === "income").reduce((sum, record) => sum + Number(record.amount || 0), 0);
-  const expenses = financeRecords.filter((record) => record.type === "expense").reduce((sum, record) => sum + Number(record.amount || 0), 0);
-  const anomalyCount = financeRecords.filter((record) => record.isAnomaly).length;
-
   const kpis = [
     kpi({
       key: "task_completion_rate",
@@ -132,21 +126,6 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
       status: getStatusFromThreshold(avgActivityScore, 60, 40, true),
       description: "Average score from activity logs.",
     }),
-    kpi({
-      key: "net_balance",
-      label: "Net balance",
-      value: income - expenses,
-      unit: "TND",
-      status: income - expenses >= 0 ? "good" : "warning",
-      description: "Income minus expenses for the analysis window.",
-    }),
-    kpi({
-      key: "finance_anomalies",
-      label: "Finance anomalies",
-      value: anomalyCount,
-      status: getStatusFromThreshold(anomalyCount, 1, 3),
-      description: "Records flagged as financial anomalies.",
-    }),
   ];
 
   const analysisItems = [];
@@ -172,14 +151,6 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
       title: "Attendance delay pattern",
       message: `Average late arrival is ${avgDelay} minutes. Managers should review recurring lateness signals.`,
       metric: "avg_delay_minutes",
-    }));
-  }
-  if (anomalyCount > 0) {
-    analysisItems.push(analysis({
-      severity: anomalyCount >= 3 ? "critical" : "warning",
-      title: "Financial anomaly signals",
-      message: `${anomalyCount} financial record(s) were flagged as anomalous by the system.`,
-      metric: "finance_anomalies",
     }));
   }
   if (!analysisItems.length) {
@@ -213,17 +184,6 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
           message: "Attendance delay is under control. Continue live check-in monitoring.",
           priority: "low",
         }),
-    anomalyCount
-      ? recommendation({
-          title: "Review flagged finance records",
-          message: "Comptable should consult anomaly results and supporting records, while AI keeps detecting anomalies automatically.",
-          priority: anomalyCount >= 3 ? "high" : "medium",
-        })
-      : recommendation({
-          title: "No finance anomaly follow-up required",
-          message: "Financial entries are stable in this window.",
-          priority: "low",
-        }),
     ...(generatedRecommendation?.recommendations || []).slice(0, 3).map((item) =>
       recommendation({
         title: "AI recommendation",
@@ -234,7 +194,7 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
     ),
   ];
 
-  const summary = `AI analyzed ${users.length} user(s), ${tasks.length} task(s), ${attendance.length} attendance record(s), and ${financeRecords.length} finance record(s) for the last ${WINDOW_DAYS} days.`;
+  const summary = `AI analyzed ${users.length} user(s), ${tasks.length} task(s), and ${attendance.length} attendance record(s) for the last ${WINDOW_DAYS} days.`;
 
   return InsightSnapshot.create({
     tenantId: tenantId || null,
@@ -250,7 +210,6 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
       userCount: users.length,
       taskCount: tasks.length,
       attendanceCount: attendance.length,
-      financeRecordCount: financeRecords.length,
       sourceRecommendationId: generatedRecommendation?._id?.toString?.() || null,
     },
   });

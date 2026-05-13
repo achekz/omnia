@@ -7,9 +7,6 @@ import type {
   Attendance,
   CreateTaskInput,
   DashboardStats,
-  FinanceReport,
-  FinanceSummary,
-  FinancialRecord,
   InsightSnapshot,
   MlInsights,
   Notification,
@@ -201,20 +198,12 @@ const fallbackDashboardStats: DashboardStats = {
   completedTasks: 5,
   overdueTasks: 1,
   streak: 14,
-  balance: 125000,
-  anomalyCount: 2,
   weeklyActivity: [
     { day: "Mon", value: 72 },
     { day: "Tue", value: 78 },
     { day: "Wed", value: 81 },
     { day: "Thu", value: 86 },
     { day: "Fri", value: 91 },
-  ],
-  byMonth: [
-    { month: "Jan", income: 32000, expense: 21000 },
-    { month: "Feb", income: 35000, expense: 22500 },
-    { month: "Mar", income: 41000, expense: 26000 },
-    { month: "Apr", income: 47000, expense: 29000 },
   ],
 };
 
@@ -242,46 +231,6 @@ const fallbackTeamMembers: TeamMemberSummary[] = [
     tasksCompleted: 15,
   },
 ];
-
-const fallbackFinanceRecords: FinancialRecord[] = [
-  {
-    id: "finance-1",
-    clientName: "Atlas SARL",
-    type: "income",
-    amount: 8200,
-    category: "Consulting",
-    description: "Monthly consulting retainer",
-    date: new Date().toISOString(),
-  },
-  {
-    id: "finance-2",
-    clientName: "Nova Tech",
-    type: "expense",
-    amount: 1200,
-    category: "Software",
-    description: "License renewal",
-    date: new Date().toISOString(),
-    isAnomaly: true,
-    anomalyScore: 91,
-  },
-];
-
-const fallbackFinanceSummary: FinanceSummary = {
-  balance: 125000,
-  anomalyCount: 1,
-  byMonth: fallbackDashboardStats.byMonth,
-};
-
-const fallbackFinanceReport: FinanceReport = {
-  generatedAt: new Date().toISOString(),
-  summary: fallbackFinanceSummary,
-  totalRecords: fallbackFinanceRecords.length,
-  topCategory: fallbackFinanceSummary.byCategory?.[0] || null,
-  anomalyRate: fallbackFinanceRecords.length
-    ? Math.round((fallbackFinanceRecords.filter((record) => record.isAnomaly).length / fallbackFinanceRecords.length) * 100)
-    : 0,
-  records: fallbackFinanceRecords,
-};
 
 const fallbackInsights: MlInsights = {
   latestPrediction: {
@@ -913,7 +862,6 @@ export function useDetectAnomaly() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -1048,95 +996,6 @@ export function useGetTeamMembers() {
       }
     },
     initialData: fallbackTeamMembers,
-  });
-}
-
-export function useGetFinanceSummary() {
-  return useQuery<FinanceSummary>({
-    queryKey: ["finance-summary"],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.get("/finance/summary");
-        return { ...fallbackFinanceSummary, ...unwrapData<FinanceSummary>(response.data, fallbackFinanceSummary) };
-      } catch {
-        return fallbackFinanceSummary;
-      }
-    },
-    initialData: fallbackFinanceSummary,
-  });
-}
-
-export function useGetFinanceRecords() {
-  return useQuery<FinancialRecord[]>({
-    queryKey: ["finance-records"],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.get("/finance/records");
-        return unwrapCollection<FinancialRecord>(response.data, "records", fallbackFinanceRecords);
-      } catch {
-        return fallbackFinanceRecords;
-      }
-    },
-    initialData: fallbackFinanceRecords,
-  });
-}
-
-export function useCreateFinanceRecord() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Omit<FinancialRecord, "_id" | "id">) => {
-      const response = await apiClient.post("/finance/records", data);
-      return unwrapEntity<FinancialRecord>(response.data, "record", { ...data, id: crypto.randomUUID() });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["finance-records"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-summary"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-report"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
-}
-
-export function useGetFinanceReport() {
-  return useQuery<FinanceReport>({
-    queryKey: ["finance-report"],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.get("/finance/reports");
-        return { ...fallbackFinanceReport, ...unwrapData<FinanceReport>(response.data, fallbackFinanceReport) };
-      } catch {
-        return fallbackFinanceReport;
-      }
-    },
-    initialData: fallbackFinanceReport,
-  });
-}
-
-export function useExportFinanceReport() {
-  return useMutation({
-    mutationFn: async (format: "csv" | "json" = "csv") => {
-      const response = await apiClient.get(`/finance/export?format=${format}`, {
-        responseType: format === "csv" ? "blob" : "json",
-      });
-
-      if (format === "json") {
-        const payload = JSON.stringify(unwrapData(response.data, response.data), null, 2);
-        return { blob: new Blob([payload], { type: "application/json" }), filename: "finance-report.json" };
-      }
-
-      return { blob: response.data as Blob, filename: "finance-report.csv" };
-    },
-    onSuccess: ({ blob, filename }) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    },
   });
 }
 

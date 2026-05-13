@@ -9,7 +9,6 @@ import Organization from '../models/Organization.js';
 import Task from '../models/Task.js';
 import Notification from '../models/Notification.js';
 import ActivityLog from '../models/ActivityLog.js';
-import FinancialRecord from '../models/FinancialRecord.js';
 import MLPrediction from '../models/MLPrediction.js';
 
 dotenv.config();
@@ -23,7 +22,6 @@ const run = async () => {
     await Task.deleteMany();
     await Notification.deleteMany();
     await ActivityLog.deleteMany();
-    await FinancialRecord.deleteMany();
     await MLPrediction.deleteMany();
 
     console.log('🧹 DB Cleared');
@@ -68,7 +66,7 @@ const run = async () => {
       name: 'Cabinet Ben Ali',
       type: 'cabinet',
       plan: 'pro',
-      industry: 'Accounting',
+      industry: 'Professional Services',
     });
 
     const cabinetAdmin = await User.create({
@@ -118,16 +116,16 @@ const run = async () => {
       });
     }
 
-    // ── SEED TASKS FOR CABINET (Tax declarations) ──
+    // ── SEED TASKS FOR CABINET ──
     for (let i = 0; i < 10; i++) {
       await Task.create({
-        title: `Déclaration fiscale Client ${i + 1}`,
+        title: `Client follow-up ${i + 1}`,
         status: i < 3 ? 'done' : 'todo',
         priority: 'high',
         assignedTo: cabinetAdmin._id,
         createdBy: cabinetAdmin._id,
         tenantId: cabinetOrg._id,
-        tags: ['declaration', 'fiscal', 'tax'],
+        tags: ['client', 'follow-up'],
         dueDate: new Date(Date.now() + (i - 2) * 24 * 60 * 60 * 1000), // Some overdue
       });
     }
@@ -167,21 +165,6 @@ const run = async () => {
           score: Math.floor(Math.random() * 60) + 30, // 30-90
         });
       }
-    }
-
-    // ── SEED FINANCIAL RECORDS (CABINET) ──
-    for (let i = 0; i < 30; i++) {
-      const isAnomaly = i % 10 === 0;
-      await FinancialRecord.create({
-        tenantId: cabinetOrg._id,
-        clientName: `Client ${Math.floor(i / 3) + 1}`,
-        type: i % 4 === 0 ? 'income' : 'expense',
-        amount: isAnomaly ? Math.random() * 20000 + 10000 : Math.random() * 1000 + 100,
-        category: 'Services',
-        date: new Date(Date.now() - i * 2 * 24 * 60 * 60 * 1000),
-        isAnomaly,
-        anomalyScore: isAnomaly ? 0.95 : 0.1,
-      });
     }
 
     // ── SEED NOTIFICATIONS ──
