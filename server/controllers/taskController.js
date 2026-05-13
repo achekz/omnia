@@ -302,10 +302,12 @@ export const getTasksByUser = asyncHandler(async (req, res) => {
   const { status, priority, deadline } = req.query;
   const user = await User.findOne(scopedUserLookup(req, req.params.userId)).select('_id name firstName lastName email avatar role profileType');
   if (!user) throw new ApiError(404, 'User not found');
+  const isAdmin = ADMIN_ROLES.includes(normalizeRole(req.user.role, req.user.role));
 
   const filter = {
     ...(req.tenantId ? { tenantId: req.tenantId } : {}),
     assignedTo: user._id,
+    ...(isAdmin ? { createdBy: req.user._id } : {}),
   };
 
   if (status && status !== 'all') filter.status = status;
