@@ -111,6 +111,13 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -120,6 +127,31 @@
       radial-gradient(circle at 15% 50%, hsla(280, 85%, 50%, 0.04) 0%, transparent 50%),
       radial-gradient(circle at 85% 30%, hsla(320, 90%, 55%, 0.04) 0%, transparent 50%);
     background-attachment: fixed;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  #root {
+    min-height: 100dvh;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -192,4 +224,76 @@
 /* Charts Tooltip Customization */
 .recharts-default-tooltip {
   @apply !bg-card/90 !backdrop-blur-md !border-border !rounded-lg !shadow-xl !text-sm !text-foreground;
+}
+
+/* Bootstrap/mobile compatibility helpers */
+.container-fluid {
+  width: 100%;
+  max-width: 100%;
+}
+
+.table-responsive,
+[data-radix-scroll-area-viewport] {
+  max-width: 100%;
+}
+
+table {
+  max-width: 100%;
+}
+
+@supports (height: 100dvh) {
+  .h-screen,
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .form-input {
+    @apply rounded-xl px-3 py-3;
+  }
+
+  .recharts-wrapper,
+  .recharts-responsive-container {
+    min-width: 0 !important;
+  }
+
+  .recharts-surface {
+    overflow: visible;
+  }
+
+  .glass-panel {
+    @apply shadow-md;
+  }
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: clamp(1.5rem, 8vw, 2.25rem);
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 6vw, 1.75rem);
+    line-height: 1.15;
+  }
+
+  .rounded-\[32px\] {
+    border-radius: 1.25rem;
+  }
+
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: 0 10px 28px -20px rgba(15, 23, 42, 0.55);
+  }
 }

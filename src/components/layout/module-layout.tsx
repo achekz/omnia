@@ -12,6 +12,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Menu,
   Package,
   Pickaxe,
   ShieldCheck,
@@ -19,6 +20,7 @@ import {
   Target,
   Users,
   Lightbulb,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
@@ -200,6 +202,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   const [activeModuleId, setActiveModuleId] = useState("");
   const [activeSidebarItem, setActiveSidebarItem] = useState(activeItem);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const currentProfile = normalizeRole(user?.profileType || user?.role) as ProfileType;
 
   const { data: notifications = [] } = useGetNotifications({
@@ -243,25 +246,37 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
     if (item.path) {
       setLocation(item.path);
     }
+    setIsSidebarOpen(false);
     onItemChange?.(activeModuleId, item.id);
   };
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col font-sans overflow-hidden">
-      <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-4 shrink-0 shadow-sm relative z-40">
-        <div className="flex items-center gap-3 shrink-0 mr-4 w-[208px]">
+    <div className="h-dvh bg-gray-50 dark:bg-gray-950 flex flex-col font-sans overflow-hidden">
+      <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 shadow-sm relative z-40">
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(true)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 lg:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <div className="flex min-w-0 items-center gap-3 shrink-0 mr-2 sm:mr-4 lg:w-[208px]">
           <Link href="/" className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-105">
             <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="font-display font-bold text-xl text-gray-900 tracking-tight">Omni AI</span>
+            <span className="hidden font-display font-bold text-xl text-gray-900 tracking-tight sm:inline dark:text-gray-100">Omni AI</span>
           </Link>
         </div>
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-3 shrink-0 ml-4">
-          <BackButton />
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2 sm:ml-4">
+          <div className="hidden sm:block">
+            <BackButton />
+          </div>
 
           <button
             onClick={() => setIsNotifOpen(true)}
@@ -278,8 +293,38 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
+        {isSidebarOpen && (
+          <button
+            type="button"
+            className="fixed inset-0 z-30 bg-gray-950/55 backdrop-blur-sm lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close menu overlay"
+          />
+        )}
         {activeModule && (
-          <aside className="w-[240px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 overflow-hidden relative z-30">
+          <aside
+            className={cn(
+              "fixed inset-y-0 left-0 z-40 flex w-[min(86vw,280px)] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 dark:border-gray-700 dark:bg-gray-900 lg:relative lg:z-30 lg:w-[240px] lg:translate-x-0 lg:shadow-none",
+              isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 lg:hidden dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-display text-lg font-bold">Omni AI</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
             <div className="p-4 flex flex-col items-center">
               <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-3">Modules</p>
 
@@ -332,7 +377,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
           </aside>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 relative">{children}</main>
+        <main className="container-fluid flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 px-0 dark:bg-gray-950 relative">{children}</main>
       </div>
 
       <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />

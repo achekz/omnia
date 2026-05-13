@@ -63,7 +63,7 @@ export default function AdminPresenceDayPage() {
 
   return (
     <ModuleLayout activeItem="presences">
-      <div className="space-y-6 p-6 lg:p-8">
+      <div className="container-fluid space-y-6 p-3 sm:p-6 lg:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <Link href="/admin/presences" className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100">
@@ -75,7 +75,7 @@ export default function AdminPresenceDayPage() {
                 <CalendarDays className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">{date}</h1>
+                <h1 className="font-display text-2xl font-bold text-gray-950 dark:text-gray-100 sm:text-3xl">{date}</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Presences détaillées par utilisateur, rôle et statut.</p>
               </div>
             </div>
@@ -100,7 +100,7 @@ export default function AdminPresenceDayPage() {
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <div className="min-w-0 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <div className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-2">
                 {roles.map((option) => (
@@ -114,7 +114,7 @@ export default function AdminPresenceDayPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="table-responsive overflow-x-auto">
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800">
                   <tr>

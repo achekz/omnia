@@ -112,14 +112,14 @@ export default function AdminPresencesPage() {
 
   return (
     <ModuleLayout activeItem="presences">
-      <div className="space-y-6 p-6 lg:p-8">
+      <div className="container-fluid space-y-6 p-3 sm:p-6 lg:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <CalendarCheck2 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold text-gray-950 dark:text-gray-100">Presences</h1>
+              <h1 className="font-display text-2xl font-bold text-gray-950 dark:text-gray-100 sm:text-3xl">Presences</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">Calendar attendance, live totals, and delay signals.</p>
             </div>
           </div>
@@ -152,11 +152,11 @@ export default function AdminPresencesPage() {
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <header className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                 <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(-1)} title="Previous month">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <h2 className="min-w-[180px] text-center text-lg font-bold capitalize text-gray-950 dark:text-gray-100">{monthLabel(cursor)}</h2>
+                <h2 className="min-w-0 flex-1 text-center text-base font-bold capitalize text-gray-950 dark:text-gray-100 sm:min-w-[180px] sm:text-lg">{monthLabel(cursor)}</h2>
                 <button className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" onClick={() => moveMonth(1)} title="Next month">
                   <ChevronRight className="h-4 w-4" />
                 </button>

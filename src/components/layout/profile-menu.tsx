@@ -49,7 +49,7 @@ export function ProfileMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-2">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(92vw,20rem)] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-2">
           <div className="bg-gradient-to-br from-violet-600 to-pink-500 p-5 text-white">
             <div className="flex items-center gap-3">
               <img src={avatarUrl} alt={user.name} className="h-14 w-14 rounded-2xl object-cover ring-4 ring-white/20" />

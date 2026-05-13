@@ -29,18 +29,19 @@ export default function AdminUsersPage() {
 
   return (
     <ModuleLayout activeItem="users">
-      <div className="p-6 lg:p-8">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="container-fluid p-3 sm:p-6 lg:p-8">
+        <div className="mb-6 flex items-start gap-3 sm:items-center">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Users</h1>
+            <h1 className="text-2xl font-display font-bold text-gray-950 dark:text-gray-100 sm:text-3xl">Users</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">All les comptes de l'espace de travail.</p>
           </div>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <div className="table-responsive overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800">
               <tr>
@@ -95,6 +96,7 @@ export default function AdminUsersPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </ModuleLayout>

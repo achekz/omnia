@@ -1,13 +1,7 @@
 // Role du fichier: structure la mise en page et la navigation globale.
 import { useState, type ReactNode, type SVGProps } from "react";
 import { Link, useLocation } from "wouter";
-import {
-  Bell,
-  BrainCircuit,
-  CheckSquare,
-  LayoutDashboard,
-  Menu,
-} from "lucide-react";
+import { Bell, BrainCircuit, CheckSquare, LayoutDashboard, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetNotifications } from "@/lib/api-client";
 import { normalizeRole } from "@/lib/roles";
@@ -69,22 +63,27 @@ export function SharedLayout({ children }: SharedLayoutProps) {
   const navLinks = getNavLinks();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex overflow-x-hidden">
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       <aside
         className={cn(
-          "fixed md:sticky top-0 left-0 h-screen w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 z-50 flex flex-col transition-transform duration-300 ease-in-out shadow-sm",
+          "fixed md:sticky top-0 left-0 h-dvh w-[min(86vw,18rem)] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 z-50 flex flex-col transition-transform duration-300 ease-in-out shadow-sm md:w-72",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
-        <div className="p-6 flex items-center gap-3">
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-purple-500/20">
             <SparklesIcon className="w-6 h-6 text-white" />
           </div>
           <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
+          </div>
+          <button type="button" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 md:hidden">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="px-6 pb-4">
@@ -114,6 +113,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
                     ? "gradient-bg text-white shadow-md shadow-purple-500/20"
                     : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-400",
                 )}
+                onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.icon}
                 {link.name}
@@ -123,17 +123,17 @@ export function SharedLayout({ children }: SharedLayoutProps) {
         </nav>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <header className="h-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-30 px-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm">
-          <div className="flex items-center gap-4">
+      <main className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden">
+        <header className="h-16 sm:h-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-30 px-3 sm:px-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
               <Menu className="w-6 h-6" />
             </button>
-            <BackButton />
+            <div className="hidden sm:block"><BackButton /></div>
             <h1 className="font-display text-xl font-bold text-gray-900 hidden sm:block">Welcome back, {user.name.split(" ")[0]}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsNotifOpen(true)}
               className="relative p-2.5 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -146,8 +146,8 @@ export function SharedLayout({ children }: SharedLayoutProps) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-8">
+          <div className="container-fluid max-w-7xl mx-auto px-0">{children}</div>
         </div>
       </main>
 

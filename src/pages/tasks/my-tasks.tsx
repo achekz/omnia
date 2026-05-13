@@ -92,19 +92,19 @@ export default function MyTasks() {
 
   return (
     <ModuleLayout activeItem="tasks">
-      <div className="mx-auto max-w-7xl p-6 lg:p-8">
+      <div className="container-fluid mx-auto max-w-7xl p-3 sm:p-6 lg:p-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <ListChecks className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="font-display text-3xl font-bold text-gray-100">My Tasks</h2>
+              <h2 className="font-display text-2xl font-bold text-gray-100 sm:text-3xl">My Tasks</h2>
               <p className="text-sm text-gray-400">Only tasks assigned to your account are shown here.</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-sm shadow-slate-950/30">
+          <div className="flex w-full flex-wrap gap-2 rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-sm shadow-slate-950/30 sm:w-auto">
             {filters.map((item) => (
               <button
                 key={item.value}
@@ -121,7 +121,7 @@ export default function MyTasks() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900 shadow-xl shadow-slate-950/30">
+        <div className="table-responsive overflow-x-auto rounded-lg border border-slate-800 bg-slate-900 shadow-xl shadow-slate-950/30">
           <table className="w-full min-w-[1080px] text-left text-sm">
             <thead className="bg-slate-950/70 text-xs font-bold uppercase text-slate-400">
               <tr>

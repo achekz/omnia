@@ -108,9 +108,9 @@ export default function AIDashboard() {
 
   return (
     <ModuleLayout activeItem="ia">
-      <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-200/40 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
+      <div className="min-h-[calc(100dvh-64px)] bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50 flex flex-col items-center justify-center p-3 sm:p-4 relative overflow-hidden">
+        <div className="absolute top-0 right-0 hidden w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none sm:block" />
+        <div className="absolute bottom-0 left-0 hidden w-[400px] h-[400px] bg-blue-200/40 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none sm:block" />
 
         <div className="w-full max-w-4xl relative z-10 flex flex-col items-center h-full">
           <div className="w-full flex justify-end mb-8">
@@ -204,10 +204,10 @@ export default function AIDashboard() {
           {!showChat && (
             <>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-                <h1 className="text-5xl md:text-6xl font-display font-extrabold tracking-tight text-slate-800 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-slate-800 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                   Comment puis-je vous aider ?
                 </h1>
-                <p className="text-lg md:text-xl text-slate-600 font-medium tracking-wide">
+                <p className="text-base md:text-xl text-slate-600 font-medium tracking-wide">
                   Optimisez vos processus métier avec l'intelligence artificielle
                 </p>
               </motion.div>
@@ -233,8 +233,8 @@ export default function AIDashboard() {
                 placeholder="Décrivez votre besoin : analyse, prédiction, automatisation... Notre IA s'occupe du reste."
                 className="w-full h-32 bg-transparent text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none px-2 text-lg font-medium"
               />
-              <div className="flex items-center justify-between mt-4 border-t border-gray-100 dark:border-gray-700 pt-3">
-                <div className="flex gap-2">
+              <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 dark:border-gray-700 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
                   <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700">
                     <Paperclip className="w-4 h-4" />
                     Files
