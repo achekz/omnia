@@ -307,7 +307,7 @@ function SystemInsight({ intel, rules }: { intel: AdminIntel; rules: Rule[] }) {
               ? `${intel.highRiskUsers.map((user) => user.name || user.email).slice(0, 3).join(", ")} require attention because they combine inactivity, high-priority work, or overdue signals.`
               : "No high-risk users are currently visible. The system trend is stable, with risk concentrated in routine operational monitoring."}
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 overflow-x-auto sm:grid-cols-[repeat(3,minmax(8.5rem,1fr))]">
             <InsightChip label="Trend" value={intel.alertsCount > 4 ? "Alert pressure rising" : "Controlled"} tone={intel.alertsCount > 4 ? "amber" : "emerald"} />
             <InsightChip label="Users at risk" value={intel.riskUsers.length} tone={intel.riskUsers.length ? "amber" : "emerald"} />
             <InsightChip label="AI confidence" value="88%" tone="cyan" />
@@ -529,9 +529,9 @@ function InsightChip({ label, value, tone }: { label: string; value: ReactNode; 
   };
 
   return (
-    <div className={cn("rounded-md border p-3", tones[tone])}>
+    <div className={cn("min-w-[8.5rem] rounded-md border p-3", tones[tone])}>
       <p className="text-xs font-bold uppercase opacity-70">{label}</p>
-      <p className="mt-1 font-bold">{value}</p>
+      <p className="mt-1 max-w-full whitespace-normal break-words font-bold leading-6">{value}</p>
     </div>
   );
 }
