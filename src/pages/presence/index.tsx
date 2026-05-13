@@ -174,34 +174,34 @@ export default function PresencePage() {
 
   return (
     <ModuleLayout activeItem="presence">
-      <div className="p-6 lg:p-8">
+      <div className="min-h-full bg-slate-950 p-6 text-slate-100 lg:p-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">Presence</h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Monthly attendance and daily check-in tracking.</p>
+            <h1 className="text-3xl font-display font-bold text-slate-100">Presence</h1>
+            <p className="mt-1 text-sm text-slate-400">Monthly attendance and daily check-in tracking.</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+          <div className="flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-200">
             <Clock className="h-4 w-4" />
             {now.toLocaleTimeString("en-GB")}
           </div>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm shadow-slate-950/30">
             <div className="mb-5 flex items-center justify-between">
               <button
                 onClick={() => setCurrentMonth(new Date(year, month - 2, 1))}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800"
               >
                 Previous
               </button>
-              <div className="flex items-center gap-2 text-lg font-bold text-gray-950 dark:text-gray-100">
-                <CalendarDays className="h-5 w-5 text-blue-600" />
+              <div className="flex items-center gap-2 text-lg font-bold text-slate-100">
+                <CalendarDays className="h-5 w-5 text-blue-300" />
                 {currentMonth.toLocaleString("en-US", { month: "long", year: "numeric" })}
               </div>
               <button
                 onClick={() => setCurrentMonth(new Date(year, month, 1))}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800"
               >
                 Next
               </button>
@@ -209,7 +209,7 @@ export default function PresencePage() {
 
             <div className="grid grid-cols-7 gap-2">
               {dayNames.map((day) => (
-                <div key={day} className="py-2 text-center text-xs font-bold uppercase text-gray-400">
+                <div key={day} className="py-2 text-center text-xs font-bold uppercase text-slate-500">
                   {day}
                 </div>
               ))}
@@ -227,19 +227,19 @@ export default function PresencePage() {
                     className={cn(
                       "min-h-24 rounded-2xl border p-3 text-left transition",
                       !date && "border-transparent bg-transparent",
-                      date && "border-gray-200 bg-gray-50 hover:bg-white dark:border-gray-700 dark:bg-gray-800",
+                      date && "border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700",
                       isToday && "border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-600",
-                      record && !isToday && "border-emerald-200 bg-emerald-50",
+                      record && !isToday && "border-emerald-400/30 bg-emerald-500/10",
                     )}
                   >
                     {date && (
                       <>
                         <div className="flex items-center justify-between">
-                          <span className={cn("text-sm font-bold", isToday ? "text-white" : "text-gray-900 dark:text-gray-100")}>{date.getDate()}</span>
-                          {record && <CheckCircle2 className={cn("h-4 w-4", isToday ? "text-white" : "text-emerald-600")} />}
+                          <span className={cn("text-sm font-bold", isToday ? "text-white" : "text-slate-100")}>{date.getDate()}</span>
+                          {record && <CheckCircle2 className={cn("h-4 w-4", isToday ? "text-white" : "text-emerald-300")} />}
                         </div>
                         {record && (
-                          <div className={cn("mt-4 text-xs font-semibold capitalize", isToday ? "text-blue-50" : "text-emerald-700")}>
+                          <div className={cn("mt-4 text-xs font-semibold capitalize", isToday ? "text-blue-50" : "text-emerald-200")}>
                             {normalizeStatus(record.status)}
                           </div>
                         )}
@@ -274,7 +274,7 @@ export default function PresencePage() {
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
                   placeholder="Reason"
-                  className="min-h-24 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900"
+                  className="min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               )}
 
@@ -308,7 +308,7 @@ export default function PresencePage() {
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="6-digit code"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
               <button
                 onClick={confirm}
@@ -328,19 +328,19 @@ export default function PresencePage() {
 // Role: Affiche et organise cet ecran.
 function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Attendance | null; loading: boolean; onOpen: () => void; isSunday: boolean }) {
   return (
-    <aside className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <aside className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm shadow-slate-950/30">
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-300">
           <Timer className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="font-bold text-gray-950 dark:text-gray-100">Today</h2>
-          <p className="text-sm text-gray-500">{new Date().toLocaleDateString()}</p>
+          <h2 className="font-bold text-slate-100">Today</h2>
+          <p className="text-sm text-slate-400">{new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-500">Loading attendance...</div>
+        <div className="text-sm text-slate-400">Loading attendance...</div>
       ) : record ? (
         <div className="space-y-3">
           <InfoRow label="Check-in time" value={record.checkInTime || (record.checkIn ? new Date(record.checkIn).toLocaleTimeString("en-GB") : "-")} />
@@ -352,11 +352,11 @@ function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Atten
           <InfoRow label="Check-out reason" value={record.checkOutReason || "-"} />
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">No attendance marked today.</div>
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/60 p-6 text-center text-sm text-slate-400">No attendance marked today.</div>
       )}
 
       {isSunday && (
-        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+        <div className="mt-5 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200">
           Sunday is a rest day. You can open your account and prepare tomorrow's tasks, but presence is disabled.
         </div>
       )}
@@ -372,9 +372,9 @@ function AttendancePanel({ record, loading, onOpen, isSunday }: { record?: Atten
 // Role: Affiche et organise cet ecran.
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800">
-      <p className="text-xs font-bold uppercase text-gray-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold capitalize text-gray-900 dark:text-gray-100">{value}</p>
+    <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+      <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold capitalize text-slate-100">{value}</p>
     </div>
   );
 }

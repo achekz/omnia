@@ -63,14 +63,14 @@ export function SharedLayout({ children }: SharedLayoutProps) {
   const navLinks = getNavLinks();
 
   return (
-    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex overflow-x-hidden">
+    <div className="min-h-dvh bg-slate-950 text-slate-100 flex overflow-x-hidden">
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       <aside
         className={cn(
-          "fixed md:sticky top-0 left-0 h-dvh w-[min(86vw,18rem)] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 z-50 flex flex-col transition-transform duration-300 ease-in-out shadow-sm md:w-72",
+          "fixed md:sticky top-0 left-0 h-dvh w-[min(86vw,18rem)] bg-slate-950 border-r border-slate-800 z-50 flex flex-col transition-transform duration-300 ease-in-out shadow-sm shadow-slate-950/40 md:w-72",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
@@ -81,21 +81,21 @@ export function SharedLayout({ children }: SharedLayoutProps) {
           </div>
           <span className="font-display font-bold text-2xl tracking-tight gradient-text">Omni AI</span>
           </div>
-          <button type="button" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 md:hidden">
+          <button type="button" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-100 md:hidden">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="px-6 pb-4">
-          <div className="p-3 rounded-xl bg-purple-50 border border-purple-100 flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-400/20 flex items-center gap-3">
             <img
               src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`}
               alt={user.name}
-              className="w-10 h-10 rounded-lg object-cover bg-white dark:bg-gray-800"
+              className="w-10 h-10 rounded-lg object-cover bg-slate-800"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.profileType}</p>
+              <p className="text-sm font-semibold truncate text-slate-100">{user.name}</p>
+              <p className="text-xs text-slate-400 capitalize">{user.profileType}</p>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
                   "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200",
                   isActive
                     ? "gradient-bg text-white shadow-md shadow-purple-500/20"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-400",
+                    : "text-slate-400 hover:bg-slate-900 hover:text-slate-100",
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -124,23 +124,23 @@ export function SharedLayout({ children }: SharedLayoutProps) {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden">
-        <header className="h-16 sm:h-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-30 px-3 sm:px-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm">
+        <header className="h-16 sm:h-20 bg-slate-950 border-b border-slate-800 z-30 px-3 sm:px-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm shadow-slate-950/40">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-400 hover:text-slate-100">
               <Menu className="w-6 h-6" />
             </button>
             <div className="hidden sm:block"><BackButton /></div>
-            <h1 className="font-display text-xl font-bold text-gray-900 hidden sm:block">Welcome back, {user.name.split(" ")[0]}</h1>
+            <h1 className="font-display text-xl font-bold text-slate-100 hidden sm:block">Welcome back, {user.name.split(" ")[0]}</h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsNotifOpen(true)}
-              className="relative p-2.5 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="relative p-2.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
-              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />}
+              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-950" />}
             </button>
             <ProfileMenu />
           </div>

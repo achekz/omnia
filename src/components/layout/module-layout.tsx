@@ -64,7 +64,7 @@ const MODULES: NavModule[] = [
     icon: <Bot className="w-4 h-4" />,
     bg: "bg-violet-500",
     textColor: "text-violet-600",
-    activeSidebarStyle: "bg-violet-50 text-violet-600 font-semibold",
+    activeSidebarStyle: "border-violet-400/30 bg-violet-500/15 text-violet-100 font-semibold shadow-sm shadow-violet-950/30",
     allowedProfiles: ["company", "cabinet", "employee", "stagiaire", "admin"],
     items: [
       { id: "ai-home", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
@@ -77,7 +77,7 @@ const MODULES: NavModule[] = [
     icon: <ShieldCheck className="w-4 h-4" />,
     bg: "bg-violet-700",
     textColor: "text-violet-700",
-    activeSidebarStyle: "bg-violet-50 text-violet-700 font-semibold",
+    activeSidebarStyle: "border-violet-400/30 bg-violet-500/15 text-violet-100 font-semibold shadow-sm shadow-violet-950/30",
     allowedProfiles: ["admin"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/admin/dashboard" },
@@ -96,7 +96,7 @@ const MODULES: NavModule[] = [
     icon: <Box className="w-4 h-4" />,
     bg: "bg-purple-500",
     textColor: "text-purple-600",
-    activeSidebarStyle: "bg-purple-50 text-purple-600 font-semibold",
+    activeSidebarStyle: "border-purple-400/30 bg-purple-500/15 text-purple-100 font-semibold shadow-sm shadow-purple-950/30",
     allowedProfiles: ["company"],
     items: [{ id: "cat-dash", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
@@ -106,7 +106,7 @@ const MODULES: NavModule[] = [
     icon: <Users className="w-4 h-4" />,
     bg: "bg-sky-600",
     textColor: "text-sky-600",
-    activeSidebarStyle: "bg-sky-50 text-sky-700 font-semibold",
+    activeSidebarStyle: "border-sky-400/30 bg-sky-500/15 text-sky-100 font-semibold shadow-sm shadow-sky-950/30",
     allowedProfiles: ["company", "employee"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
@@ -123,7 +123,7 @@ const MODULES: NavModule[] = [
     icon: <Users className="w-4 h-4" />,
     bg: "bg-sky-600",
     textColor: "text-sky-600",
-    activeSidebarStyle: "bg-sky-50 text-sky-700 font-semibold",
+    activeSidebarStyle: "border-sky-400/30 bg-sky-500/15 text-sky-100 font-semibold shadow-sm shadow-sky-950/30",
     allowedProfiles: ["comptable"],
     items: [
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
@@ -138,7 +138,7 @@ const MODULES: NavModule[] = [
     icon: <Target className="w-4 h-4" />,
     bg: "bg-blue-500",
     textColor: "text-blue-600",
-    activeSidebarStyle: "bg-blue-50 text-blue-600 font-semibold",
+    activeSidebarStyle: "border-blue-400/30 bg-blue-500/15 text-blue-100 font-semibold shadow-sm shadow-blue-950/30",
     allowedProfiles: ["company"],
     items: [{ id: "crm-dash", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
@@ -148,7 +148,7 @@ const MODULES: NavModule[] = [
     icon: <Package className="w-4 h-4" />,
     bg: "bg-teal-500",
     textColor: "text-teal-600",
-    activeSidebarStyle: "bg-teal-50 text-teal-600 font-semibold",
+    activeSidebarStyle: "border-teal-400/30 bg-teal-500/15 text-teal-100 font-semibold shadow-sm shadow-teal-950/30",
     allowedProfiles: ["company"],
     items: [{ id: "inv-dash", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
@@ -158,7 +158,7 @@ const MODULES: NavModule[] = [
     icon: <FileText className="w-4 h-4" />,
     bg: "bg-lime-500",
     textColor: "text-lime-600",
-    activeSidebarStyle: "bg-lime-50 text-lime-600 font-semibold",
+    activeSidebarStyle: "border-lime-400/30 bg-lime-500/15 text-lime-100 font-semibold shadow-sm shadow-lime-950/30",
     allowedProfiles: ["company", "cabinet"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" />, path: "/paie/dashboard" },
@@ -174,7 +174,7 @@ const MODULES: NavModule[] = [
     icon: <Pickaxe className="w-4 h-4" />,
     bg: "bg-amber-600",
     textColor: "text-amber-700",
-    activeSidebarStyle: "bg-amber-50 text-amber-700 font-semibold",
+    activeSidebarStyle: "border-amber-400/30 bg-amber-500/15 text-amber-100 font-semibold shadow-sm shadow-amber-950/30",
     allowedProfiles: ["company"],
     items: [{ id: "btp-dash", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
@@ -184,7 +184,7 @@ const MODULES: NavModule[] = [
     icon: <Users className="w-4 h-4" />,
     bg: "bg-sky-600",
     textColor: "text-sky-600",
-    activeSidebarStyle: "bg-sky-50 text-sky-700 font-semibold",
+    activeSidebarStyle: "border-sky-400/30 bg-sky-500/15 text-sky-100 font-semibold shadow-sm shadow-sky-950/30",
     allowedProfiles: ["stagiaire"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/stagiaire/dashboard" },
@@ -251,12 +251,12 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   };
 
   return (
-    <div className="h-dvh bg-gray-50 dark:bg-gray-950 flex flex-col font-sans overflow-hidden">
-      <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 shadow-sm relative z-40">
+    <div className="h-dvh bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
+      <header className="h-16 bg-slate-950 border-b border-slate-800 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 shadow-sm shadow-slate-950/40 relative z-40">
         <button
           type="button"
           onClick={() => setIsSidebarOpen(true)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 text-slate-300 transition hover:bg-slate-800 lg:hidden"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
@@ -267,7 +267,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="hidden font-display font-bold text-xl text-gray-900 tracking-tight sm:inline dark:text-gray-100">Omni AI</span>
+            <span className="hidden font-display font-bold text-xl text-slate-100 tracking-tight sm:inline">Omni AI</span>
           </Link>
         </div>
 
@@ -280,11 +280,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
 
           <button
             onClick={() => setIsNotifOpen(true)}
-            className="relative p-2 rounded-full text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+            className="relative p-2 rounded-full text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-950" />
             )}
           </button>
 
@@ -304,11 +304,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
         {activeModule && (
           <aside
             className={cn(
-              "fixed inset-y-0 left-0 z-40 flex w-[min(86vw,280px)] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 dark:border-gray-700 dark:bg-gray-900 lg:relative lg:z-30 lg:w-[240px] lg:translate-x-0 lg:shadow-none",
+              "fixed inset-y-0 left-0 z-40 flex w-[min(86vw,280px)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-950 shadow-2xl shadow-slate-950/60 transition-transform duration-300 lg:relative lg:z-30 lg:w-[240px] lg:translate-x-0 lg:shadow-none",
               isSidebarOpen ? "translate-x-0" : "-translate-x-full",
             )}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 p-4 lg:hidden dark:border-gray-800">
+            <div className="flex items-center justify-between border-b border-slate-800 p-4 lg:hidden">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
                   <Sparkles className="w-4 h-4 text-white" />
@@ -318,7 +318,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
@@ -326,7 +326,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             </div>
 
             <div className="p-4 flex flex-col items-center">
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-3">Modules</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Modules</p>
 
               <div
                 className={cn(
@@ -350,11 +350,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                       "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all duration-200 border border-transparent",
                       isActive
                         ? activeModule.activeSidebarStyle
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 font-medium",
+                        : "text-slate-400 hover:bg-slate-900 hover:text-slate-100 font-medium",
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={cn(isActive ? activeModule.textColor : "text-gray-400 dark:text-gray-600")}>
+                      <span className={cn(isActive ? "text-current" : "text-slate-500")}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -365,10 +365,10 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
               })}
             </nav>
 
-            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+            <div className="p-4 border-t border-slate-800 bg-slate-900/60">
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-200 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Déconnexion
@@ -377,7 +377,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
           </aside>
         )}
 
-        <main className="container-fluid flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 px-0 dark:bg-gray-950 relative">{children}</main>
+        <main className="container-fluid flex-1 overflow-x-hidden overflow-y-auto bg-slate-950 px-0 relative">{children}</main>
       </div>
 
       <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />

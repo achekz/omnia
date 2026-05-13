@@ -12,24 +12,15 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeType>(() => {
-    // Récupérer le thème sauvegardé du localStorage
     const savedTheme = localStorage.getItem('app-theme') as ThemeType | null;
-    return savedTheme || 'light';
+    return savedTheme || 'dark';
   });
 
   useEffect(() => {
-    // Appliquer le thème au changement
     const html = document.documentElement;
-    
-    if (theme === 'dark') {
-      html.classList.add('dark');
-      html.style.colorScheme = 'dark';
-    } else {
-      html.classList.remove('dark');
-      html.style.colorScheme = 'light';
-    }
-    
-    // Sauvegarder le choix
+    html.classList.toggle('dark', theme === 'dark');
+    html.classList.toggle('light', theme === 'light');
+    html.style.colorScheme = theme;
     localStorage.setItem('app-theme', theme);
   }, [theme]);
 

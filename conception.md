@@ -70,8 +70,8 @@ else donnees valides
   Backend -> Database : recuperer les regles actives
   Database --> Backend : retourner les regles actives
 
-  Backend -> Database : recuperer les donnees a analyser
-  Database --> Backend : retourner les donnees
+  Backend -> Database : recuperer les taches a analyser
+  Database --> Backend : retourner les taches actives ou en retard
 
   Backend -> Backend : verifier les conditions
 
