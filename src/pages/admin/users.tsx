@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => setLocation(`/admin/users/${user._id || user.id}/tasks`)}
+                          onClick={() => setLocation(`/admin/users/${user._id || user.id}`)}
                           className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-50"
                         >
                           <Eye className="h-4 w-4" />

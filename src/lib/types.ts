@@ -19,6 +19,7 @@ export interface User {
   tenantId?: string;
   avatar?: string;
   isVerified: boolean;
+  isActive?: boolean;
   isPublic?: boolean;
   createdAt?: string;
   preferences?: {

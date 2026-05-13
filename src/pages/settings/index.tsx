@@ -1,9 +1,10 @@
 // Role du fichier: affiche une page React de l application.
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Bell, Briefcase, Building, Camera, Check, Key, Mail, Shield, User } from "lucide-react";
+import { Bell, Briefcase, Building, Camera, Check, Eye, EyeOff, Key, Mail, Shield, User } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useChangePasswordWithCode, useSendPasswordChangeCode, useSendSelfEmailCode, useVerifySelfEmailChange } from "@/lib/api-client";
 
 type SettingsTab = "profile" | "security" | "notifications";
 type SuccessKey = "profile" | "email" | "notifications" | "password";
@@ -42,6 +43,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState(user?.name || "");
   const [showChangeEmail, setShowChangeEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
+  const [emailCurrentPassword, setEmailCurrentPassword] = useState("");
   const [emailVerificationCode, setEmailVerificationCode] = useState("");
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
@@ -53,6 +55,12 @@ export default function SettingsPage() {
     marketingUpdates: false,
   });
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
+  const [passwordVerificationCode, setPasswordVerificationCode] = useState("");
+  const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirm: false, email: false });
+  const sendSelfEmailCode = useSendSelfEmailCode();
+  const verifySelfEmailChange = useVerifySelfEmailChange();
+  const sendPasswordChangeCode = useSendPasswordChangeCode();
+  const changePasswordWithCode = useChangePasswordWithCode();
   const [successMessages, setSuccessMessages] = useState<Record<SuccessKey, boolean>>({
     profile: false,
     email: false,
@@ -98,22 +106,19 @@ export default function SettingsPage() {
       return;
     }
 
+    if (!emailCurrentPassword) {
+      alert("Please enter your current password");
+      return;
+    }
+
     setLoadingEmail(true);
     try {
-      const response = await fetch("/api/users/send-email-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newEmail }),
-      });
-
-      if (response.ok) {
-        setShowEmailVerification(true);
-        alert("Verification code sent to your email");
-      } else {
-        alert("Failed to send verification code");
-      }
-    } catch {
-      alert("Failed to send verification code");
+      const result = await sendSelfEmailCode.mutateAsync({ newEmail, currentPassword: emailCurrentPassword });
+      if (result.devCode) setEmailVerificationCode(result.devCode);
+      setShowEmailVerification(true);
+      alert("Verification code sent to your new email");
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to send verification code");
     } finally {
       setLoadingEmail(false);
     }
@@ -127,26 +132,18 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch("/api/users/verify-email-change", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newEmail, code: emailVerificationCode }),
-      });
-
-      if (response.ok) {
-        showSuccess("email");
-        alert("Email updated successfully. Please log in again.");
-        logout();
-        window.setTimeout(() => setLocation("/login"), 1000);
-        setShowChangeEmail(false);
-        setShowEmailVerification(false);
-        setNewEmail("");
-        setEmailVerificationCode("");
-      } else {
-        alert("Invalid verification code");
-      }
-    } catch {
-      alert("Failed to verify email");
+      await verifySelfEmailChange.mutateAsync({ newEmail, code: emailVerificationCode });
+      showSuccess("email");
+      alert("Email updated successfully. Please log in again.");
+      logout();
+      window.setTimeout(() => setLocation("/login"), 1000);
+      setShowChangeEmail(false);
+      setShowEmailVerification(false);
+      setNewEmail("");
+      setEmailCurrentPassword("");
+      setEmailVerificationCode("");
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to verify email");
     }
   };
 
@@ -170,7 +167,7 @@ export default function SettingsPage() {
   };
 
   // Role: Traite une action utilisateur.
-  const handleChangePassword = async () => {
+  const handleSendPasswordCode = async () => {
     if (!passwords.current || !passwords.new || !passwords.confirm) {
       alert("Please fill all password fields");
       return;
@@ -182,21 +179,32 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch("/api/users/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.new }),
-      });
+      const result = await sendPasswordChangeCode.mutateAsync({ currentPassword: passwords.current, newPassword: passwords.new });
+      if (result.devCode) setPasswordVerificationCode(result.devCode);
+      alert(`Verification code sent to ${user.email}`);
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to send verification code");
+    }
+  };
 
-      if (response.ok) {
-        showSuccess("password");
-        alert("Password updated successfully");
-        setPasswords({ current: "", new: "", confirm: "" });
-      } else {
-        alert("Failed to change password");
-      }
-    } catch {
-      alert("Failed to change password");
+  const handleChangePassword = async () => {
+    if (!passwordVerificationCode) {
+      alert("Please enter the verification code");
+      return;
+    }
+
+    try {
+      await changePasswordWithCode.mutateAsync({
+        currentPassword: passwords.current,
+        newPassword: passwords.new,
+        code: passwordVerificationCode,
+      });
+      showSuccess("password");
+      alert("Password updated successfully");
+      setPasswords({ current: "", new: "", confirm: "" });
+      setPasswordVerificationCode("");
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to change password");
     }
   };
 
@@ -313,6 +321,17 @@ export default function SettingsPage() {
                     {!showEmailVerification ? (
                       <>
                         <div className="space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">Current Password</label>
+                          <PasswordInput
+                            value={emailCurrentPassword}
+                            onChange={(value) => setEmailCurrentPassword(value)}
+                            visible={showPasswords.email}
+                            onToggle={() => setShowPasswords((current) => ({ ...current, email: !current.email }))}
+                            placeholder="Required before changing email"
+                            iconOffset
+                          />
+                        </div>
+                        <div className="space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">New Email Address</label>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
@@ -339,7 +358,7 @@ export default function SettingsPage() {
                       <>
                         <div className="space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">Verification Code</label>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">We sent a code to {newEmail}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">We sent a code to the new email: {newEmail}</p>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                               <Key className="w-4 h-4" />
@@ -409,38 +428,47 @@ export default function SettingsPage() {
                 <div className="space-y-4 max-w-md">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Current Password</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-                        <Key className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        value={passwords.current}
-                        onChange={(event) => setPasswords({ ...passwords, current: event.target.value })}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
-                      />
-                    </div>
+                    <PasswordInput
+                      value={passwords.current}
+                      onChange={(value) => setPasswords({ ...passwords, current: value })}
+                      visible={showPasswords.current}
+                      onToggle={() => setShowPasswords((current) => ({ ...current, current: !current.current }))}
+                      placeholder="••••••••"
+                      iconOffset
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">New Password</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
+                    <PasswordInput
                       value={passwords.new}
-                      onChange={(event) => setPasswords({ ...passwords, new: event.target.value })}
-                      className="w-full pl-4 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
+                      onChange={(value) => setPasswords({ ...passwords, new: value })}
+                      visible={showPasswords.next}
+                      onToggle={() => setShowPasswords((current) => ({ ...current, next: !current.next }))}
+                      placeholder="••••••••"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
+                    <PasswordInput
                       value={passwords.confirm}
-                      onChange={(event) => setPasswords({ ...passwords, confirm: event.target.value })}
-                      className="w-full pl-4 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
+                      onChange={(value) => setPasswords({ ...passwords, confirm: value })}
+                      visible={showPasswords.confirm}
+                      onToggle={() => setShowPasswords((current) => ({ ...current, confirm: !current.confirm }))}
+                      placeholder="••••••••"
                     />
+                  </div>
+                  <div className="space-y-1.5 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                    <label className="text-sm font-medium text-gray-700">Verification Code</label>
+                    <p className="text-xs text-gray-600">Send a code to {user.email}, then enter it here.</p>
+                    <input
+                      value={passwordVerificationCode}
+                      onChange={(event) => setPasswordVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="6-digit code"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-center text-sm font-bold tracking-[0.35em] text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                    />
+                    <button onClick={handleSendPasswordCode} className="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700">
+                      Send Code
+                    </button>
                   </div>
                 </div>
 
@@ -498,5 +526,44 @@ export default function SettingsPage() {
         </div>
       </div>
     </ModuleLayout>
+  );
+}
+
+function PasswordInput({
+  value,
+  onChange,
+  visible,
+  onToggle,
+  placeholder,
+  iconOffset = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  visible: boolean;
+  onToggle: () => void;
+  placeholder: string;
+  iconOffset?: boolean;
+}) {
+  return (
+    <div className="relative">
+      {iconOffset && (
+        <Key className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+      )}
+      <input
+        type={visible ? "text" : "password"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`w-full rounded-lg border border-gray-200 bg-gray-50 py-2 ${iconOffset ? "pl-10" : "pl-4"} pr-11 text-gray-900 outline-none transition-all focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:bg-gray-700`}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+        title={visible ? "Hide password" : "Show password"}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }

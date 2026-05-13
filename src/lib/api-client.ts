@@ -695,6 +695,91 @@ export function useDeleteAdminUser() {
   });
 }
 
+export function useUpdateAdminUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<User> & { password?: string; passwordCode?: string; emailCode?: string; adminPassword?: string } }) => {
+      const response = await apiClient.put(`/admin/users/${id}`, data);
+      return unwrapEntity<User>(response.data, "user", {} as User);
+    },
+    onSuccess: (user) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-task-details", user._id || user.id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-task-details"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useSendAdminUserPasswordCode() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post(`/admin/users/${id}/password-code`);
+      return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useSendAdminUserEmailCode() {
+  return useMutation({
+    mutationFn: async ({ id, newEmail }: { id: string; newEmail: string }) => {
+      const response = await apiClient.post(`/admin/users/${id}/email-code`, { newEmail });
+      return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useSendPasswordChangeCode() {
+  return useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const response = await apiClient.post("/users/send-password-change-code", data);
+      return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useChangePasswordWithCode() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string; code: string }) => {
+      const response = await apiClient.post("/users/change-password", data);
+      return unwrapEntity<User>(response.data, "user", {} as User);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useSendSelfEmailCode() {
+  return useMutation({
+    mutationFn: async (data: { newEmail: string; currentPassword: string }) => {
+      const response = await apiClient.post("/users/send-email-verification", data);
+      return unwrapData<{ devCode?: string; expiresAt?: string }>(response.data, {});
+    },
+  });
+}
+
+export function useVerifySelfEmailChange() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { newEmail: string; code: string }) => {
+      const response = await apiClient.post("/users/verify-email-change", data);
+      return unwrapEntity<User>(response.data, "user", {} as User);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ml-insights"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
 export function useGetAdminUserTaskDetails(id?: string, options?: QueryHookOptions) {
   return useQuery<{ user: User | null; tasks: Task[] }>({
     queryKey: ["admin-user-task-details", id],

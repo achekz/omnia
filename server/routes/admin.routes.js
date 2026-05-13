@@ -30,6 +30,27 @@ router.get(
   adminController.getUserTaskDetails
 );
 
+router.put(
+  '/users/:id',
+  protect,
+  authorize('ADMIN'),
+  adminController.updateUserAccount
+);
+
+router.post(
+  '/users/:id/password-code',
+  protect,
+  authorize('ADMIN'),
+  adminController.sendAdminUserPasswordCode
+);
+
+router.post(
+  '/users/:id/email-code',
+  protect,
+  authorize('ADMIN'),
+  adminController.sendAdminUserEmailCode
+);
+
 router.delete(
   '/users/:id',
   protect,

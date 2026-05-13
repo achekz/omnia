@@ -1,63 +1,133 @@
 // Role du fichier: affiche une page reservee au compte admin.
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ArrowLeft, CheckCircle2, Clock, MessageSquare, Timer, UserRound } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Key, Mail, Power, Save, ShieldCheck, UserRound } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useAddTaskComment, useGetAdminUserTaskDetails } from "@/lib/api-client";
-import type { Task, User } from "@/lib/types";
+import { useGetAdminUserTaskDetails, useSendAdminUserEmailCode, useSendAdminUserPasswordCode, useUpdateAdminUser } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
-// Role: Prepare une valeur pour l affichage ou l API.
-function formatDuration(seconds: number) {
-  const safeSeconds = Math.max(0, Math.floor(seconds));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const remainingSeconds = safeSeconds % 60;
-  return `${hours}h ${minutes}m ${remainingSeconds}s`;
+interface AccountFormState {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  passwordCode: string;
+  emailCode: string;
+  adminPassword: string;
+  isActive: boolean;
 }
 
-// Role: Recupere les donnees necessaires.
-function getTaskDurationSeconds(task: Task, now: number) {
-  const startedAt = task.actualStartedAt || task.acceptedAt || task.startTime;
-  const finishedAt = task.actualFinishedAt || task.completedAt;
-
-  if (!startedAt) return 0;
-
-  const start = new Date(startedAt).getTime();
-  const end = finishedAt ? new Date(finishedAt).getTime() : task.status === "in_progress" ? now : start;
-  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
-  return Math.max(0, Math.floor((end - start) / 1000));
-}
-
-// Role: Recupere les donnees necessaires.
-function getUserName(user?: Partial<User> | string) {
-  if (!user || typeof user === "string") return "User";
-  return user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "User";
-}
+const emptyForm: AccountFormState = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  passwordCode: "",
+  emailCode: "",
+  adminPassword: "",
+  isActive: true,
+};
 
 // Role: Affiche et organise cet ecran.
 export default function AdminUserTaskDetailsPage() {
-  const [, params] = useRoute("/admin/users/:id/tasks");
+  const [, params] = useRoute("/admin/users/:id");
+  const [, legacyParams] = useRoute("/admin/users/:id/tasks");
   const [, setLocation] = useLocation();
-  const userId = params?.id;
-  const { data, isLoading } = useGetAdminUserTaskDetails(userId, { query: { refetchInterval: 10000 } });
-  const [now, setNow] = useState(Date.now());
+  const userId = params?.id || legacyParams?.id;
+  const { data, isLoading } = useGetAdminUserTaskDetails(userId);
+  const updateUser = useUpdateAdminUser();
+  const sendPasswordCode = useSendAdminUserPasswordCode();
+  const sendEmailCode = useSendAdminUserEmailCode();
+  const { toast } = useToast();
+  const [form, setForm] = useState<AccountFormState>(emptyForm);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+
+  const user = data.user;
+  const fullName = useMemo(
+    () => `${form.firstName} ${form.lastName}`.trim() || user?.name || user?.email || "Compte utilisateur",
+    [form.firstName, form.lastName, user?.email, user?.name],
+  );
 
   useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
+    if (!user) return;
 
-  const summary = useMemo(() => {
-    const tasks = data.tasks || [];
-    return {
-      total: tasks.length,
-      done: tasks.filter((task) => task.status === "done").length,
-      pending: tasks.filter((task) => task.status === "todo" || task.status === "overdue").length,
-      active: tasks.filter((task) => task.status === "in_progress").length,
-    };
-  }, [data.tasks]);
+    setForm({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      password: "",
+      passwordCode: "",
+      emailCode: "",
+      adminPassword: "",
+      isActive: user.isActive !== false,
+    });
+  }, [user]);
+
+  const updateField = <K extends keyof AccountFormState>(key: K, value: AccountFormState[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!userId) return;
+
+    try {
+      await updateUser.mutateAsync({
+        id: userId,
+        data: {
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim().toLowerCase(),
+          isActive: form.isActive,
+          ...(form.password.trim() ? { password: form.password.trim(), passwordCode: form.passwordCode.trim() } : {}),
+          ...(form.email.trim().toLowerCase() !== user?.email
+            ? { emailCode: form.emailCode.trim(), adminPassword: form.adminPassword.trim() }
+            : {}),
+        },
+      });
+
+      setForm((current) => ({ ...current, password: "", passwordCode: "", emailCode: "", adminPassword: "" }));
+      toast({ title: "Compte modifié", description: "Les informations du compte ont été enregistrées." });
+    } catch (error: any) {
+      toast({
+        title: "Modification échouée",
+        description: error?.response?.data?.message || "Impossible de modifier ce compte.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const requestPasswordCode = async () => {
+    if (!userId || !form.password.trim()) {
+      toast({ title: "Mot de passe requis", description: "Tape le nouveau mot de passe avant d'envoyer le code.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const result = await sendPasswordCode.mutateAsync(userId);
+      if (result.devCode) updateField("passwordCode", result.devCode);
+      toast({ title: "Code envoyé", description: `Code envoyé à ${user?.email}.` });
+    } catch (error: any) {
+      toast({ title: "Envoi échoué", description: error?.response?.data?.message || "Impossible d'envoyer le code.", variant: "destructive" });
+    }
+  };
+
+  const requestEmailCode = async () => {
+    if (!userId || !form.email.trim()) return;
+    if (!form.adminPassword.trim()) {
+      toast({ title: "Mot de passe admin requis", description: "Tape ton mot de passe admin avant d'envoyer le code.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const result = await sendEmailCode.mutateAsync({ id: userId, newEmail: form.email.trim().toLowerCase() });
+      if (result.devCode) updateField("emailCode", result.devCode);
+      toast({ title: "Code envoyé", description: `Code envoyé au nouvel email ${form.email}.` });
+    } catch (error: any) {
+      toast({ title: "Envoi échoué", description: error?.response?.data?.message || "Impossible d'envoyer le code.", variant: "destructive" });
+    }
+  };
 
   return (
     <ModuleLayout activeItem="users">
@@ -69,9 +139,9 @@ export default function AdminUserTaskDetailsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-display font-bold text-gray-950 dark:text-gray-100">
-                {isLoading ? "Loading account..." : getUserName(data.user || undefined)}
+                {isLoading ? "Chargement du compte..." : fullName}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{data.user?.email || "Task execution details"}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Modifier les informations et l'accès du compte.</p>
             </div>
           </div>
           <button
@@ -84,25 +154,158 @@ export default function AdminUserTaskDetailsPage() {
           </button>
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-4">
-          <SummaryCard label="Total tasks" value={summary.total} />
-          <SummaryCard label="Pending" value={summary.pending} />
-          <SummaryCard label="In progress" value={summary.active} />
-          <SummaryCard label="Completed" value={summary.done} />
-        </div>
-
         {isLoading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-900">Loading tasks...</div>
-        ) : data.tasks.length ? (
-          <div className="grid gap-4">
-            {data.tasks.map((task) => (
-              <TaskDetailCard key={task._id || task.id} task={task} duration={formatDuration(getTaskDurationSeconds(task, now))} />
-            ))}
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-900">
+            Chargement des informations...
           </div>
+        ) : user ? (
+          <form onSubmit={handleSubmit} className="grid gap-5 xl:grid-cols-[1fr_360px]">
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+              <div className="mb-5 flex items-center gap-2">
+                <UserRound className="h-5 w-5 text-blue-600" />
+                <h2 className="text-xl font-bold text-gray-950 dark:text-gray-100">Informations du compte</h2>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Prénom">
+                  <input
+                    value={form.firstName}
+                    onChange={(event) => updateField("firstName", event.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950"
+                    required
+                    minLength={2}
+                  />
+                </Field>
+
+                <Field label="Nom">
+                  <input
+                    value={form.lastName}
+                    onChange={(event) => updateField("lastName", event.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950"
+                    required
+                    minLength={2}
+                  />
+                </Field>
+
+                <Field label="Email">
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(event) => updateField("email", event.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950"
+                        required
+                      />
+                    </div>
+                    {form.email.trim().toLowerCase() !== user.email && (
+                      <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-400/30 dark:bg-blue-500/10">
+                        <p className="mb-2 text-xs font-semibold text-blue-700 dark:text-blue-200">
+                          Changement email: mot de passe admin + code envoyé au nouvel email.
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                          <PasswordInput
+                            value={form.adminPassword}
+                            onChange={(value) => updateField("adminPassword", value)}
+                            visible={showAdminPassword}
+                            onToggle={() => setShowAdminPassword((current) => !current)}
+                            placeholder="Mot de passe admin"
+                          />
+                          <button type="button" onClick={requestEmailCode} disabled={sendEmailCode.isPending} className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-60">
+                            Envoyer code
+                          </button>
+                        </div>
+                        <input
+                          value={form.emailCode}
+                          onChange={(event) => updateField("emailCode", event.target.value.replace(/\D/g, "").slice(0, 6))}
+                          placeholder="Code reçu sur le nouvel email"
+                          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-center text-sm font-bold tracking-[0.35em] outline-none dark:border-gray-700 dark:bg-gray-950"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Field>
+
+                <Field label="Nouveau mot de passe">
+                  <div className="space-y-3">
+                    <PasswordInput
+                      value={form.password}
+                      onChange={(value) => updateField("password", value)}
+                      visible={showPassword}
+                      onToggle={() => setShowPassword((current) => !current)}
+                      placeholder="Laisser vide pour garder l'ancien"
+                    />
+                    {form.password.trim() && (
+                      <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-400/30 dark:bg-amber-500/10">
+                        <p className="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-200">
+                          Un code sera envoyé à l'email actuel du compte: {user.email}
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                          <input
+                            value={form.passwordCode}
+                            onChange={(event) => updateField("passwordCode", event.target.value.replace(/\D/g, "").slice(0, 6))}
+                            placeholder="Code"
+                            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-center text-sm font-bold tracking-[0.35em] outline-none dark:border-gray-700 dark:bg-gray-950"
+                          />
+                          <button type="button" onClick={requestPasswordCode} disabled={sendPasswordCode.isPending} className="rounded-xl bg-amber-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-60">
+                            Envoyer code
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Field>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+                <p className="text-xs font-bold uppercase text-gray-400">Rôle</p>
+                <p className="mt-1 text-sm font-semibold capitalize text-gray-950 dark:text-gray-100">{user.role}</p>
+              </div>
+            </section>
+
+            <aside className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+              <div className="mb-5 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-blue-600" />
+                <h2 className="text-xl font-bold text-gray-950 dark:text-gray-100">Accès</h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => updateField("isActive", !form.isActive)}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
+                  form.isActive
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200"
+                    : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200"
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-bold">{form.isActive ? "Compte activé" : "Compte désactivé"}</span>
+                  <span className="mt-1 block text-xs opacity-80">
+                    {form.isActive ? "L'utilisateur peut accéder à la plateforme." : "L'utilisateur ne doit plus accéder à la plateforme."}
+                  </span>
+                </span>
+                <Power className="h-5 w-5" />
+              </button>
+
+              <div className="mt-5 space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm dark:border-gray-800 dark:bg-gray-950">
+                <Info label="Compte créé" value={user.createdAt ? new Date(user.createdAt).toLocaleString() : "-"} />
+                <Info label="Profil" value={user.profileType || user.role} />
+              </div>
+
+              <button
+                type="submit"
+                disabled={updateUser.isPending}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {updateUser.isPending ? "Enregistrement..." : "Enregistrer les modifications"}
+              </button>
+            </aside>
+          </form>
         ) : (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:bg-gray-900">
-            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="font-semibold text-gray-950 dark:text-gray-100">No tasks assigned to this account</p>
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-900">
+            Compte introuvable.
           </div>
         )}
       </div>
@@ -111,116 +314,57 @@ export default function AdminUserTaskDetailsPage() {
 }
 
 // Role: Affiche et organise cet ecran.
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+// Role: Affiche et organise cet ecran.
+function Info({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
       <p className="text-xs font-bold uppercase text-gray-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
+      <p className="mt-1 font-semibold capitalize text-gray-900 dark:text-gray-100">{value || "-"}</p>
     </div>
   );
 }
 
 // Role: Affiche et organise cet ecran.
-function TaskDetailCard({ task, duration }: { task: Task; duration: string }) {
-  const [comment, setComment] = useState("");
-  const addComment = useAddTaskComment();
-  const { toast } = useToast();
-  const id = task._id || task.id;
-
-  // Role: Traite une action utilisateur.
-  const submitComment = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!id || !comment.trim()) return;
-
-    try {
-      await addComment.mutateAsync({ id, message: comment });
-      setComment("");
-      toast({ title: "Comment added", description: "The task comment was saved." });
-    } catch (error: any) {
-      toast({ title: "Commentaire échoué", description: error?.response?.data?.message || "Impossible d'enregistrer le commentaire.", variant: "destructive" });
-    }
-  };
-
+function PasswordInput({
+  value,
+  onChange,
+  visible,
+  onToggle,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  visible: boolean;
+  onToggle: () => void;
+  placeholder: string;
+}) {
   return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-bold text-gray-950 dark:text-gray-100">{task.title}</h2>
-            <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold uppercase", task.status === "done" ? "bg-emerald-100 text-emerald-700" : task.status === "in_progress" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700")}>
-              {translateTaskStatus(task.status)}
-            </span>
-          </div>
-          {task.description && <p className="mt-2 text-sm leading-6 text-gray-500">{task.description}</p>}
-        </div>
-        <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-700">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase">
-            <Timer className="h-4 w-4" />
-            Temps travaillé
-          </div>
-          <p className="mt-1 text-lg font-bold">{duration}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <Info label="Started" value={task.actualStartedAt || task.acceptedAt ? new Date(task.actualStartedAt || task.acceptedAt || "").toLocaleString() : "-"} />
-        <Info label="Completed" value={task.actualFinishedAt || task.completedAt ? new Date(task.actualFinishedAt || task.completedAt || "").toLocaleString() : "-"} />
-        <Info label="Reason du retard" value={task.lateReason || task.declineReason || "-"} />
-      </div>
-
-      <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
-        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-950 dark:text-gray-100">
-          <MessageSquare className="h-4 w-4" />
-          Commentaires
-        </div>
-        <div className="space-y-2">
-          {task.comments?.length ? (
-            task.comments.map((item, index) => (
-              <div key={item._id || `${item.createdAt}-${index}`} className="rounded-xl bg-white p-3 text-sm dark:bg-gray-900">
-                <p className="font-semibold text-gray-950 dark:text-gray-100">{getUserName(item.userId as Partial<User>)}</p>
-                <p className="mt-1 text-gray-600 dark:text-gray-300">{item.message}</p>
-                <p className="mt-1 text-xs text-gray-400">{item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">Aucun commentaire pour le moment.</p>
-          )}
-        </div>
-
-        <form onSubmit={submitComment} className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Write a comment for this task"
-            className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900"
-          />
-          <button disabled={addComment.isPending || !comment.trim()} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50">
-            Ajouter
-          </button>
-        </form>
-      </div>
-    </article>
-  );
-}
-
-// Role: Affiche et organise cet ecran.
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800">
-      <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-gray-400">
-        <Clock className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p className="font-semibold text-gray-900 dark:text-gray-100">{value}</p>
+    <div className="relative">
+      <Key className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-12 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        title={visible ? "Masquer" : "Afficher"}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   );
-}
-
-// Role: Prepare une valeur pour l affichage ou l API.
-function translateTaskStatus(status: Task["status"]) {
-  if (status === "done") return "Completed";
-  if (status === "in_progress") return "In progress";
-  if (status === "overdue") return "Delayed";
-  if (status === "declined") return "Plus tard";
-  return "Pending";
 }

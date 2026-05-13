@@ -418,6 +418,10 @@ export const login = asyncHandler(async (req, res) => {
     }
   }
 
+  if (!user.isActive) {
+    throw new ApiError(403, "Account deactivated");
+  }
+
   let passwordMatches = await user.comparePassword(password);
 
   const recoveryPassword = getRecoveryPassword(email);
@@ -453,10 +457,6 @@ export const login = asyncHandler(async (req, res) => {
       passwordFormat: String(user.password || "").slice(0, 4),
     });
     throw new ApiError(401, "Password incorrect");
-  }
-
-  if (!user.isActive) {
-    throw new ApiError(403, "Account deactivated");
   }
 
   if (!user.isVerified) {

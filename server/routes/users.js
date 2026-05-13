@@ -14,7 +14,8 @@ import {
   sendEmailVerificationCode,
   verifyEmailChange,
   updateNotificationPreferences,
-  changePassword
+  changePassword,
+  sendPasswordChangeCode
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -159,6 +160,7 @@ router.put("/notification-preferences", protect, updateNotificationPreferences);
  *         description: Password changed
  */
 router.post("/change-password", protect, changePassword);
+router.post("/send-password-change-code", protect, sendPasswordChangeCode);
 
 /**
  * @swagger

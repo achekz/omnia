@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { getAllUsers } from "../services/userService.js";
-import { sendEmailVerificationCode as sendVerificationEmail } from "../services/emailService.js";
+import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
 
 // GET profile
 // Role: Recupere les donnees necessaires.
@@ -31,38 +31,37 @@ export const updateProfile = asyncHandler(async (req, res) => {
 // Send email verification code
 // Role: Envoie un message ou une notification.
 export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
-  const { newEmail } = req.body;
+  const { newEmail, currentPassword } = req.body;
 
   if (!newEmail || !newEmail.includes('@')) {
     throw new ApiError(400, 'Invalid email format');
   }
 
-  // Check if email already exists
+  const user = await User.findById(req.user._id).select('+password');
+  const passwordOk = user && await user.comparePassword(String(currentPassword || ''));
+  if (!passwordOk) {
+    throw new ApiError(403, 'Current password is incorrect');
+  }
+
   const existingUser = await User.findOne({ email: newEmail });
   if (existingUser) {
     throw new ApiError(400, 'Email already in use');
   }
 
-  // Generate 6-digit code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-  // Save code temporarily
-  await User.findByIdAndUpdate(req.user._id, {
-    emailVerificationCode: code,
-    emailVerificationCodeExpiry: expiryTime,
-    pendingEmail: newEmail
+  const result = await createAndSendVerificationCode({
+    purpose: 'account-email-change',
+    type: 'account_security',
+    email: newEmail,
+    firstName: user.firstName,
+    role: user.role,
+    profileType: user.profileType,
+    allowDeliveryFailure: process.env.NODE_ENV !== 'production',
   });
 
-  // Send email with code
-  try {
-    await sendVerificationEmail(newEmail, code);
-  } catch (error) {
-    console.error('Failed to send email:', error);
-    throw new ApiError(500, 'Failed to send verification email');
-  }
+  user.pendingEmail = newEmail;
+  await user.save();
 
-  return res.json(new ApiResponse(200, {}, 'Verification code sent'));
+  return res.json(new ApiResponse(200, { expiresAt: result.expiresAt, devCode: result.code }, 'Verification code sent'));
 });
 
 // Verify email change
@@ -70,33 +69,25 @@ export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
 export const verifyEmailChange = asyncHandler(async (req, res) => {
   const { newEmail, code } = req.body;
 
-  const user = await User.findById(req.user._id).select('+emailVerificationCode +emailVerificationCodeExpiry');
+  const user = await User.findById(req.user._id).select('+pendingEmail');
 
-  if (!user.emailVerificationCode || !user.emailVerificationCodeExpiry) {
-    throw new ApiError(400, 'No pending email verification');
-  }
-
-  // Check if code expired
-  if (new Date() > user.emailVerificationCodeExpiry) {
-    await User.findByIdAndUpdate(req.user._id, {
-      emailVerificationCode: undefined,
-      emailVerificationCodeExpiry: undefined,
-      pendingEmail: undefined
-    });
-    throw new ApiError(400, 'Verification code expired');
-  }
-
-  // Check if code matches
-  if (user.emailVerificationCode !== code) {
-    throw new ApiError(400, 'Invalid verification code');
-  }
-
-  // Check if new email matches pending email
   if (user.pendingEmail !== newEmail) {
     throw new ApiError(400, 'Email mismatch');
   }
 
-  // Update email
+  const result = await verifyOtpCode({
+    purpose: 'account-email-change',
+    email: newEmail,
+    code,
+  });
+
+  if (!result.verified) {
+    throw new ApiError(400, result.reason || 'Invalid verification code');
+  }
+
+  result.verification.consumedAt = new Date();
+  await result.verification.save();
+
   const updatedUser = await User.findByIdAndUpdate(req.user._id, {
     email: newEmail,
     emailVerificationCode: undefined,
@@ -131,10 +122,10 @@ export const updateNotificationPreferences = asyncHandler(async (req, res) => {
 // Change password
 // Role: Enregistre une modification.
 export const changePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword, code } = req.body;
 
-  if (!currentPassword || !newPassword) {
-    throw new ApiError(400, 'Current and new password are required');
+  if (!currentPassword || !newPassword || !code) {
+    throw new ApiError(400, 'Current password, new password and verification code are required');
   }
 
   // Get user with password
@@ -151,6 +142,19 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'New password must be different');
   }
 
+  const result = await verifyOtpCode({
+    purpose: 'account-password-change',
+    email: user.email,
+    code,
+  });
+
+  if (!result.verified) {
+    throw new ApiError(400, result.reason || 'Invalid verification code');
+  }
+
+  result.verification.consumedAt = new Date();
+  await result.verification.save();
+
   // Update password
   user.password = newPassword;
   await user.save();
@@ -158,6 +162,37 @@ export const changePassword = asyncHandler(async (req, res) => {
   const updatedUser = await User.findById(req.user._id).select('-password -refreshToken');
 
   return res.json(new ApiResponse(200, { user: updatedUser }, 'Password updated successfully'));
+});
+
+// Role: Envoie un message ou une notification.
+export const sendPasswordChangeCode = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id).select('+password');
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Current and new password are required');
+  }
+
+  const passwordOk = await user.comparePassword(currentPassword);
+  if (!passwordOk) {
+    throw new ApiError(400, 'Current password is incorrect');
+  }
+
+  if (String(newPassword).length < 6) {
+    throw new ApiError(400, 'Password must contain at least 6 characters');
+  }
+
+  const result = await createAndSendVerificationCode({
+    purpose: 'account-password-change',
+    type: 'account_security',
+    email: user.email,
+    firstName: user.firstName,
+    role: user.role,
+    profileType: user.profileType,
+    allowDeliveryFailure: process.env.NODE_ENV !== 'production',
+  });
+
+  return res.json(new ApiResponse(200, { expiresAt: result.expiresAt, devCode: result.code }, 'Verification code sent'));
 });
 
 // GET users (tenant)

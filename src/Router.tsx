@@ -127,6 +127,7 @@ const routes: AppRoute[] = [
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
+  { path: "/admin/users/:id", component: AdminUserTaskDetailsPage, protected: true, roles: ["admin"] },
   { path: "/admin/users/:id/tasks", component: AdminUserTaskDetailsPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences/:date", component: AdminPresenceDayPage, protected: true, roles: ["admin"] },
   { path: "/admin/presences", component: AdminPresencesPage, protected: true, roles: ["admin"] },

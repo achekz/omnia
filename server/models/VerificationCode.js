@@ -9,13 +9,13 @@ const verificationCodeSchema = new Schema(
   {
     purpose: {
       type: String,
-      enum: ["register", "presence", "reset-password"],
+      enum: ["register", "presence", "reset-password", "account-password-change", "account-email-change", "admin-user-password-change", "admin-user-email-change"],
       required: true,
       index: true,
     },
     type: {
       type: String,
-      enum: ["registration", "presence", "password_reset"],
+      enum: ["registration", "presence", "password_reset", "account_security"],
       index: true,
     },
     email: {

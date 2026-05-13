@@ -15,6 +15,7 @@ import { normalizeRole } from '../utils/roleNormalization.js';
 import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
 import { generateWeeklyEffectivenessRecommendation, refreshRecommendationsForScope } from '../services/recommendationService.js';
+import { createAndSendVerificationCode, verifyOtpCode } from '../services/verificationCodeService.js';
 
 // Role: Construit des donnees derivees.
 function buildScopeFilter(req) {
@@ -378,6 +379,171 @@ export const getUserTaskDetails = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { user, tasks }, 'User task details retrieved'));
 });
 
+// Role: Enregistre une modification.
+export const updateUserAccount = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } }).select('+password');
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, 'User not found'));
+  }
+
+  const firstName = String(req.body.firstName || '').trim();
+  const lastName = String(req.body.lastName || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '').trim();
+  const passwordCode = String(req.body.passwordCode || '').trim();
+  const emailCode = String(req.body.emailCode || '').trim();
+  const adminPassword = String(req.body.adminPassword || '').trim();
+  const emailChanged = email !== user.email;
+
+  if (!firstName || firstName.length < 2) {
+    throw new ApiError(400, 'First name must contain at least 2 characters');
+  }
+
+  if (!lastName || lastName.length < 2) {
+    throw new ApiError(400, 'Last name must contain at least 2 characters');
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError(400, 'Valid email is required');
+  }
+
+  const existingEmail = await User.exists({ _id: { $ne: user._id }, email });
+  if (existingEmail) {
+    throw new ApiError(409, 'Email already used by another account');
+  }
+
+  if (password) {
+    if (!passwordCode) {
+      throw new ApiError(400, 'Password verification code is required');
+    }
+
+    const passwordVerification = await verifyOtpCode({
+      purpose: 'admin-user-password-change',
+      email: user.email,
+      code: passwordCode,
+    });
+
+    if (!passwordVerification.verified) {
+      throw new ApiError(400, passwordVerification.reason || 'Invalid password verification code');
+    }
+
+    passwordVerification.verification.consumedAt = new Date();
+    await passwordVerification.verification.save();
+  }
+
+  if (emailChanged) {
+    if (!adminPassword) {
+      throw new ApiError(400, 'Admin password is required to change email');
+    }
+
+    const adminUser = await User.findById(req.user._id).select('+password');
+    const adminPasswordValid = adminUser && await adminUser.comparePassword(adminPassword);
+    if (!adminPasswordValid) {
+      throw new ApiError(403, 'Admin password is incorrect');
+    }
+
+    if (!emailCode) {
+      throw new ApiError(400, 'Email verification code is required');
+    }
+
+    const emailVerification = await verifyOtpCode({
+      purpose: 'admin-user-email-change',
+      email,
+      code: emailCode,
+    });
+
+    if (!emailVerification.verified) {
+      throw new ApiError(400, emailVerification.reason || 'Invalid email verification code');
+    }
+
+    emailVerification.verification.consumedAt = new Date();
+    await emailVerification.verification.save();
+  }
+
+  user.firstName = firstName;
+  user.lastName = lastName;
+  user.email = email;
+  user.name = `${firstName} ${lastName}`.trim();
+
+  if (req.body.isActive !== undefined) {
+    user.isActive = Boolean(req.body.isActive);
+  }
+
+  if (password) {
+    if (password.length < 6) {
+      throw new ApiError(400, 'Password must contain at least 6 characters');
+    }
+    user.password = password;
+    user.refreshToken = undefined;
+  }
+
+  await user.save();
+
+  const sanitizedUser = await User.findById(user._id).select('-password -refreshToken');
+  await MLPrediction.updateMany(
+    { ...scopeFilter, userId: user._id },
+    { $set: { 'metadata.userStatus': sanitizedUser.isActive ? 'active' : 'inactive' } },
+  );
+
+  res.json(new ApiResponse(200, { user: sanitizedUser }, 'User account updated'));
+});
+
+// Role: Envoie un message ou une notification.
+export const sendAdminUserPasswordCode = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } }).select('-password -refreshToken');
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, 'User not found'));
+  }
+
+  const result = await createAndSendVerificationCode({
+    purpose: 'admin-user-password-change',
+    type: 'account_security',
+    email: user.email,
+    firstName: user.firstName,
+    role: user.role,
+    profileType: user.profileType,
+    allowDeliveryFailure: process.env.NODE_ENV !== 'production',
+  });
+
+  res.json(new ApiResponse(200, { expiresAt: result.expiresAt, devCode: result.code }, 'Verification code sent to account email'));
+});
+
+// Role: Envoie un message ou une notification.
+export const sendAdminUserEmailCode = asyncHandler(async (req, res) => {
+  const scopeFilter = buildScopeFilter(req);
+  const user = await User.findOne({ _id: req.params.id, ...scopeFilter, role: { $ne: 'admin' } }).select('_id role');
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, 'User not found'));
+  }
+
+  const newEmail = String(req.body.newEmail || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    throw new ApiError(400, 'Valid email is required');
+  }
+
+  const existingEmail = await User.exists({ _id: { $ne: user._id }, email: newEmail });
+  if (existingEmail) {
+    throw new ApiError(409, 'Email already used by another account');
+  }
+
+  const result = await createAndSendVerificationCode({
+    purpose: 'admin-user-email-change',
+    type: 'account_security',
+    email: newEmail,
+    firstName: 'there',
+    role: user.role,
+    profileType: user.role,
+    allowDeliveryFailure: process.env.NODE_ENV !== 'production',
+  });
+
+  res.json(new ApiResponse(200, { expiresAt: result.expiresAt, devCode: result.code }, 'Verification code sent to new email'));
+});
+
 // Role: Supprime ou reinitialise des donnees.
 export const deleteUserAccount = asyncHandler(async (req, res) => {
   const scopeFilter = buildScopeFilter(req);
@@ -520,6 +686,9 @@ export default {
   getAdminDashboard,
   getAllUsers,
   getUserTaskDetails,
+  updateUserAccount,
+  sendAdminUserPasswordCode,
+  sendAdminUserEmailCode,
   deleteUserAccount,
   getAllPresences,
   getAllTasks,
