@@ -57,6 +57,27 @@ function validateRulePayload(payload, { partial = false } = {}) {
   }
 }
 
+// Role: Prepare les valeurs de regle pour une execution automatique.
+function normalizeRuleTrigger(trigger) {
+  return trigger === 'manual' ? 'scheduled' : trigger;
+}
+
+// Role: Lance automatiquement les regles apres une creation ou modification.
+function runRulesAutomatically(rule, req, source) {
+  void ruleEngine.run({
+    trigger: normalizeRuleTrigger(rule.trigger || 'scheduled'),
+    tenantId: req.tenantId,
+  }).then((result) => {
+    console.log(`[RuleEngine] auto-run after ${source}:`, {
+      ruleId: rule._id?.toString?.(),
+      trigger: normalizeRuleTrigger(rule.trigger || 'scheduled'),
+      ...result,
+    });
+  }).catch((error) => {
+    console.error(`[RuleEngine] auto-run after ${source} failed:`, error.message);
+  });
+}
+
 // Role: Recupere les donnees necessaires.
 export const listRules = asyncHandler(async (req, res) => {
   const rules = await Rule.find(scopedFilter(req)).sort({ createdAt: -1 });
@@ -72,7 +93,7 @@ export const createRule = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
     name,
     description,
-    trigger,
+    trigger: normalizeRuleTrigger(trigger),
     resource,
     roles,
     conditions,
@@ -87,6 +108,8 @@ export const createRule = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   });
 
+  runRulesAutomatically(rule, req, 'createRule');
+
   res.status(201).json(new ApiResponse(201, { rule }, 'Rule created'));
 });
 
@@ -98,7 +121,9 @@ export const updateRule = asyncHandler(async (req, res) => {
 
   const editable = ['name', 'description', 'trigger', 'resource', 'roles', 'conditions', 'action', 'redirectTarget', 'cooldownMinutes', 'isActive'];
   editable.forEach((field) => {
-    if (req.body[field] !== undefined) rule[field] = req.body[field];
+    if (req.body[field] !== undefined) {
+      rule[field] = field === 'trigger' ? normalizeRuleTrigger(req.body[field]) : req.body[field];
+    }
   });
 
   if (req.body.redirectTarget !== undefined) {
@@ -110,6 +135,7 @@ export const updateRule = asyncHandler(async (req, res) => {
   }
 
   await rule.save();
+  runRulesAutomatically(rule, req, 'updateRule');
   res.json(new ApiResponse(200, { rule }, 'Rule updated'));
 });
 
@@ -119,14 +145,4 @@ export const deleteRule = asyncHandler(async (req, res) => {
   if (!rule) throw new ApiError(404, 'Rule not found');
   await rule.deleteOne();
   res.json(new ApiResponse(200, {}, 'Rule deleted'));
-});
-
-// Role: Lance un traitement metier ou IA.
-export const runRules = asyncHandler(async (req, res) => {
-  const result = await ruleEngine.run({
-    trigger: req.body?.trigger || 'manual',
-    tenantId: req.tenantId,
-  });
-
-  res.json(new ApiResponse(200, result, 'Rule engine executed'));
 });

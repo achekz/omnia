@@ -52,7 +52,7 @@ const ruleSchema = new Schema(
     description: { type: String, trim: true },
     trigger: {
       type: String,
-      enum: ['scheduled', 'task', 'finance', 'manual'],
+      enum: ['scheduled', 'task', 'finance'],
       default: 'scheduled',
       index: true,
     },
@@ -79,6 +79,9 @@ const ruleSchema = new Schema(
 ruleSchema.index({ tenantId: 1, isActive: 1, trigger: 1 });
 
 ruleSchema.pre('validate', function normalizeRule(next) {
+  if (this.trigger === 'manual') {
+    this.trigger = 'scheduled';
+  }
   this.roles = (this.roles || []).map((role) => normalizeRole(role, role));
   this.conditions = (this.conditions || []).map((condition) => {
     const conditionObject = condition.toObject?.() || condition;

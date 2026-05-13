@@ -13,7 +13,6 @@ import {
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   UserCheck,
   UserX,
   Users,
@@ -112,7 +111,7 @@ export default function AdminDashboard() {
   const { data: rules = [] } = useGetRules();
   const [dashboard, setDashboard] = useState<AdminDashboardPayload>(defaultDashboard);
   const [loading, setLoading] = useState(true);
-  const [runningAction, setRunningAction] = useState<"behavior" | "anomalies" | "rules" | "risks" | null>(null);
+  const [runningAction, setRunningAction] = useState<"behavior" | "anomalies" | "risks" | null>(null);
 
   useEffect(() => {
     void loadDashboard();
@@ -138,7 +137,7 @@ export default function AdminDashboard() {
   const intel = useMemo(() => buildAdminIntel(dashboard, rules), [dashboard, rules]);
 
   // Role: Lance un traitement metier ou IA.
-  async function runAdminAction(action: "behavior" | "anomalies" | "rules" | "risks") {
+  async function runAdminAction(action: "behavior" | "anomalies" | "risks") {
     try {
       setRunningAction(action);
       if (action === "behavior") {
@@ -152,15 +151,6 @@ export default function AdminDashboard() {
         toast({
           title: "Global anomaly detection executed",
           description: anomalyScore !== undefined ? `Latest anomaly score: ${Number(anomalyScore).toFixed(2)}.` : "ML anomaly signals have been refreshed.",
-        });
-      }
-      if (action === "rules") {
-        const response = await apiClient.post("/admin/optimize-system-rules");
-        await loadDashboard();
-        const result = response.data?.data || {};
-        toast({
-          title: "Rule Engine optimized",
-          description: `${result.rulesEvaluated || 0} rules checked, ${result.triggeredCount || 0} alerts triggered.`,
         });
       }
       if (action === "risks") {
@@ -201,11 +191,9 @@ export default function AdminDashboard() {
           <AdminActions
             isAnalyzing={runningAction === "behavior"}
             isDetecting={runningAction === "anomalies"}
-            isOptimizing={runningAction === "rules"}
             isMonitoring={runningAction === "risks"}
             onAnalyze={() => void runAdminAction("behavior")}
             onDetect={() => void runAdminAction("anomalies")}
-            onOptimize={() => void runAdminAction("rules")}
             onMonitor={() => void runAdminAction("risks")}
           />
           <SystemMetrics dashboard={dashboard} intel={intel} />
@@ -378,27 +366,22 @@ function UserOverview({ dashboard, intel }: { dashboard: AdminDashboardPayload; 
 function AdminActions({
   isAnalyzing,
   isDetecting,
-  isOptimizing,
   isMonitoring,
   onAnalyze,
   onDetect,
-  onOptimize,
   onMonitor,
 }: {
   isAnalyzing: boolean;
   isDetecting: boolean;
-  isOptimizing: boolean;
   isMonitoring: boolean;
   onAnalyze: () => void;
   onDetect: () => void;
-  onOptimize: () => void;
   onMonitor: () => void;
 }) {
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-3 md:grid-cols-3">
       <ActionButton icon={<RefreshCw className="h-4 w-4" />} label="Analyze system behavior" busy={isAnalyzing} onClick={onAnalyze} />
       <ActionButton icon={<Radar className="h-4 w-4" />} label="Detect global anomalies" busy={isDetecting} onClick={onDetect} tone="rose" />
-      <ActionButton icon={<Sparkles className="h-4 w-4" />} label="Optimize system rules" busy={isOptimizing} onClick={onOptimize} tone="orange" />
       <ActionButton icon={<ShieldCheck className="h-4 w-4" />} label="Monitor user risks" busy={isMonitoring} onClick={onMonitor} tone="cyan" />
     </section>
   );

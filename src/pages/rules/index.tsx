@@ -1,8 +1,8 @@
 // Role du fichier: affiche une page React de l application.
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Loader2, Pencil, Play, Plus, Trash2, Zap } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
-import { useDeleteRule, useGetRules, useRunRules, useSaveRule } from "@/lib/api-client";
+import { useDeleteRule, useGetRules, useSaveRule } from "@/lib/api-client";
 import type { Rule, RuleMetric, RuleOperator } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,17 +60,9 @@ export default function RuleEnginePage() {
   const { data: rules = [], isLoading } = useGetRules();
   const saveRule = useSaveRule();
   const deleteRule = useDeleteRule();
-  const runRules = useRunRules();
   const [form, setForm] = useState<Rule>(emptyForm);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState("");
-  const [executionLogs, setExecutionLogs] = useState<Array<{ id: string; timestamp: string; rulesEvaluated: number; triggeredCount: number }>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("omni_rule_engine_logs") || "[]");
-    } catch {
-      return [];
-    }
-  });
 
   const activeCount = useMemo(() => rules.filter((rule) => rule.isActive !== false).length, [rules]);
 
@@ -141,60 +133,24 @@ export default function RuleEnginePage() {
     }
   }
 
-  // Role: Traite une action utilisateur.
-  async function handleRunRules() {
-    try {
-      const result = await runRules.mutateAsync();
-      const nextLog = {
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        rulesEvaluated: result.rulesEvaluated || 0,
-        triggeredCount: result.triggeredCount || 0,
-      };
-      const nextLogs = [nextLog, ...executionLogs].slice(0, 8);
-      setExecutionLogs(nextLogs);
-      localStorage.setItem("omni_rule_engine_logs", JSON.stringify(nextLogs));
-      toast({
-        title: "Rule Engine executed",
-        description: `${result.rulesEvaluated || 0} rules checked, ${result.triggeredCount || 0} alerts triggered.`,
-      });
-    } catch {
-      toast({
-        title: "Rule Engine failed",
-        description: "Unable to run rules right now.",
-        variant: "destructive",
-      });
-    }
-  }
-
   const condition = form.conditions[0] || emptyForm.conditions[0];
 
   return (
     <ModuleLayout activeItem="rules">
       <div className="p-6 md:p-8">
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">Automation</p>
             <h1 className="mt-2 text-3xl font-display font-bold text-gray-950">Rule Engine</h1>
             <p className="mt-2 max-w-2xl text-gray-500">
-              Create IF/THEN rules that trigger real-time notifications for task delays, budget alerts and operational risks.
+              Create IF/THEN rules that automatically trigger notifications for task delays, budget alerts and operational risks.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void handleRunRules()}
-            disabled={runRules.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700 disabled:opacity-60"
-          >
-            {runRules.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Run Rules
-          </button>
         </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
+        <div className="mb-8 grid gap-4 md:grid-cols-2">
           <RuleStat label="Active rules" value={activeCount} />
           <RuleStat label="Total rules" value={rules.length} />
-          <RuleStat label="Last run" value={runRules.data?.triggeredCount ?? 0} suffix="alerts" />
         </div>
 
         <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
@@ -255,7 +211,6 @@ export default function RuleEnginePage() {
                     <option value="scheduled">Scheduled</option>
                     <option value="task">Task</option>
                     <option value="finance">Finance</option>
-                    <option value="manual">Manual</option>
                   </select>
                 </Field>
                 <Field label="Resource">
@@ -418,32 +373,6 @@ export default function RuleEnginePage() {
           </section>
         </div>
 
-        <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-950">Execution logs</h2>
-              <p className="text-sm text-gray-500">Recent UI-visible runs for demo and operations review.</p>
-            </div>
-            <Clock3 className="h-5 w-5 text-gray-400" />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {executionLogs.length ? executionLogs.map((log) => (
-              <div key={log.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{new Date(log.timestamp).toLocaleString()}</p>
-                <p className="mt-3 text-sm text-gray-700">
-                  <strong>{log.rulesEvaluated}</strong> rules evaluated
-                </p>
-                <p className={cn("mt-1 text-sm font-bold", log.triggeredCount > 0 ? "text-rose-600" : "text-emerald-600")}>
-                  {log.triggeredCount} alerts triggered
-                </p>
-              </div>
-            )) : (
-              <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 md:col-span-2 xl:col-span-4">
-                Run the Rule Engine to see execution logs here.
-              </div>
-            )}
-          </div>
-        </section>
       </div>
     </ModuleLayout>
   );

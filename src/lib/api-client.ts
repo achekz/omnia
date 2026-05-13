@@ -43,6 +43,8 @@ const apiClient = axios.create({
   },
 });
 
+let refreshAccessTokenPromise: Promise<string> | null = null;
+
 const PUBLIC_API_PATHS = new Set([
   "/auth/send-code",
   "/auth/verify-code",
@@ -67,9 +69,68 @@ function isPublicApiRequest(url = "") {
   }
 }
 
+function clearStoredAuth() {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_USER_STORAGE_KEY);
+}
+
+function getStoredToken() {
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+}
+
+function getStoredRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+}
+
+function isJwtExpired(token?: string | null) {
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    const expiresAt = Number(payload.exp || 0) * 1000;
+    return !expiresAt || expiresAt <= Date.now() + 15000;
+  } catch {
+    return true;
+  }
+}
+
+async function refreshAccessToken() {
+  if (!refreshAccessTokenPromise) {
+    refreshAccessTokenPromise = (async () => {
+      const refreshToken = getStoredRefreshToken();
+      if (!refreshToken) throw new Error("No refresh token");
+
+      const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
+      const newToken = res.data?.data?.accessToken as string | undefined;
+      if (!newToken) throw new Error("Invalid refresh response");
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+      localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, newToken);
+      return newToken;
+    })().finally(() => {
+      refreshAccessTokenPromise = null;
+    });
+  }
+
+  return refreshAccessTokenPromise;
+}
+
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+  async (config) => {
+    let token = getStoredToken();
+
+    if (token && isJwtExpired(token) && getStoredRefreshToken() && !isPublicApiRequest(config.url)) {
+      try {
+        token = await refreshAccessToken();
+      } catch {
+        clearStoredAuth();
+        window.location.href = "/login";
+        return Promise.reject(new axios.CanceledError("Authentication refresh failed"));
+      }
+    }
 
     if (token) {
       config.headers = config.headers ?? {};
@@ -92,32 +153,13 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
-
-        if (!refreshToken) {
-          throw new Error("No refresh token");
-        }
-
-        const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
-        const newToken = res.data?.data?.accessToken as string | undefined;
-
-        if (!newToken) {
-          throw new Error("Invalid refresh response");
-        }
-
-        localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
-        localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, newToken);
+        const newToken = await refreshAccessToken();
         originalRequest.headers = originalRequest.headers ?? {};
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
         return apiClient(originalRequest);
       } catch {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-        localStorage.removeItem(USER_STORAGE_KEY);
-        localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
-        localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
-        localStorage.removeItem(LEGACY_USER_STORAGE_KEY);
+        clearStoredAuth();
         window.location.href = "/login";
       }
     }
@@ -975,6 +1017,7 @@ export function useSaveRule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rules"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -989,21 +1032,6 @@ export function useDeleteRule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rules"] });
-    },
-  });
-}
-
-export function useRunRules() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      const response = await apiClient.post("/rules/run", { trigger: "manual" });
-      return unwrapData<{ rulesEvaluated?: number; triggeredCount?: number }>(response.data, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rules"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }

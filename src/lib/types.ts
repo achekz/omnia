@@ -484,7 +484,7 @@ export interface Rule {
   id?: string;
   name: string;
   description?: string;
-  trigger: "scheduled" | "task" | "finance" | "manual";
+  trigger: "scheduled" | "task" | "finance";
   resource: "task" | "finance" | "stagiaire";
   roles?: string[];
   conditions: RuleCondition[];

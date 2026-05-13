@@ -132,11 +132,11 @@ export default function AdminRecommendationsPage() {
 
   return (
     <ModuleLayout activeItem="recommendations">
-      <div className="p-6 lg:p-8">
+      <div className="p-3 sm:p-6 lg:p-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-400">Admin AI</p>
-            <h1 className="mt-2 text-3xl font-display font-bold text-gray-100">Weekly Recommendations</h1>
+            <h1 className="mt-2 text-2xl font-display font-bold text-gray-100 sm:text-3xl">Weekly Recommendations</h1>
             <p className="mt-1 text-sm text-gray-400">
               Newest Saturday first. Click a week and an account to inspect why it is efficient.
             </p>
@@ -257,9 +257,9 @@ function TrendChart({ account, data }: { account?: WeeklyRecommendationUserScore
         <p className="mt-1 text-sm text-gray-400">Présence, absences, retards, Plus tard et tâches faites pour {account?.name || "ce compte"}.</p>
       </div>
 
-      <div className="h-[360px]">
+      <div className="h-[280px] sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 18, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="4 4" stroke="#cbd5e1" opacity={0.55} />
             <XAxis dataKey="label" stroke="#9ca3af" tickLine={false} axisLine={false} />
             <YAxis stroke="#9ca3af" tickLine={false} axisLine={false} allowDecimals={false} domain={[0, Math.max(1, maxValue)]} />
@@ -303,8 +303,8 @@ function AccountRanking({ ranking, selected, onSelect }: { ranking: WeeklyRecomm
         <TrendingUp className="h-5 w-5 text-emerald-300" />
         <h2 className="text-lg font-bold text-gray-100">Account effectiveness ranking</h2>
       </div>
-      <div className="overflow-hidden rounded-xl border border-gray-800">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-xl border border-gray-800">
+        <table className="min-w-[900px] w-full text-left text-sm">
           <thead className="bg-gray-950 text-xs uppercase text-gray-500">
             <tr>
               <th className="px-4 py-3">Rank</th>

@@ -15,7 +15,6 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { normalizeRole } from '../utils/roleNormalization.js';
 import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
-import { ruleEngine } from '../services/ruleEngine.js';
 import { generateWeeklyEffectivenessRecommendation, refreshRecommendationsForScope } from '../services/recommendationService.js';
 
 // Role: Construit des donnees derivees.
@@ -313,18 +312,16 @@ export const monitorUserRisks = asyncHandler(async (req, res) => {
 
 // Role: Lance un traitement metier ou IA.
 export const optimizeSystemRules = asyncHandler(async (req, res) => {
-  const [ruleResult, recommendation] = await Promise.all([
-    ruleEngine.run({ trigger: 'manual', tenantId: req.tenantId }),
-    refreshRecommendationsForScope({
-      tenantId: req.user?.tenantId || req.tenantId,
-      trigger: 'admin-system-optimization',
-    }),
-  ]);
+  const recommendation = await refreshRecommendationsForScope({
+    tenantId: req.user?.tenantId || req.tenantId,
+    trigger: 'admin-system-optimization',
+  });
 
   res.json(new ApiResponse(200, {
-    ...ruleResult,
+    rulesEvaluated: 0,
+    triggeredCount: 0,
     recommendation,
-  }, 'System rules optimized'));
+  }, 'System recommendations optimized'));
 });
 
 // Role: Recupere l historique des recommandations hebdomadaires.

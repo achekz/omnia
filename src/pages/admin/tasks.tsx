@@ -170,7 +170,7 @@ export default function AdminTasksPage() {
 
   return (
     <ModuleLayout activeItem="admin-tasks">
-      <div className="min-h-full bg-gray-950 p-4 text-gray-100 lg:p-6">
+      <div className="min-h-full bg-gray-950 p-3 text-gray-100 sm:p-4 lg:p-6">
         <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
           <UserSidebar users={filteredUsers} selectedUserId={selectedUserId} roleFilter={roleFilter} search={search} onSearch={setSearch} onRoleFilter={setRoleFilter} onSelect={(id) => setLocation(`/admin/tasks/${id}`)} />
 
@@ -220,7 +220,7 @@ export default function AdminTasksPage() {
 
 function UserSidebar({ users, selectedUserId, roleFilter, search, onSearch, onRoleFilter, onSelect }: { users: TaskUserSummary[]; selectedUserId: string; roleFilter: string; search: string; onSearch: (value: string) => void; onRoleFilter: (value: any) => void; onSelect: (id: string) => void }) {
   return (
-    <aside className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-xl shadow-black/20">
+    <aside className="rounded-2xl border border-gray-800 bg-gray-900 p-3 shadow-xl shadow-black/20 sm:p-4">
       <div className="mb-4">
         <h1 className="text-xl font-bold">Accounts</h1>
         <p className="text-sm text-gray-500">User-centric task management</p>
@@ -234,7 +234,7 @@ function UserSidebar({ users, selectedUserId, roleFilter, search, onSearch, onRo
           <button key={role} onClick={() => onRoleFilter(role)} className={cn("rounded-lg border px-3 py-1.5 text-xs font-bold capitalize", roleFilter === role ? "border-violet-500 bg-violet-500/20 text-violet-100" : "border-gray-700 text-gray-400")}>{role}</button>
         ))}
       </div>
-      <div className="space-y-3">
+      <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1 xl:max-h-none">
         {users.map((user) => {
           const id = getUserId(user);
           const name = user.fullName || getUserName(user);
@@ -265,7 +265,7 @@ function UserSidebar({ users, selectedUserId, roleFilter, search, onSearch, onRo
 
 function HeaderSummary({ summary, isConnected }: { summary: { total: number; completed: number; overdue: number; avgProductivity: number }; isConnected: boolean }) {
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard icon={<ListTodo />} label="Total tasks" value={summary.total} />
       <SummaryCard icon={<CheckCircle2 />} label="Completed" value={summary.completed} tone="emerald" />
       <SummaryCard icon={<AlertTriangle />} label="Overdue" value={summary.overdue} tone="rose" />
@@ -293,13 +293,13 @@ function Charts({ stats }: { stats: any }) {
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
         <h2 className="mb-4 font-bold">Productivity evolution</h2>
-        <div className="h-52">
+        <div className="h-48 sm:h-52">
           <ResponsiveContainer width="100%" height="100%"><AreaChart data={data}><CartesianGrid strokeDasharray="4 4" stroke="#334155" /><XAxis dataKey="day" stroke="#94a3b8" /><YAxis stroke="#94a3b8" /><Tooltip /><Area dataKey="productivity" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} /></AreaChart></ResponsiveContainer>
         </div>
       </div>
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
         <h2 className="mb-4 font-bold">Task completion rate</h2>
-        <div className="h-52">
+        <div className="h-48 sm:h-52">
           <ResponsiveContainer width="100%" height="100%"><BarChart data={completion}><CartesianGrid strokeDasharray="4 4" stroke="#334155" /><XAxis dataKey="name" stroke="#94a3b8" /><YAxis stroke="#94a3b8" /><Tooltip /><Bar dataKey="value" fill="#10b981" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
       </div>

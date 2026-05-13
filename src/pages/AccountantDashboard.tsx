@@ -8,7 +8,6 @@ import {
   FileCheck2,
   LineChart,
   ReceiptText,
-  RefreshCw,
   SearchCheck,
   ShieldAlert,
   Sparkles,
@@ -25,7 +24,6 @@ import {
   useGenerateRecommendations,
   useGetFinanceRecords,
   useGetFinanceSummary,
-  useRunRules,
 } from "@/lib/api-client";
 import type { FinancialRecord } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -306,12 +304,10 @@ function FinanceRecordCard({ record }: { record: FinancialRecord }) {
 }
 
 // Role: Affiche et organise cet ecran.
-function FinanceActions({ onDetect, onRecommend, onRules, isScanning }: { onDetect: () => void; onRecommend: () => void; onRules: () => void; isScanning: boolean }) {
+function FinanceActions({ onDetect, onRecommend, isScanning }: { onDetect: () => void; onRecommend: () => void; isScanning: boolean }) {
   const actions = [
     { label: isScanning ? "Scanning anomalies..." : "Detect anomalies", icon: ShieldAlert, onClick: onDetect, tone: "from-rose-500 to-amber-500" },
-    { label: "Validate entries", icon: FileCheck2, onClick: onRules, tone: "from-emerald-500 to-blue-500" },
     { label: "Analyze financial trends", icon: BarChart3, onClick: onRecommend, tone: "from-blue-500 to-cyan-500" },
-    { label: "Auto-check inconsistencies", icon: RefreshCw, onClick: onRules, tone: "from-indigo-500 to-blue-500" },
   ];
 
   return (
@@ -376,7 +372,6 @@ export default function AccountantDashboard() {
   const { data: records = [] } = useGetFinanceRecords();
   const detectAnomaly = useDetectAnomaly();
   const generateRecommendations = useGenerateRecommendations();
-  const runRules = useRunRules();
 
   const signal = useMemo(() => {
     const derived = deriveFinanceSignal(records);
@@ -407,7 +402,6 @@ export default function AccountantDashboard() {
             <FinanceActions
               onDetect={runAnomalyScan}
               onRecommend={() => generateRecommendations.mutate()}
-              onRules={() => runRules.mutate()}
               isScanning={detectAnomaly.isPending}
             />
             <FinanceMetrics signal={signal} />

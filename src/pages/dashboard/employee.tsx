@@ -33,7 +33,6 @@ import {
   useGetDashboardStats,
   useMlInsights,
   useRunRiskPrediction,
-  useRunRules,
   useUpdateTaskStatus,
 } from "@/lib/api-client";
 import type { Task, TaskStatus, User } from "@/lib/types";
@@ -571,7 +570,6 @@ export default function EmployeeDashboard() {
   const { data: mlInsights } = useMlInsights();
   const runRiskPrediction = useRunRiskPrediction();
   const generateRecommendations = useGenerateRecommendations();
-  const runRules = useRunRules();
   const updateTaskStatus = useUpdateTaskStatus();
 
   const riskScore = normalizeRiskScore(mlInsights?.latestPrediction?.riskScore);
@@ -607,7 +605,6 @@ export default function EmployeeDashboard() {
   // Role: Lance un traitement metier ou IA.
   const optimizeWorkload = () => {
     generateRecommendations.mutate();
-    runRules.mutate();
   };
 
   return (
@@ -633,7 +630,6 @@ export default function EmployeeDashboard() {
               onAnalyze={analyzeProductivity}
               onReprioritize={optimizeWorkload}
               onFixDelays={() => {
-                runRules.mutate();
                 runRiskPrediction.mutate();
               }}
             />
