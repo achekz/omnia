@@ -65,7 +65,7 @@ const MODULES: NavModule[] = [
     bg: "bg-violet-500",
     textColor: "text-violet-600",
     activeSidebarStyle: "border-violet-400/30 bg-violet-500/15 text-violet-100 font-semibold shadow-sm shadow-violet-950/30",
-    allowedProfiles: ["company", "cabinet", "employee", "stagiaire", "admin"],
+    allowedProfiles: ["company", "cabinet", "employee", "stagiaire", "admin", "comptable"],
     items: [
       { id: "ai-home", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
       { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
@@ -126,6 +126,7 @@ const MODULES: NavModule[] = [
     activeSidebarStyle: "border-sky-400/30 bg-sky-500/15 text-sky-100 font-semibold shadow-sm shadow-sky-950/30",
     allowedProfiles: ["comptable"],
     items: [
+      { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
       { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
@@ -159,7 +160,7 @@ const MODULES: NavModule[] = [
     bg: "bg-lime-500",
     textColor: "text-lime-600",
     activeSidebarStyle: "border-lime-400/30 bg-lime-500/15 text-lime-100 font-semibold shadow-sm shadow-lime-950/30",
-    allowedProfiles: ["company", "cabinet"],
+    allowedProfiles: ["company", "cabinet", "comptable"],
     items: [
       { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" />, path: "/paie/dashboard" },
       { id: "salaries", label: "Salariés", icon: <Users className="w-4 h-4" /> },

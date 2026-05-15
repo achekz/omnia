@@ -124,6 +124,9 @@ const routes: AppRoute[] = [
 
   { path: "/stagiaire/dashboard", component: StagiaireDashboard, protected: true, roles: ["stagiaire"] },
 
+  { path: "/comptable/dashboard", component: PaieDashboardPage, protected: true, roles: ["comptable"] },
+  { path: "/dashboard/comptable", component: PaieDashboardPage, protected: true, roles: ["comptable"] },
+
   { path: "/admin", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/dashboard", component: AdminDashboard, protected: true, roles: ["admin"] },
   { path: "/admin/users", component: AdminUsersPage, protected: true, roles: ["admin"] },
@@ -158,7 +161,7 @@ const routes: AppRoute[] = [
   { path: "/employee/employees", component: EmployeeSectionPage, protected: true },
   { path: "/employee/projects", component: EmployeeSectionPage, protected: true },
 
-  { path: "/paie/dashboard", component: PaieDashboardPage, protected: true },
+  { path: "/paie/dashboard", component: PaieDashboardPage, protected: true, roles: ["comptable"] },
   { path: "/help", component: HelpCenterPage, protected: true },
 ];
 
