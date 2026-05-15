@@ -10,6 +10,9 @@ const GEMINI_PREFERRED_MODELS = [
 
 const GEMINI_UNAVAILABLE_MESSAGE =
   "L'IA est temporairement indisponible. Réessayez dans quelques secondes.";
+const MAX_ATTACHMENTS = 5;
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const TEXT_ATTACHMENT_LIMIT = 12000;
 
 function getGeminiApiKey() {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -48,6 +51,102 @@ function parseJsonSafe(rawText) {
   } catch {
     return null;
   }
+}
+
+function getAttachmentByteSize(base64Data = "") {
+  return Math.ceil((base64Data.length * 3) / 4);
+}
+
+function normalizeAttachment(attachment) {
+  if (!attachment || typeof attachment !== "object") {
+    return null;
+  }
+
+  const name = String(attachment.name || "document").slice(0, 160);
+  const mimeType = String(attachment.type || attachment.mimeType || "").toLowerCase();
+  const textContent =
+    typeof attachment.textContent === "string"
+      ? attachment.textContent.slice(0, TEXT_ATTACHMENT_LIMIT)
+      : "";
+  const data =
+    typeof attachment.data === "string"
+      ? attachment.data.replace(/^data:[^;]+;base64,/, "").trim()
+      : "";
+
+  if (!textContent && !data) {
+    return null;
+  }
+
+  if (data && getAttachmentByteSize(data) > MAX_ATTACHMENT_BYTES) {
+    const error = new Error(`Attachment "${name}" is too large.`);
+    error.code = "XAI_ATTACHMENT_TOO_LARGE";
+    throw error;
+  }
+
+  return {
+    name,
+    mimeType,
+    textContent,
+    data,
+  };
+}
+
+function canSendInlineData(attachment) {
+  return (
+    attachment.data &&
+    (attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf")
+  );
+}
+
+function buildGeminiParts(prompt, systemInstruction, attachments = []) {
+  const normalizedAttachments = attachments
+    .slice(0, MAX_ATTACHMENTS)
+    .map(normalizeAttachment)
+    .filter(Boolean);
+
+  const parts = [
+    {
+      text: `${systemInstruction}\n\nUser question: ${prompt.trim()}`,
+    },
+  ];
+
+  if (normalizedAttachments.length === 0) {
+    return parts;
+  }
+
+  parts.push({
+    text:
+      "The user attached document(s). Read their content carefully and answer the user's question using the attachments when relevant. If the attachment is an image, inspect it visually.",
+  });
+
+  for (const attachment of normalizedAttachments) {
+    parts.push({
+      text: `Attachment: ${attachment.name}\nMIME type: ${attachment.mimeType || "unknown"}`,
+    });
+
+    if (attachment.textContent) {
+      parts.push({
+        text: `Extracted text content from ${attachment.name}:\n${attachment.textContent}`,
+      });
+      continue;
+    }
+
+    if (canSendInlineData(attachment)) {
+      parts.push({
+        inline_data: {
+          mime_type: attachment.mimeType,
+          data: attachment.data,
+        },
+      });
+      continue;
+    }
+
+    parts.push({
+      text: `The file "${attachment.name}" could not be read directly because its format is not supported by the current attachment reader.`,
+    });
+  }
+
+  return parts;
 }
 
 function normalizeModelName(modelName) {
@@ -127,7 +226,7 @@ async function getCandidateModels(apiKey) {
   return [...new Set([...GEMINI_PREFERRED_MODELS, ...availableModels])];
 }
 
-export async function generateResponse(prompt, role = "employee") {
+export async function generateResponse(prompt, role = "employee", attachments = []) {
   if (!prompt || !prompt.trim()) {
     const error = new Error("Prompt is required.");
     error.code = "XAI_PROMPT_REQUIRED";
@@ -136,7 +235,7 @@ export async function generateResponse(prompt, role = "employee") {
 
   const apiKey = getGeminiApiKey();
   const systemInstruction = getRoleInstruction(role);
-  const fullPrompt = `${systemInstruction}\n\nUser: ${prompt.trim()}`;
+  const parts = buildGeminiParts(prompt, systemInstruction, attachments);
   const candidateModels = await getCandidateModels(apiKey);
 
   for (const model of candidateModels) {
@@ -145,7 +244,7 @@ export async function generateResponse(prompt, role = "employee") {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: fullPrompt }] }],
+        contents: [{ role: "user", parts }],
       }),
     });
 
@@ -169,7 +268,10 @@ export async function generateResponse(prompt, role = "employee") {
       throw error;
     }
 
-    const reply = payload?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const reply = payload?.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("")
+      .trim();
 
     if (!reply) {
       const error = new Error("Gemini returned an empty response.");

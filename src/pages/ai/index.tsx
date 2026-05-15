@@ -1,5 +1,5 @@
 // Role du fichier: affiche une page React de l application.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
@@ -28,6 +28,14 @@ interface Conversation {
   createdAt: string;
   updatedAt: string;
   messages: Message[];
+}
+
+interface AttachmentPayload {
+  name: string;
+  type: string;
+  size: number;
+  data?: string;
+  textContent?: string;
 }
 
 function createMessage(role: Message["role"], text: string): Message {
@@ -120,15 +128,89 @@ function formatHistoryDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatFileSize(size: number) {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isReadableFile(file: File) {
+  const readableExtensions = [".txt", ".md", ".csv", ".json", ".xml", ".html", ".css", ".js", ".ts", ".tsx", ".jsx"];
+  return file.type.startsWith("text/") || readableExtensions.some((extension) => file.name.toLowerCase().endsWith(extension));
+}
+
+function readFileAsBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.includes(",") ? result.split(",")[1] || "" : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function canSendAsInlineData(file: File) {
+  return file.type.startsWith("image/") || file.type === "application/pdf";
+}
+
+async function buildAttachmentPayloads(files: File[]): Promise<AttachmentPayload[]> {
+  const limitedFiles = files.slice(0, 5);
+
+  return Promise.all(
+    limitedFiles.map(async (file) => {
+      const basePayload = {
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+      };
+
+      if (isReadableFile(file)) {
+        try {
+          return {
+            ...basePayload,
+            textContent: (await file.text()).slice(0, 12000),
+          };
+        } catch {
+          return basePayload;
+        }
+      }
+
+      if (canSendAsInlineData(file)) {
+        return {
+          ...basePayload,
+          data: await readFileAsBase64(file),
+        };
+      }
+
+      return {
+        ...basePayload,
+        textContent: `Le fichier "${file.name}" n'est pas dans un format lisible directement. Formats pris en charge ici: images, PDF et fichiers texte/CSV/JSON.`,
+      };
+    }),
+  );
+}
+
 // Role: Affiche et organise cet ecran.
 export default function AIDashboard() {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const historyStorageKey = `omni_ai_chat_conversations_${user?._id || user?.id || user?.email || "guest"}`;
   const legacyHistoryStorageKey = `omni_ai_chat_history_${user?._id || user?.id || user?.email || "guest"}`;
   const sortedConversations = useMemo(
@@ -218,30 +300,90 @@ export default function AIDashboard() {
     setMessages([]);
     setActiveConversationId(null);
     setPrompt("");
+    setSelectedFiles([]);
     setIsHistoryOpen(false);
+  };
+
+  const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles((previousFiles) => [...previousFiles, ...files]);
+    }
+    event.target.value = "";
+  };
+
+  const removeSelectedFile = (indexToRemove: number) => {
+    setSelectedFiles((previousFiles) => previousFiles.filter((_, index) => index !== indexToRemove));
+  };
+
+  const startVoiceMessage = () => {
+    const speechWindow = window as typeof window & {
+      SpeechRecognition?: new () => any;
+      webkitSpeechRecognition?: new () => any;
+    };
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setMessages((previousMessages) => [
+        ...previousMessages,
+        createMessage("ai", "La reconnaissance vocale n'est pas supportee par ce navigateur. Essayez Chrome ou Edge."),
+      ]);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = navigator.language || "fr-FR";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => {
+      setIsListening(false);
+      setMessages((previousMessages) => [
+        ...previousMessages,
+        createMessage("ai", "Je n'ai pas pu entendre le message vocal. Reessayez."),
+      ]);
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results?.[0]?.[0]?.transcript?.trim();
+      if (transcript) {
+        void sendMessage(transcript);
+      }
+    };
+
+    recognition.start();
   };
 
   // Role: Envoie un message ou une notification.
   const sendMessage = async (message?: string) => {
     const textToSend = message || prompt.trim();
-    if (!textToSend) {
+    const filesToSend = selectedFiles;
+    if (!textToSend && filesToSend.length === 0) {
       return;
     }
 
     const conversationId = activeConversationId || createConversationId();
     setActiveConversationId(conversationId);
 
-    const userMessage = createMessage("user", textToSend);
+    const filesSummary = filesToSend.length
+      ? `\n\nFichiers joints:\n${filesToSend.map((file) => `- ${file.name} (${file.type || "type inconnu"}, ${formatFileSize(file.size)})`).join("\n")}`
+      : "";
+    const userVisibleText = `${textToSend || "Analyse les fichiers joints."}${filesSummary}`;
+    const apiMessage = textToSend || "Analyse les fichiers joints.";
+    const userMessage = createMessage("user", userVisibleText);
     setMessages((prev) => {
       const nextMessages = [...prev, userMessage];
       saveConversationMessages(conversationId, nextMessages);
       return nextMessages;
     });
     setPrompt("");
+    setSelectedFiles([]);
     setIsLoading(true);
 
     try {
-      const res = await apiClient.post("/ai/chat", { message: textToSend });
+      const attachments = await buildAttachmentPayloads(filesToSend);
+      const res = await apiClient.post("/ai/chat", { message: apiMessage, attachments }, { timeout: 30000 });
       const aiResponse =
         res.data?.reply ||
         "Je suis en train d'analyser votre demande. Veuillez réessayer.";
@@ -414,6 +556,22 @@ export default function AIDashboard() {
             className="w-full max-w-3xl"
           >
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-4 shadow-xl shadow-indigo-500/10 border border-white/60 dark:border-gray-700/60 mb-6">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="*/*"
+                className="hidden"
+                onChange={handleFileSelection}
+              />
+              <input
+                ref={documentInputRef}
+                type="file"
+                multiple
+                accept="*/*"
+                className="hidden"
+                onChange={handleFileSelection}
+              />
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
@@ -426,24 +584,63 @@ export default function AIDashboard() {
                 placeholder="Décrivez votre besoin : analyse, prédiction, automatisation... Notre IA s'occupe du reste."
                 className="w-full h-32 bg-transparent text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none px-2 text-lg font-medium"
               />
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 px-1">
+                  {selectedFiles.map((file, index) => (
+                    <span
+                      key={`${file.name}-${file.size}-${index}`}
+                      className="inline-flex max-w-full items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                    >
+                      <span className="max-w-48 truncate">{file.name}</span>
+                      <span className="text-blue-500 dark:text-blue-300">{formatFileSize(file.size)}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedFile(index)}
+                        className="rounded-full p-0.5 hover:bg-blue-100 dark:hover:bg-blue-900"
+                        aria-label={`Supprimer ${file.name}`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-col gap-3 mt-4 border-t border-gray-100 dark:border-gray-700 pt-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-2">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700"
+                  >
                     <Paperclip className="w-4 h-4" />
                     Files
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => documentInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 transition-colors border border-gray-200 dark:border-gray-700"
+                  >
                     <FileText className="w-4 h-4" />
                     Documents
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
+                  <button
+                    type="button"
+                    onClick={startVoiceMessage}
+                    disabled={isLoading || isListening}
+                    className={`p-2.5 rounded-full transition-colors disabled:opacity-60 ${
+                      isListening
+                        ? "bg-red-50 text-red-500"
+                        : "text-blue-500 hover:bg-blue-50"
+                    }`}
+                    title={isListening ? "Ecoute en cours..." : "Envoyer un vocal"}
+                  >
                     <Mic className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => void sendMessage()}
-                    disabled={!prompt.trim() || isLoading}
+                    disabled={(!prompt.trim() && selectedFiles.length === 0) || isLoading}
                     className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all disabled:opacity-50 disabled:scale-100 hover:scale-105 shadow-lg shadow-blue-500/30"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

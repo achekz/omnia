@@ -5,18 +5,22 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Role: Decrit la logique chatWithAI.
 export const chatWithAI = asyncHandler(async (req, res) => {
-  const { message } = req.body;
+  const { message, attachments = [] } = req.body;
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     throw new ApiError(400, "Message is required");
   }
 
-  if (message.length > 5000) {
+  if (message.length > 20000) {
     throw new ApiError(400, "Message is too long");
   }
 
+  if (!Array.isArray(attachments)) {
+    throw new ApiError(400, "Attachments must be an array");
+  }
+
   try {
-    const reply = await generateResponse(message, req.user?.role);
+    const reply = await generateResponse(message, req.user?.role, attachments);
     return res.status(200).json({ reply });
   } catch (error) {
     console.error("[AI] Chat request failed:", {
@@ -32,6 +36,10 @@ export const chatWithAI = asyncHandler(async (req, res) => {
 
     if (error.code === "XAI_EMPTY_RESPONSE") {
       throw new ApiError(502, "Gemini returned an empty response");
+    }
+
+    if (error.code === "XAI_ATTACHMENT_TOO_LARGE") {
+      throw new ApiError(400, error.message);
     }
 
     if (error.status === 401 || error.status === 403) {
