@@ -495,6 +495,8 @@ export const updateUserAccount = asyncHandler(async (req, res) => {
   const emailCode = String(req.body.emailCode || '').trim();
   const adminPassword = String(req.body.adminPassword || '').trim();
   const emailChanged = email !== user.email;
+  const requestedRole = req.body.role !== undefined ? normalizeRole(req.body.role, '') : normalizeRole(user.role, 'employee');
+  const roleChanged = requestedRole && requestedRole !== normalizeRole(user.role, 'employee');
 
   if (!firstName || firstName.length < 2) {
     throw new ApiError(400, 'First name must contain at least 2 characters');
@@ -506,6 +508,10 @@ export const updateUserAccount = asyncHandler(async (req, res) => {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ApiError(400, 'Valid email is required');
+  }
+
+  if (!['employee', 'stagiaire', 'comptable'].includes(requestedRole)) {
+    throw new ApiError(400, 'Role must be employee, stagiaire, or comptable');
   }
 
   const existingEmail = await User.exists({ _id: { $ne: user._id }, email });
@@ -565,6 +571,8 @@ export const updateUserAccount = asyncHandler(async (req, res) => {
   user.lastName = lastName;
   user.email = email;
   user.name = `${firstName} ${lastName}`.trim();
+  user.role = requestedRole;
+  user.profileType = requestedRole;
 
   if (req.body.isActive !== undefined) {
     user.isActive = Boolean(req.body.isActive);
@@ -575,15 +583,42 @@ export const updateUserAccount = asyncHandler(async (req, res) => {
       throw new ApiError(400, 'Password must contain at least 6 characters');
     }
     user.password = password;
+  }
+
+  if (password || roleChanged) {
     user.refreshToken = undefined;
   }
 
   await user.save();
 
   const sanitizedUser = await User.findById(user._id).select('-password -refreshToken');
+
+  if (roleChanged) {
+    await RoleChangeRequest.updateMany(
+      { ...scopeFilter, userId: user._id, status: 'pending' },
+      {
+        $set: {
+          status: 'approved',
+          decidedBy: req.user._id,
+          decidedAt: new Date(),
+          decisionReason: 'Role updated directly by admin',
+        },
+      },
+    );
+
+    await notifService.create(user._id, user.tenantId || req.user?.tenantId || null, {
+      type: 'success',
+      title: 'Rôle modifié par admin',
+      message: `Votre rôle est maintenant ${requestedRole}. Reconnectez-vous pour appliquer tous les accès.`,
+      source: 'system',
+      actionUrl: '/profile',
+      metadata: { userId: user._id.toString(), requestedRole },
+    });
+  }
+
   await MLPrediction.updateMany(
     { ...scopeFilter, userId: user._id },
-    { $set: { 'metadata.userStatus': sanitizedUser.isActive ? 'active' : 'inactive' } },
+    { $set: { 'metadata.userStatus': sanitizedUser.isActive ? 'active' : 'inactive', 'metadata.userRole': sanitizedUser.role } },
   );
 
   res.json(new ApiResponse(200, { user: sanitizedUser }, 'User account updated'));

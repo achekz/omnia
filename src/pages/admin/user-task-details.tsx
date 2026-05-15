@@ -5,11 +5,13 @@ import { useLocation, useRoute } from "wouter";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGetAdminUserTaskDetails, useSendAdminUserEmailCode, useSendAdminUserPasswordCode, useUpdateAdminUser } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import type { UserRole } from "@/lib/types";
 
 interface AccountFormState {
   firstName: string;
   lastName: string;
   email: string;
+  role: Exclude<UserRole, "admin">;
   password: string;
   passwordCode: string;
   emailCode: string;
@@ -21,6 +23,7 @@ const emptyForm: AccountFormState = {
   firstName: "",
   lastName: "",
   email: "",
+  role: "employee",
   password: "",
   passwordCode: "",
   emailCode: "",
@@ -56,6 +59,7 @@ export default function AdminUserTaskDetailsPage() {
       firstName: user.firstName || "",
       lastName: user.lastName || "",
       email: user.email || "",
+      role: user.role === "admin" ? "employee" : user.role,
       password: "",
       passwordCode: "",
       emailCode: "",
@@ -79,6 +83,8 @@ export default function AdminUserTaskDetailsPage() {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim().toLowerCase(),
+          role: form.role,
+          profileType: form.role,
           isActive: form.isActive,
           ...(form.password.trim() ? { password: form.password.trim(), passwordCode: form.passwordCode.trim() } : {}),
           ...(form.email.trim().toLowerCase() !== user?.email
@@ -259,8 +265,23 @@ export default function AdminUserTaskDetailsPage() {
               </div>
 
               <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
-                <p className="text-xs font-bold uppercase text-gray-400">Rôle</p>
-                <p className="mt-1 text-sm font-semibold capitalize text-gray-950 dark:text-gray-100">{user.role}</p>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase text-gray-400">Rôle</span>
+                  <select
+                    value={form.role}
+                    onChange={(event) => updateField("role", event.target.value as Exclude<UserRole, "admin">)}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold capitalize text-gray-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="comptable">Comptable</option>
+                    <option value="stagiaire">Stagiaire</option>
+                  </select>
+                </label>
+                {form.role !== user.role && (
+                  <p className="mt-2 text-xs font-semibold text-amber-600 dark:text-amber-300">
+                    Le rôle sera modifié directement par l'admin après enregistrement.
+                  </p>
+                )}
               </div>
             </section>
 
@@ -290,7 +311,7 @@ export default function AdminUserTaskDetailsPage() {
 
               <div className="mt-5 space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm dark:border-gray-800 dark:bg-gray-950">
                 <Info label="Compte créé" value={user.createdAt ? new Date(user.createdAt).toLocaleString() : "-"} />
-                <Info label="Profil" value={user.profileType || user.role} />
+                <Info label="Profil" value={form.role} />
               </div>
 
               <button

@@ -1,5 +1,5 @@
 @startuml
-title Diagramme de sequence - Configurer une regle | OmniAI Platform
+title Diagramme de sequence - Marquer presence | OmniAI Platform
 
 autonumber
 
@@ -21,80 +21,164 @@ skinparam sequence {
   NoteBackgroundColor #FEF3C7
 }
 
-actor "Admin" as Admin #DBEAFE
+actor "Utilisateur\n(Employe, Stagiaire, Comptable)" as Utilisateur #DBEAFE
+actor "Admin" as Admin #FEF3C7
 participant "Frontend" as Frontend #EFF6FF
 participant "Backend" as Backend #F8FAFC
+participant "Service Email" as Email #FEF3C7
 database "BD" as Database #D1FAE5
-participant "Compte cible" as TargetAccount #FEF3C7
 
-ref over Admin, TargetAccount
+ref over Utilisateur, Database
 Authentification
 end ref
 
-note over Admin, TargetAccount
-Architecture generale de configuration d'une regle:
-l'Admin configure une regle depuis le Frontend,
-le Backend valide et enregistre la regle,
-la BD conserve les regles et les notifications,
-les regles actives s'executent automatiquement apres sauvegarde et par planification.
+note over Utilisateur, Database
+Regle metier:
+Tous les comptes sauf Admin peuvent marquer la presence.
+L'Utilisateur peut etre Employe, Stagiaire ou Comptable.
+L'Admin consulte le temps de presence, le temps de check-out et les causes.
 end note
 
-Frontend --> Admin : afficher page d'accueil Admin
+alt Utilisateur marque sa presence
+  Frontend --> Utilisateur : afficher tableau de bord
+  Utilisateur -> Frontend : cliquer sur "Presence"
+  Frontend --> Utilisateur : afficher page "Marquer presence"
 
-Admin -> Frontend : cliquer sur "Rule Engine"
-Frontend -> Backend : demander les regles existantes
-Backend -> Database : recuperer les regles
-Database --> Backend : retourner les regles
-Backend --> Frontend : retourner la liste des regles
-Frontend --> Admin : afficher page automation
+  Utilisateur -> Frontend : cliquer sur "Marquer presence"
+  Frontend -> Backend : envoyer demande de check-in(idUtilisateur, role, date, heureEntree)
 
-Admin -> Frontend : cliquer sur "New Rule"
-Frontend --> Admin : afficher formulaire de regle
+  Backend -> Backend : verifier ponctualite de l'entree
 
-Admin -> Frontend : remplir le formulaire
-Admin -> Frontend : cliquer sur "Save Rule"
-Frontend -> Backend : envoyer les donnees de la regle
-
-Backend -> Backend : verifier les donnees de la regle
-
-alt donnees invalides
-  Backend --> Frontend : retourner une erreur de validation
-  Frontend --> Admin : afficher "Verifier les donnees"
-else donnees valides
-  Backend -> Database : enregistrer la regle
-  Database --> Backend : regle enregistree
-  Backend --> Frontend : confirmer la creation de la regle
-  Frontend --> Admin : afficher "Regle creee avec succes"
-
-  Backend -> Backend : executer automatiquement les regles actives
-  Backend -> Database : recuperer les regles actives
-  Database --> Backend : retourner les regles actives
-
-  Backend -> Database : recuperer les taches a analyser
-  Database --> Backend : retourner les taches actives ou en retard
-
-  Backend -> Backend : verifier les conditions
-
-  alt condition non verifiee
-    Backend -> Database : ne creer aucune notification
-    Database --> Backend : aucune alerte enregistree
-  else condition verifiee
-    Backend -> Database : enregistrer la notification
-    Database --> Backend : notification enregistree
-
-    Backend -> Database : mettre a jour la date de declenchement
-    Database --> Backend : regle mise a jour
-
-    Backend --> TargetAccount : envoyer notification d'alerte
-    TargetAccount --> Admin : afficher l'alerte dans les notifications
+  alt entree ponctuelle
+    Backend -> Email : envoyer code de verification a l'email
+    Email --> Utilisateur : recevoir code de verification
+    Frontend --> Utilisateur : demander le code de verification
+    Utilisateur -> Frontend : saisir code de verification
+    ref over Utilisateur, Database
+    Verification du code email
+    end ref
+    Backend -> Database : enregistrer presence(heureEntree, statut ponctuel)
+    Database --> Backend : presence enregistree
+    Backend --> Frontend : confirmer le marquage
+    Frontend --> Utilisateur : afficher "Presence marquee avec succes"
+  else entree en retard
+    Frontend --> Utilisateur : demander la cause du retard
+    Utilisateur -> Frontend : saisir cause du retard
+    Frontend -> Backend : envoyer cause du retard
+    Backend -> Email : envoyer code de verification a l'email
+    Email --> Utilisateur : recevoir code de verification
+    Frontend --> Utilisateur : demander le code de verification
+    Utilisateur -> Frontend : saisir code de verification
+    ref over Utilisateur, Database
+    Verification du code email
+    end ref
+    Backend -> Database : enregistrer presence(heureEntree, statut retard, causeRetard)
+    Database --> Backend : presence enregistree
+    Backend --> Frontend : confirmer le marquage
+    Frontend --> Utilisateur : afficher "Presence marquee avec succes"
   end
+
+  == Fin de travail ==
+
+  Utilisateur -> Frontend : cliquer sur "Check-out"
+  Frontend -> Backend : envoyer demande de check-out(idUtilisateur, date, heureSortie)
+  Backend -> Database : verifier presence du jour
+  Database --> Backend : retourner presence
+
+  Backend -> Backend : verifier heure de sortie
+
+  alt check-out ponctuel
+    Backend -> Email : envoyer code de verification a l'email
+    Email --> Utilisateur : recevoir code de verification
+    Frontend --> Utilisateur : demander le code de verification
+    Utilisateur -> Frontend : saisir code de verification
+    ref over Utilisateur, Database
+    Verification du code email
+    end ref
+    Backend -> Database : enregistrer check-out(heureSortie, statut ponctuel)
+    Database --> Backend : check-out enregistre
+    Backend --> Frontend : confirmer le check-out
+    Frontend --> Utilisateur : afficher "Check-out marque avec succes"
+  else check-out trop tot
+    Frontend --> Utilisateur : demander la cause de sortie avant l'heure
+    Utilisateur -> Frontend : saisir cause de sortie
+    Frontend -> Backend : envoyer cause de sortie
+    Backend -> Email : envoyer code de verification a l'email
+    Email --> Utilisateur : recevoir code de verification
+    Frontend --> Utilisateur : demander le code de verification
+    Utilisateur -> Frontend : saisir code de verification
+    ref over Utilisateur, Database
+    Verification du code email
+    end ref
+    Backend -> Database : enregistrer check-out(heureSortie, statut trop tot, causeSortie)
+    Database --> Backend : check-out enregistre
+    Backend --> Frontend : confirmer le check-out
+    Frontend --> Utilisateur : afficher "Check-out marque avec succes"
+  end
+else Admin consulte les presences
+  Frontend --> Admin : afficher tableau de bord Admin
+  Admin -> Frontend : cliquer sur "Gestion des presences"
+  Frontend -> Backend : demander la liste des presences
+  Backend -> Backend : verifier role Admin
+  Backend -> Database : recuperer presences avec heures et causes
+  Database --> Backend : retourner heureEntree, causeRetard, heureSortie, causeSortie
+  Backend --> Frontend : retourner la liste des presences
+  Frontend --> Admin : afficher temps de presence et causes
 end
 
-note over Admin, TargetAccount
+note over Utilisateur, Database
 Resultat final:
-la regle est enregistree dans la BD,
-elle s'execute automatiquement sans bouton manuel,
-si la condition est verifiee, une notification arrive au compte cible.
+l'Utilisateur marque l'entree et le check-out avec un code envoye par email.
+La cause est obligatoire si l'entree est en retard ou si le check-out est trop tot.
+L'Admin consulte les heures marquees et les causes sans marquer sa presence.
 end note
+
+@enduml
+
+' ============================================================
+' Diagramme separe - Verification du code email
+' ============================================================
+
+@startuml
+title Diagramme de sequence - Verification du code email | OmniAI Platform
+
+autonumber
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #1E293B
+  ActorBorderColor #2563EB
+  ActorBackgroundColor #DBEAFE
+  ParticipantBorderColor #334155
+  ParticipantBackgroundColor #E2E8F0
+  DatabaseBorderColor #047857
+  DatabaseBackgroundColor #D1FAE5
+  LifeLineBorderColor #64748B
+  LifeLineBackgroundColor #CBD5E1
+  GroupBorderColor #7C3AED
+  GroupBackgroundColor #F5F3FF
+  NoteBorderColor #F59E0B
+  NoteBackgroundColor #FEF3C7
+}
+
+actor "Utilisateur" as Utilisateur #DBEAFE
+participant "Frontend" as Frontend #EFF6FF
+participant "Backend" as Backend #F8FAFC
+database "BD" as Database #D1FAE5
+
+Frontend -> Backend : envoyer code de verification
+Backend -> Database : recuperer code de verification
+Database --> Backend : retourner code enregistre
+Backend -> Backend : comparer le code saisi avec le code enregistre
+
+alt code incorrect
+  Backend --> Frontend : retourner erreur "Code incorrect"
+  Frontend --> Utilisateur : afficher message d'erreur
+else code valide
+  Backend -> Database : marquer code comme utilise
+  Database --> Backend : code mis a jour
+  Backend --> Frontend : confirmer la validation du code
+end
 
 @enduml
