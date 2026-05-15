@@ -1,14 +1,16 @@
 // Role du fichier: affiche une page React de l application.
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity,
+  CalendarDays,
   FileText,
+  History,
   Loader2,
   Mic,
   Paperclip,
   Send,
   Sparkles,
+  X,
 } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +19,105 @@ import apiClient from "@/lib/api-client";
 interface Message {
   role: "user" | "ai";
   text: string;
+  createdAt: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Message[];
+}
+
+function createMessage(role: Message["role"], text: string): Message {
+  return {
+    role,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function normalizeStoredMessages(value: unknown): Message[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((message): message is Partial<Message> => {
+      return (
+        typeof message === "object" &&
+        message !== null &&
+        (message as Partial<Message>).role !== undefined &&
+        typeof (message as Partial<Message>).text === "string"
+      );
+    })
+    .map((message, index) => ({
+      role: message.role === "user" ? "user" : "ai",
+      text: message.text || "",
+      createdAt: message.createdAt || new Date(Date.now() - (value.length - index) * 1000).toISOString(),
+    }));
+}
+
+function createConversationId() {
+  return globalThis.crypto?.randomUUID?.() || `conversation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createConversationTitle(text: string) {
+  const cleanText = text.trim().replace(/\s+/g, " ");
+  if (!cleanText) {
+    return "Nouvelle conversation";
+  }
+
+  return cleanText.length > 48 ? `${cleanText.slice(0, 48)}...` : cleanText;
+}
+
+function normalizeStoredConversations(value: unknown): Conversation[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  if (value.every((item) => typeof item === "object" && item !== null && "messages" in item)) {
+    return value
+      .map((item): Conversation | null => {
+        const source = item as Partial<Conversation>;
+        const messages = normalizeStoredMessages(source.messages);
+        if (messages.length === 0) {
+          return null;
+        }
+
+        return {
+          id: source.id || createConversationId(),
+          title: source.title || createConversationTitle(messages.find((message) => message.role === "user")?.text || messages[0]?.text || ""),
+          createdAt: source.createdAt || messages[0]?.createdAt || new Date().toISOString(),
+          updatedAt: source.updatedAt || messages[messages.length - 1]?.createdAt || new Date().toISOString(),
+          messages,
+        };
+      })
+      .filter((conversation): conversation is Conversation => conversation !== null);
+  }
+
+  const migratedMessages = normalizeStoredMessages(value);
+  if (migratedMessages.length === 0) {
+    return [];
+  }
+
+  return [
+    {
+      id: createConversationId(),
+      title: createConversationTitle(migratedMessages.find((message) => message.role === "user")?.text || migratedMessages[0]?.text || ""),
+      createdAt: migratedMessages[0]?.createdAt || new Date().toISOString(),
+      updatedAt: migratedMessages[migratedMessages.length - 1]?.createdAt || new Date().toISOString(),
+      messages: migratedMessages,
+    },
+  ];
+}
+
+function formatHistoryDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 // Role: Affiche et organise cet ecran.
@@ -24,37 +125,52 @@ export default function AIDashboard() {
   const { user } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const historyStorageKey = `omni_ai_chat_history_${user?._id || user?.id || user?.email || "guest"}`;
+  const historyStorageKey = `omni_ai_chat_conversations_${user?._id || user?.id || user?.email || "guest"}`;
+  const legacyHistoryStorageKey = `omni_ai_chat_history_${user?._id || user?.id || user?.email || "guest"}`;
+  const sortedConversations = useMemo(
+    () =>
+      [...conversations].sort(
+        (firstConversation, secondConversation) =>
+          new Date(secondConversation.updatedAt).getTime() - new Date(firstConversation.updatedAt).getTime(),
+      ),
+    [conversations],
+  );
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    const storedHistory = localStorage.getItem(historyStorageKey);
+    const storedHistory = localStorage.getItem(historyStorageKey) || localStorage.getItem(legacyHistoryStorageKey);
     if (!storedHistory) {
+      setMessages([]);
+      setActiveConversationId(null);
       return;
     }
 
     try {
-      const parsedHistory = JSON.parse(storedHistory) as Message[];
-      if (Array.isArray(parsedHistory)) {
-        setMessages(parsedHistory);
-      }
+      const storedConversations = normalizeStoredConversations(JSON.parse(storedHistory));
+      setConversations(storedConversations);
+      setMessages([]);
+      setActiveConversationId(null);
+      localStorage.setItem(historyStorageKey, JSON.stringify(storedConversations));
     } catch {
       localStorage.removeItem(historyStorageKey);
+      localStorage.removeItem(legacyHistoryStorageKey);
     }
-  }, [historyStorageKey, user]);
+  }, [historyStorageKey, legacyHistoryStorageKey, user]);
 
   useEffect(() => {
-    if (!user || messages.length === 0) {
+    if (!user) {
       return;
     }
 
-    localStorage.setItem(historyStorageKey, JSON.stringify(messages));
-  }, [historyStorageKey, messages, user]);
+    localStorage.setItem(historyStorageKey, JSON.stringify(conversations));
+  }, [conversations, historyStorageKey, user]);
 
   if (!user) {
     return (
@@ -71,6 +187,40 @@ export default function AIDashboard() {
     "Automatiser mon CRM",
   ];
 
+  const saveConversationMessages = (conversationId: string, nextMessages: Message[]) => {
+    const now = new Date().toISOString();
+    setConversations((previousConversations) => {
+      const existingConversation = previousConversations.find((conversation) => conversation.id === conversationId);
+      const nextConversation: Conversation = {
+        id: conversationId,
+        title:
+          existingConversation?.title ||
+          createConversationTitle(nextMessages.find((message) => message.role === "user")?.text || nextMessages[0]?.text || ""),
+        createdAt: existingConversation?.createdAt || nextMessages[0]?.createdAt || now,
+        updatedAt: now,
+        messages: nextMessages,
+      };
+
+      return [
+        nextConversation,
+        ...previousConversations.filter((conversation) => conversation.id !== conversationId),
+      ];
+    });
+  };
+
+  const openConversation = (conversation: Conversation) => {
+    setMessages(conversation.messages);
+    setActiveConversationId(conversation.id);
+    setIsHistoryOpen(false);
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setActiveConversationId(null);
+    setPrompt("");
+    setIsHistoryOpen(false);
+  };
+
   // Role: Envoie un message ou une notification.
   const sendMessage = async (message?: string) => {
     const textToSend = message || prompt.trim();
@@ -78,7 +228,15 @@ export default function AIDashboard() {
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "user", text: textToSend }]);
+    const conversationId = activeConversationId || createConversationId();
+    setActiveConversationId(conversationId);
+
+    const userMessage = createMessage("user", textToSend);
+    setMessages((prev) => {
+      const nextMessages = [...prev, userMessage];
+      saveConversationMessages(conversationId, nextMessages);
+      return nextMessages;
+    });
     setPrompt("");
     setIsLoading(true);
 
@@ -88,7 +246,11 @@ export default function AIDashboard() {
         res.data?.reply ||
         "Je suis en train d'analyser votre demande. Veuillez réessayer.";
 
-      setMessages((prev) => [...prev, { role: "ai", text: aiResponse }]);
+      setMessages((prev) => {
+        const nextMessages = [...prev, createMessage("ai", aiResponse)];
+        saveConversationMessages(conversationId, nextMessages);
+        return nextMessages;
+      });
     } catch (error: unknown) {
       const errorMessage =
         typeof error === "object" &&
@@ -98,7 +260,11 @@ export default function AIDashboard() {
           ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
           : "Une erreur s'est produite. Veuillez réessayer.";
 
-      setMessages((prev) => [...prev, { role: "ai", text: errorMessage || "Une erreur s'est produite. Veuillez réessayer." }]);
+      setMessages((prev) => {
+        const nextMessages = [...prev, createMessage("ai", errorMessage || "Une erreur s'est produite. Veuillez réessayer.")];
+        saveConversationMessages(conversationId, nextMessages);
+        return nextMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -114,47 +280,73 @@ export default function AIDashboard() {
 
         <div className="w-full max-w-4xl relative z-10 flex flex-col items-center h-full">
           <div className="w-full flex justify-end mb-8">
-            <button
-              onClick={() => setIsHistoryOpen((current) => !current)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Activity className="w-4 h-4" />
-              Historique
-            </button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {showChat && (
+                <button
+                  onClick={startNewConversation}
+                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Nouvelle conversation
+                </button>
+              )}
+              <button
+                onClick={() => setIsHistoryOpen((current) => !current)}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <History className="w-4 h-4" />
+                Historique
+              </button>
+            </div>
           </div>
 
           {isHistoryOpen && (
-            <div className="w-full max-w-3xl mb-6 rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/90">
+            <div className="w-full max-w-3xl mb-6 rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Historique de conversation</h2>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Historique de conversation</h2>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Conversations triees par date, du plus recent au plus ancien.</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsHistoryOpen(false)}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  aria-label="Fermer l'historique"
                 >
-                  Fermer
+                  <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                {messages.length === 0 ? (
+                {sortedConversations.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-slate-500 dark:border-gray-700">
                     Aucun historique pour le moment.
                   </p>
                 ) : (
-                  messages.map((message, index) => (
-                    <div
-                      key={`${message.role}-history-${index}`}
-                      className={`rounded-xl px-4 py-3 text-sm ${
-                        message.role === "user"
-                          ? "bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-100"
-                          : "bg-slate-50 text-slate-800 dark:bg-gray-800 dark:text-gray-100"
+                  sortedConversations.map((conversation) => (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      onClick={() => openConversation(conversation)}
+                      className={`w-full rounded-xl border px-4 py-3 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+                        conversation.id === activeConversationId
+                          ? "border-blue-300 bg-blue-50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-950/40 dark:text-blue-100"
+                          : "border-gray-200 bg-slate-50 text-slate-800 hover:border-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                       }`}
                     >
-                      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        {message.role === "user" ? "Vous" : "Omni AI"}
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <p className="line-clamp-1 text-sm font-bold">
+                          {conversation.title}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {formatHistoryDate(conversation.updatedAt)}
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                        {conversation.messages.find((storedMessage) => storedMessage.role === "user")?.text ||
+                          conversation.messages[0]?.text ||
+                          "Conversation"}
                       </p>
-                      <p className="whitespace-pre-line">{message.text}</p>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -183,6 +375,7 @@ export default function AIDashboard() {
                         <span className="text-xs font-semibold text-indigo-600">Omni AI</span>
                       </div>
                     )}
+                    <p className="mb-2 text-xs text-gray-400 dark:text-gray-500">{formatHistoryDate(msg.createdAt)}</p>
                     <p className="whitespace-pre-line">{msg.text}</p>
                   </div>
                 </motion.div>

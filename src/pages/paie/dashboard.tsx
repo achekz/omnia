@@ -1,7 +1,6 @@
 // Role du fichier: affiche une page React de l application.
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useAuth } from "@/hooks/useAuth";
-import { normalizeRole } from "@/lib/roles";
 import {
   ArrowRight,
   Banknote,
@@ -19,9 +18,8 @@ import {
 // Role: Affiche et organise cet ecran.
 export default function PaieTunisieDashboard() {
   const { user } = useAuth();
-  const role = normalizeRole(user?.profileType || user?.role);
 
-  if (!user || role !== "comptable") {
+  if (!user || user.profileType !== "comptable") {
     return (
       <ModuleLayout activeItem="dashboard">
         <div className="p-8 text-center text-gray-500 dark:text-gray-400">Access Restricted</div>
