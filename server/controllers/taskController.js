@@ -23,6 +23,19 @@ function getDisplayName(user) {
   return user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
 }
 
+async function runNonCriticalTaskSideEffect(label, operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    console.error(`[Task] ${label} failed:`, {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+    });
+    return null;
+  }
+}
+
 // Role: Decrit la logique populateTask.
 async function populateTask(task) {
   return task.populate([
@@ -436,27 +449,41 @@ export const createTask = asyncHandler(async (req, res) => {
   taskData.tenantId = req.tenantId || assignedUser.tenantId;
 
   const task = await Task.create(taskData);
+  const persistedTask = await Task.exists({ _id: task._id });
+
+  if (!persistedTask) {
+    console.error('[Task] Task.create returned a document but it was not found in MongoDB.', {
+      taskId: task._id,
+      assignedTo: assignedUser._id,
+      createdBy: req.user._id,
+    });
+    throw new ApiError(500, 'Task was not persisted to the database');
+  }
+
   await populateTask(task);
 
-  // Log task creation
-  const today = new Date(); today.setHours(0,0,0,0);
-  await ActivityLog.findOneAndUpdate(
-    { userId: req.user._id, date: today },
-    { $inc: { tasksCreated: 1 }, $setOnInsert: { tenantId: req.tenantId } },
-    { upsert: true }
-  );
+  await runNonCriticalTaskSideEffect('activity log creation', async () => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    await ActivityLog.findOneAndUpdate(
+      { userId: req.user._id, date: today },
+      { $inc: { tasksCreated: 1 }, $setOnInsert: { tenantId: req.tenantId } },
+      { upsert: true }
+    );
+  });
 
   // Notify assigned user via socket if different from creator
   if (task.assignedTo && task.assignedTo._id.toString() !== req.user._id.toString()) {
     emitToUser(task.assignedTo._id.toString(), 'task_created', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskCreated', { task });
-    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
-      type: 'info',
-      title: 'New task assigned',
-      message: `A new task "${task.title}" was assigned to you for ${getTaskDay(task)}. Confirm it or choose Plus tard.`,
-      source: 'user',
-      actionUrl: '/tasks',
-      metadata: { taskId: task._id.toString(), taskTitle: task.title, taskStatus: 'todo', taskDay: getTaskDay(task), actionRequired: true },
+    await runNonCriticalTaskSideEffect('task assignment notification', async () => {
+      await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
+        type: 'info',
+        title: 'New task assigned',
+        message: `A new task "${task.title}" was assigned to you for ${getTaskDay(task)}. Confirm it or choose Plus tard.`,
+        source: 'user',
+        actionUrl: '/tasks',
+        metadata: { taskId: task._id.toString(), taskTitle: task.title, taskStatus: 'todo', taskDay: getTaskDay(task), actionRequired: true },
+      });
     });
     void sendTaskAssignmentEmail(task, task.assignedTo);
   }
@@ -470,6 +497,8 @@ export const createTask = asyncHandler(async (req, res) => {
     tenantId: task.tenantId || req.tenantId || undefined,
     userIds: [task.assignedTo?._id?.toString?.(), task.createdBy?._id?.toString?.()].filter(Boolean),
     trigger: 'task-created',
+  }).catch((error) => {
+    console.error('[Task] recommendation refresh after task creation failed:', error.message);
   });
 
   return res.status(201).json(new ApiResponse(201, { task }, 'Task created'));
@@ -524,13 +553,15 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
-    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
-      type: 'info',
-      title: 'Task updated',
-      message: `"${task.title}" was updated by admin.`,
-      source: 'user',
-      actionUrl: '/tasks',
-      metadata: { taskId: task._id.toString(), taskStatus: task.status },
+    await runNonCriticalTaskSideEffect('task update notification', async () => {
+      await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
+        type: 'info',
+        title: 'Task updated',
+        message: `"${task.title}" was updated by admin.`,
+        source: 'user',
+        actionUrl: '/tasks',
+        metadata: { taskId: task._id.toString(), taskStatus: task.status },
+      });
     });
   }
   emitToRole('admin', 'task_updated', { task });
@@ -661,35 +692,41 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   const actorName = getDisplayName(req.user);
 
   if (status === 'in_progress' && task.createdBy) {
-    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
-      type: 'info',
-      title: 'Task confirmed',
-      message: `${actorName} confirmed "${task.title}". It is now in progress.`,
-      source: 'user',
-      actionUrl: '/admin/tasks',
-      metadata: { taskId: task._id.toString(), taskStatus: 'in_progress' },
+    await runNonCriticalTaskSideEffect('task confirmed notification', async () => {
+      await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
+        type: 'info',
+        title: 'Task confirmed',
+        message: `${actorName} confirmed "${task.title}". It is now in progress.`,
+        source: 'user',
+        actionUrl: '/admin/tasks',
+        metadata: { taskId: task._id.toString(), taskStatus: 'in_progress' },
+      });
     });
   }
 
   if (status === 'declined' && task.createdBy) {
-    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
-      type: 'danger',
-      title: 'Task cancelled',
-      message: `${actorName} chose Plus tard for "${task.title}".`,
-      source: 'user',
-      actionUrl: '/admin/tasks',
-      metadata: { taskId: task._id.toString(), taskStatus: 'declined', declineReason: task.declineReason },
+    await runNonCriticalTaskSideEffect('task declined notification', async () => {
+      await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
+        type: 'danger',
+        title: 'Task cancelled',
+        message: `${actorName} chose Plus tard for "${task.title}".`,
+        source: 'user',
+        actionUrl: '/admin/tasks',
+        metadata: { taskId: task._id.toString(), taskStatus: 'declined', declineReason: task.declineReason },
+      });
     });
   }
 
   if (status === 'done' && task.createdBy) {
-    await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
-      type: task.isDelayed ? 'warning' : 'success',
-      title: 'Task completed',
-      message: `${actorName} completed "${task.title}"${task.isDelayed ? ' with delay' : ''}.`,
-      source: 'user',
-      actionUrl: '/admin/tasks',
-      metadata: { taskId: task._id.toString(), isDelayed: task.isDelayed },
+    await runNonCriticalTaskSideEffect('task completed notification', async () => {
+      await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
+        type: task.isDelayed ? 'warning' : 'success',
+        title: 'Task completed',
+        message: `${actorName} completed "${task.title}"${task.isDelayed ? ' with delay' : ''}.`,
+        source: 'user',
+        actionUrl: '/admin/tasks',
+        metadata: { taskId: task._id.toString(), isDelayed: task.isDelayed },
+      });
     });
   }
 
@@ -775,13 +812,15 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
     emitToUser(task.assignedTo._id.toString(), 'taskUpdated', { task });
-    await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
-      type: 'info',
-      title: 'Task rescheduled',
-      message: `"${task.title}" was rescheduled for today.`,
-      source: 'ai_rules',
-      actionUrl: `/tasks/${task._id}`,
-      metadata: { taskId: task._id.toString(), taskStatus: task.status, aiRecommendation },
+    await runNonCriticalTaskSideEffect('task reschedule notification', async () => {
+      await notifService.create(task.assignedTo._id, task.tenantId || req.tenantId, {
+        type: 'info',
+        title: 'Task rescheduled',
+        message: `"${task.title}" was rescheduled for today.`,
+        source: 'ai_rules',
+        actionUrl: `/tasks/${task._id}`,
+        metadata: { taskId: task._id.toString(), taskStatus: task.status, aiRecommendation },
+      });
     });
   }
 
@@ -790,17 +829,19 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
 
   await evaluateTaskRules(task, req, 'task');
 
-  await MLPrediction.create({
-    userId: task.assignedTo?._id || task.assignedTo || req.user._id,
-    tenantId: task.tenantId || req.tenantId,
-    modelType: 'recommendation',
-    input: {
-      trigger: 'task-reschedule-today',
-      taskId: task._id.toString(),
-      previousLateSignal: true,
-    },
-    output: aiRecommendation,
-    recommendations: [aiRecommendation.recommendation],
+  await runNonCriticalTaskSideEffect('task reschedule ML prediction', async () => {
+    await MLPrediction.create({
+      userId: task.assignedTo?._id || task.assignedTo || req.user._id,
+      tenantId: task.tenantId || req.tenantId,
+      modelType: 'recommendation',
+      input: {
+        trigger: 'task-reschedule-today',
+        taskId: task._id.toString(),
+        previousLateSignal: true,
+      },
+      output: aiRecommendation,
+      recommendations: [aiRecommendation.recommendation],
+    });
   });
 
   return res.json(new ApiResponse(200, { task: { ...task.toObject(), aiRecommendation } }, 'Task rescheduled for today'));
@@ -832,13 +873,15 @@ export const addTaskComment = asyncHandler(async (req, res) => {
 
   const targetUserId = isAdmin ? task.assignedTo?._id || task.assignedTo : task.createdBy;
   if (targetUserId) {
-    await notifService.create(targetUserId, task.tenantId || req.tenantId, {
-      type: 'info',
-      title: 'Task comment added',
-      message: `${getDisplayName(req.user)} commented on "${task.title}".`,
-      source: 'user',
-      actionUrl: isAdmin ? '/tasks' : '/admin/tasks',
-      metadata: { taskId: task._id.toString() },
+    await runNonCriticalTaskSideEffect('task comment notification', async () => {
+      await notifService.create(targetUserId, task.tenantId || req.tenantId, {
+        type: 'info',
+        title: 'Task comment added',
+        message: `${getDisplayName(req.user)} commented on "${task.title}".`,
+        source: 'user',
+        actionUrl: isAdmin ? '/tasks' : '/admin/tasks',
+        metadata: { taskId: task._id.toString() },
+      });
     });
   }
 

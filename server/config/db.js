@@ -79,7 +79,9 @@ function logConnectionFailure(error, metadata) {
 
 async function attemptConnection() {
   const primaryUri = process.env.MONGO_URI;
-  const fallbackUri = process.env.MONGO_FALLBACK_URI;
+  const fallbackUri = process.env.MONGO_ALLOW_FALLBACK_URI === 'true'
+    ? process.env.MONGO_FALLBACK_URI
+    : null;
 
   if (!primaryUri) {
     const error = new Error('MONGO_URI is undefined. Check your .env file');

@@ -37,12 +37,19 @@ export default function VerifyResetCodePage() {
     event.preventDefault();
     setError("");
     setSuccess("");
+
+    const trimmedCode = code.trim();
+    if (!email.trim() || trimmedCode.length !== 6) {
+      setError("Please enter the 6-digit verification code.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await apiClient.post("/auth/verify-reset-code", {
-        email,
-        code,
+        email: email.trim().toLowerCase(),
+        code: trimmedCode,
       });
       sessionStorage.setItem(RESET_VERIFIED_STORAGE_KEY, "true");
       setSuccess("Code verified successfully.");

@@ -181,7 +181,7 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   const dbResult = await connectDB();
-  const allowStartWithoutDb = process.env.ALLOW_START_WITHOUT_DB !== 'false';
+  const allowStartWithoutDb = process.env.ALLOW_START_WITHOUT_DB === 'true';
 
   setMongoStatus({
     connected: dbResult.connected,

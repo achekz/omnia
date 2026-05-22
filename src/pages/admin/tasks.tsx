@@ -110,15 +110,28 @@ export default function AdminTasksPage() {
 
   async function submitTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
     if (!selectedUserId) {
       toast({ title: "Choisir un compte", description: "Sélectionne employee, stagiaire ou comptable avant de créer la tâche.", variant: "destructive" });
       return;
     }
 
+    if (!trimmedTitle) {
+      toast({ title: "Titre requis", description: "Remplis le titre de la tâche avant de créer.", variant: "destructive" });
+      return;
+    }
+
+    if (!Number.isFinite(estimatedMinutes) || estimatedMinutes < 1) {
+      toast({ title: "Durée requise", description: "Indique une durée valide avant de créer la tâche.", variant: "destructive" });
+      return;
+    }
+
     try {
       await createTask.mutateAsync({
-        title: title.trim(),
-        description: description.trim(),
+        title: trimmedTitle,
+        description: trimmedDescription,
         assignedTo: selectedUserId,
         priority,
         startTime: startTime ? new Date(startTime).toISOString() : undefined,

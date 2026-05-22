@@ -28,11 +28,18 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError("");
     setSuccess("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError("Please enter your email before sending the reset code.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await apiClient.post("/auth/forgot-password", { email: email.trim().toLowerCase() });
-      sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, email.trim().toLowerCase());
+      await apiClient.post("/auth/forgot-password", { email: trimmedEmail });
+      sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, trimmedEmail);
       sessionStorage.removeItem(RESET_VERIFIED_STORAGE_KEY);
       setSuccess("Reset code sent. Check your inbox.");
       setLocation("/verify-code");

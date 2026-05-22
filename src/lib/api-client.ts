@@ -168,29 +168,6 @@ apiClient.interceptors.response.use(
 
 const fallbackNotifications: Notification[] = [];
 
-const fallbackTasks: Task[] = [
-  {
-    id: "task-1",
-    title: "Review dashboard insights",
-    status: "todo",
-    priority: "medium",
-    description: "Open the dashboard and review today’s AI recommendations.",
-    dueDate: new Date(Date.now() + 86400000).toISOString(),
-  },
-  {
-    id: "task-2",
-    title: "Organize weekly priorities",
-    status: "in_progress",
-    priority: "high",
-  },
-  {
-    id: "task-3",
-    title: "Close completed items",
-    status: "done",
-    priority: "low",
-  },
-];
-
 const fallbackDashboardStats: DashboardStats = {
   teamSize: 24,
   activeProjects: 8,
@@ -408,12 +385,8 @@ export function useGetTasks(options?: QueryHookOptions & { params?: TaskQueryPar
   return useQuery<Task[]>({
     queryKey: ["tasks", options?.params || {}],
     queryFn: async () => {
-      try {
-        const response = await apiClient.get("/tasks", { params: cleanTaskParams(options?.params) });
-        return unwrapCollection<Task>(response.data, "tasks", []);
-      } catch {
-        return [];
-      }
+      const response = await apiClient.get("/tasks", { params: cleanTaskParams(options?.params) });
+      return unwrapCollection<Task>(response.data, "tasks", []);
     },
     enabled: options?.query?.enabled ?? true,
     refetchInterval: options?.query?.refetchInterval,
@@ -425,12 +398,8 @@ export function useGetAssignedTasks(options?: QueryHookOptions & { params?: Task
   return useQuery<Task[]>({
     queryKey: ["assigned-tasks", options?.params || {}],
     queryFn: async () => {
-      try {
-        const response = await apiClient.get("/tasks", { params: { limit: 100, ...cleanTaskParams(options?.params) } });
-        return unwrapCollection<Task>(response.data, "tasks", []);
-      } catch {
-        return [];
-      }
+      const response = await apiClient.get("/tasks", { params: { limit: 100, ...cleanTaskParams(options?.params) } });
+      return unwrapCollection<Task>(response.data, "tasks", []);
     },
     enabled: options?.query?.enabled ?? true,
     refetchInterval: options?.query?.refetchInterval,
@@ -454,7 +423,7 @@ export function useCreateTask() {
       });
     },
     onSuccess: (createdTask) => {
-      queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) => [createdTask, ...current]);
+      queryClient.setQueryData<Task[]>(["tasks"], (current = []) => [createdTask, ...current]);
       queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-users"] });
       queryClient.invalidateQueries({ queryKey: ["user-tasks"] });
@@ -472,7 +441,7 @@ export function useUpdateTask() {
       return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status: "todo", ...data });
     },
     onSuccess: (updatedTask) => {
-      queryClient.setQueryData<Task[]>(["tasks"], (current = fallbackTasks) =>
+      queryClient.setQueryData<Task[]>(["tasks"], (current = []) =>
         current.map((task) => {
           const taskId = task._id ?? task.id;
           const updatedId = updatedTask._id ?? updatedTask.id;

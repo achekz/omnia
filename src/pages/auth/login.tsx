@@ -42,11 +42,18 @@ export default function Login() {
   // Role: Traite une action utilisateur.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
     setError("");
 
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password.trim()) {
+      setError("Please fill email and password before signing in.");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      await login({ email, password });
+      await login({ email: trimmedEmail, password });
     } catch (error: unknown) {
       setError(getLoginErrorMessage(error));
     } finally {
@@ -58,11 +65,18 @@ export default function Login() {
   const handleAdminLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setAdminError("");
+
+    const trimmedEmail = adminEmail.trim().toLowerCase();
+    if (!trimmedEmail || !adminPassword.trim()) {
+      setAdminError("Please fill admin email and password before continuing.");
+      return;
+    }
+
     setIsAdminLoading(true);
 
     try {
       const response = await apiClient.post("/auth/admin-login", {
-        email: adminEmail,
+        email: trimmedEmail,
         password: adminPassword,
       });
 

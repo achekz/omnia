@@ -76,18 +76,39 @@ export default function AdminUserTaskDetailsPage() {
     event.preventDefault();
     if (!userId) return;
 
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const email = form.email.trim().toLowerCase();
+    const isEmailChanged = email !== user?.email;
+    const hasPasswordChange = Boolean(form.password.trim());
+
+    if (!firstName || !lastName || !email || !form.role) {
+      toast({ title: "Champs requis", description: "Remplis prénom, nom, email et rôle avant d'enregistrer.", variant: "destructive" });
+      return;
+    }
+
+    if (hasPasswordChange && !form.passwordCode.trim()) {
+      toast({ title: "Code requis", description: "Entre le code reçu avant de changer le mot de passe.", variant: "destructive" });
+      return;
+    }
+
+    if (isEmailChanged && (!form.adminPassword.trim() || !form.emailCode.trim())) {
+      toast({ title: "Vérification email requise", description: "Entre le mot de passe admin et le code reçu avant de changer l'email.", variant: "destructive" });
+      return;
+    }
+
     try {
       await updateUser.mutateAsync({
         id: userId,
         data: {
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          email: form.email.trim().toLowerCase(),
+          firstName,
+          lastName,
+          email,
           role: form.role,
           profileType: form.role,
           isActive: form.isActive,
-          ...(form.password.trim() ? { password: form.password.trim(), passwordCode: form.passwordCode.trim() } : {}),
-          ...(form.email.trim().toLowerCase() !== user?.email
+          ...(hasPasswordChange ? { password: form.password.trim(), passwordCode: form.passwordCode.trim() } : {}),
+          ...(isEmailChanged
             ? { emailCode: form.emailCode.trim(), adminPassword: form.adminPassword.trim() }
             : {}),
         },
@@ -120,7 +141,11 @@ export default function AdminUserTaskDetailsPage() {
   };
 
   const requestEmailCode = async () => {
-    if (!userId || !form.email.trim()) return;
+    if (!userId) return;
+    if (!form.email.trim()) {
+      toast({ title: "Email requis", description: "Tape le nouvel email avant d'envoyer le code.", variant: "destructive" });
+      return;
+    }
     if (!form.adminPassword.trim()) {
       toast({ title: "Mot de passe admin requis", description: "Tape ton mot de passe admin avant d'envoyer le code.", variant: "destructive" });
       return;

@@ -108,11 +108,16 @@ export default function SettingsPage() {
 
   // Role: Traite une action utilisateur.
   const handleSaveProfile = async () => {
+    if (!fullName.trim()) {
+      alert("Please enter your full name before saving.");
+      return;
+    }
+
     try {
       const response = await fetch("/api/users/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName }),
+        body: JSON.stringify({ name: fullName.trim() }),
       });
 
       if (response.ok) {
@@ -127,19 +132,22 @@ export default function SettingsPage() {
 
   // Role: Traite une action utilisateur.
   const handleSendEmailCode = async () => {
-    if (!newEmail || !newEmail.includes("@")) {
+    const trimmedEmail = newEmail.trim().toLowerCase();
+    const currentPassword = emailCurrentPassword.trim();
+
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
       alert("Please enter a valid email");
       return;
     }
 
-    if (!emailCurrentPassword) {
+    if (!currentPassword) {
       alert("Please enter your current password");
       return;
     }
 
     setLoadingEmail(true);
     try {
-      const result = await sendSelfEmailCode.mutateAsync({ newEmail, currentPassword: emailCurrentPassword });
+      const result = await sendSelfEmailCode.mutateAsync({ newEmail: trimmedEmail, currentPassword });
       if (result.devCode) setEmailVerificationCode(result.devCode);
       setShowEmailVerification(true);
       alert("Verification code sent to your new email");
@@ -152,13 +160,16 @@ export default function SettingsPage() {
 
   // Role: Traite une action utilisateur.
   const handleVerifyEmailCode = async () => {
-    if (!emailVerificationCode) {
+    const trimmedEmail = newEmail.trim().toLowerCase();
+    const code = emailVerificationCode.trim();
+
+    if (!trimmedEmail || code.length !== 6) {
       alert("Please enter the verification code");
       return;
     }
 
     try {
-      await verifySelfEmailChange.mutateAsync({ newEmail, code: emailVerificationCode });
+      await verifySelfEmailChange.mutateAsync({ newEmail: trimmedEmail, code });
       showSuccess("email");
       alert("Email updated successfully. Please log in again.");
       logout();
@@ -194,7 +205,7 @@ export default function SettingsPage() {
 
   // Role: Traite une action utilisateur.
   const handleSendPasswordCode = async () => {
-    if (!passwords.current || !passwords.new || !passwords.confirm) {
+    if (!passwords.current.trim() || !passwords.new.trim() || !passwords.confirm.trim()) {
       alert("Please fill all password fields");
       return;
     }
@@ -214,7 +225,12 @@ export default function SettingsPage() {
   };
 
   const handleChangePassword = async () => {
-    if (!passwordVerificationCode) {
+    if (!passwords.current.trim() || !passwords.new.trim() || !passwords.confirm.trim()) {
+      alert("Please fill all password fields");
+      return;
+    }
+
+    if (!passwordVerificationCode.trim()) {
       alert("Please enter the verification code");
       return;
     }
@@ -223,7 +239,7 @@ export default function SettingsPage() {
       await changePasswordWithCode.mutateAsync({
         currentPassword: passwords.current,
         newPassword: passwords.new,
-        code: passwordVerificationCode,
+        code: passwordVerificationCode.trim(),
       });
       showSuccess("password");
       alert("Password updated successfully");
@@ -236,6 +252,11 @@ export default function SettingsPage() {
 
   const handleSendRoleCode = async () => {
     if (!user || user.role === "admin") return;
+    if (!selectedRole) {
+      alert("Please choose the requested role first");
+      return;
+    }
+
     if (selectedRole === user.role) {
       alert("Choose a different role first");
       return;
@@ -251,13 +272,13 @@ export default function SettingsPage() {
   };
 
   const handleRequestRoleChange = async () => {
-    if (!roleVerificationCode) {
+    if (!selectedRole || !roleVerificationCode.trim()) {
       alert("Please enter the verification code");
       return;
     }
 
     try {
-      await requestRoleChange.mutateAsync({ requestedRole: selectedRole, code: roleVerificationCode });
+      await requestRoleChange.mutateAsync({ requestedRole: selectedRole, code: roleVerificationCode.trim() });
       showSuccess("role");
       setRoleVerificationCode("");
       alert("Role change request sent to admin");

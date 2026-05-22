@@ -1,8 +1,24 @@
 // Role du fichier: prepare ou repare des donnees initiales de demonstration.
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '..', '.env'), override: true });
+
+function maskMongoUri(uri) {
+  try {
+    const parsed = new URL(uri);
+    if (parsed.password) parsed.password = '***';
+    if (parsed.username) parsed.username = '***';
+    return parsed.toString();
+  } catch {
+    return `${uri.substring(0, 24)}...`;
+  }
+}
 
 async function testMongoDB() {
   console.log('🔍 Testing MongoDB Connection...\n');
@@ -20,7 +36,7 @@ async function testMongoDB() {
     process.exit(1);
   }
 
-  console.log(`   URI preview: ${mongoUri.substring(0, 50)}...\n`);
+  console.log(`   URI preview: ${maskMongoUri(mongoUri)}\n`);
 
   // Test connection
   console.log('🔗 Attempting connection...');

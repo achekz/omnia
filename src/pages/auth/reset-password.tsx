@@ -55,6 +55,11 @@ export default function ResetPasswordPage() {
     setError("");
     setSuccess("");
 
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setError("Please fill all password fields before resetting your password.");
+      return;
+    }
+
     if (!passwordPattern.test(password)) {
       setError("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
       return;
@@ -69,7 +74,7 @@ export default function ResetPasswordPage() {
 
     try {
       await apiClient.post("/auth/reset-password", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
         confirmPassword,
       });
