@@ -20,6 +20,7 @@ import { protect } from '../middleware/auth.js';
 import { tenantIsolation } from '../middleware/tenant.js';
 import {
   validateCreateTask,
+  validateUpdateTask,
   validateSearch,
   handleValidationErrors
 } from '../utils/validators.js';
@@ -142,7 +143,7 @@ router.post('/', validateCreateTask, handleValidationErrors, createTask);
  *       200:
  *         description: Task updated
  */
-router.put('/:id', validateCreateTask, handleValidationErrors, updateTask);
+router.put('/:id', validateUpdateTask, handleValidationErrors, updateTask);
 
 /**
  * @swagger

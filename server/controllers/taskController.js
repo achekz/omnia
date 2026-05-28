@@ -12,6 +12,7 @@ import { isEmployeeLikeRole, normalizeRole } from '../utils/roleNormalization.js
 import { refreshRecommendationsForScope } from '../services/recommendationService.js';
 import { sendAlert } from '../services/emailService.js';
 import { ruleEngine } from '../services/ruleEngine.js';
+import { assertDocumentPersisted, ensureMongoConnected } from '../services/persistenceVerifier.js';
 
 const ASSIGNABLE_ROLES = ['employee', 'stagiaire', 'comptable'];
 const ADMIN_ROLES = ['company_admin', 'cabinet_admin', 'manager', 'admin'];
@@ -391,6 +392,8 @@ export const getTaskById = asyncHandler(async (req, res) => {
 // POST /api/tasks
 // Role: Cree une nouvelle ressource.
 export const createTask = asyncHandler(async (req, res) => {
+  ensureMongoConnected('create task');
+
   const {
     title,
     description,
@@ -449,16 +452,10 @@ export const createTask = asyncHandler(async (req, res) => {
   taskData.tenantId = req.tenantId || assignedUser.tenantId;
 
   const task = await Task.create(taskData);
-  const persistedTask = await Task.exists({ _id: task._id });
-
-  if (!persistedTask) {
-    console.error('[Task] Task.create returned a document but it was not found in MongoDB.', {
-      taskId: task._id,
-      assignedTo: assignedUser._id,
-      createdBy: req.user._id,
-    });
-    throw new ApiError(500, 'Task was not persisted to the database');
-  }
+  await assertDocumentPersisted(Task, task._id, 'Task', {
+    assignedTo: assignedUser._id,
+    createdBy: req.user._id,
+  });
 
   await populateTask(task);
 
@@ -548,6 +545,10 @@ export const updateTask = asyncHandler(async (req, res) => {
 }
   allowed.forEach((field) => { if (req.body[field] !== undefined) task[field] = req.body[field]; });
   await task.save();
+  await assertDocumentPersisted(Task, task._id, 'Task update', {
+    updatedBy: req.user._id,
+    status: task.status,
+  });
   await populateTask(task);
 
   if (task.assignedTo?._id) {
@@ -674,6 +675,10 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     task.progress = Math.max(0, Math.min(100, Number(progress) || 0));
   }
   await task.save();
+  await assertDocumentPersisted(Task, task._id, 'Task status update', {
+    updatedBy: req.user._id,
+    status: task.status,
+  });
   await populateTask(task);
 
   if (task.assignedTo) {
@@ -805,6 +810,10 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   task.lateReason = String(req.body?.reason || 'AI suggested reschedule for today').trim();
 
   await task.save();
+  await assertDocumentPersisted(Task, task._id, 'Task reschedule', {
+    updatedBy: req.user._id,
+    status: task.status,
+  });
   await populateTask(task);
 
   const aiRecommendation = buildTaskAiRecommendation(task);
@@ -869,6 +878,9 @@ export const addTaskComment = asyncHandler(async (req, res) => {
 
   task.comments.push({ userId: req.user._id, message });
   await task.save();
+  await assertDocumentPersisted(Task, task._id, 'Task comment update', {
+    commentedBy: req.user._id,
+  });
   await populateTask(task);
 
   const targetUserId = isAdmin ? task.assignedTo?._id || task.assignedTo : task.createdBy;

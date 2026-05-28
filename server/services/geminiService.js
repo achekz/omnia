@@ -149,6 +149,34 @@ function buildGeminiParts(prompt, systemInstruction, attachments = []) {
   return parts;
 }
 
+function buildRagContextText(ragContext) {
+  if (!ragContext) {
+    return "";
+  }
+
+  const safeContext = JSON.stringify(ragContext, null, 2);
+  return `
+Application context retrieved from MongoDB:
+${safeContext}
+
+Rules for using this context:
+- Answer using the application context first.
+- Do not invent tasks, notifications, attendance records, users, rules, or metrics that are not present in the context.
+- If the context does not contain the requested data, say that clearly and explain what data is missing.
+- When listing tasks, include their title, status, priority, and due date when available.
+- For prioritization, use overdue status, due dates, priority, priorityScore, progress, and existing recommendations.
+- Keep the response concise and practical.
+`;
+}
+
+function buildContextualSystemInstruction(baseInstruction, ragContext) {
+  const contextInstruction = ragContext
+    ? " You are also a RAG assistant for the OmniAI application. You receive live MongoDB context for the current user and must ground operational answers in that context."
+    : "";
+
+  return `${baseInstruction}${contextInstruction}`;
+}
+
 function normalizeModelName(modelName) {
   return modelName?.replace(/^models\//, "");
 }
@@ -226,7 +254,7 @@ async function getCandidateModels(apiKey) {
   return [...new Set([...GEMINI_PREFERRED_MODELS, ...availableModels])];
 }
 
-export async function generateResponse(prompt, role = "employee", attachments = []) {
+export async function generateResponse(prompt, role = "employee", attachments = [], ragContext = null) {
   if (!prompt || !prompt.trim()) {
     const error = new Error("Prompt is required.");
     error.code = "XAI_PROMPT_REQUIRED";
@@ -234,8 +262,11 @@ export async function generateResponse(prompt, role = "employee", attachments = 
   }
 
   const apiKey = getGeminiApiKey();
-  const systemInstruction = getRoleInstruction(role);
-  const parts = buildGeminiParts(prompt, systemInstruction, attachments);
+  const systemInstruction = buildContextualSystemInstruction(getRoleInstruction(role), ragContext);
+  const contextualPrompt = ragContext
+    ? `${buildRagContextText(ragContext)}\n\nUser question: ${prompt}`
+    : prompt;
+  const parts = buildGeminiParts(contextualPrompt, systemInstruction, attachments);
   const candidateModels = await getCandidateModels(apiKey);
 
   for (const model of candidateModels) {

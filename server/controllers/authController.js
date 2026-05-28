@@ -14,6 +14,7 @@ import { validatePhoneNumberByCity } from "../services/phoneValidationService.js
 import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
 import * as notifService from "../services/notifService.js";
+import { assertDocumentPersisted, ensureMongoConnected } from "../services/persistenceVerifier.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
@@ -301,12 +302,7 @@ export const register = asyncHandler(async (req, res) => {
   const email = req.body.email?.trim().toLowerCase();
   const phoneValidation = validatePhoneNumberByCity(city, phoneNumber);
 
-  if (mongoose.connection.readyState !== 1) {
-    console.error("[AUTH] Registration blocked because MongoDB is not connected.", {
-      readyState: mongoose.connection.readyState,
-    });
-    throw new ApiError(503, "Database is not connected. Please try again.");
-  }
+  ensureMongoConnected("register user");
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -362,12 +358,14 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   await user.save();
+  await assertDocumentPersisted(User, user._id, "User", { email, role });
 
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
   await User.updateOne({ _id: user._id }, { $set: { refreshToken } });
+  await assertDocumentPersisted(User, user._id, "User refresh token update", { email });
 
   const savedUser = await User.findById(user._id).select("_id email role profileType createdAt");
   if (!savedUser) {

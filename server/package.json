@@ -7,6 +7,7 @@
     "dev": "nodemon --watch server.js --watch controllers --watch models --watch middleware --watch routes --watch services --watch utils --watch config --ext js,json server.js",
     "start": "node server.js",
     "typecheck": "powershell -ExecutionPolicy Bypass -File scripts/typecheck.ps1",
+    "verify:persistence": "node scripts/verify-persistence.js",
     "create-admin": "node seed/createAdminAccount.js",
     "fix-stagiaire-accounts": "node seed/resetAuthSystem.js",
     "reset-auth-system": "node seed/resetAuthSystem.js",
