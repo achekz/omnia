@@ -87,7 +87,8 @@ async function buildAdminAiMetrics(scopeFilter) {
     MLPrediction.find({ ...scopeFilter, modelType: 'prediction' })
       .sort({ createdAt: -1 })
       .limit(500)
-      .select('userId riskLevel riskScore createdAt'),
+      .select('userId riskLevel riskScore createdAt')
+      .lean(),
   ]);
 
   const latestByUser = new Map();
@@ -139,17 +140,23 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
     activeSessions,
     aiMetrics,
   ] = await Promise.all([
-    User.find(scopeFilter).select('-password -refreshToken').sort({ createdAt: -1 }).limit(50),
+    User.find(scopeFilter)
+      .select('name firstName lastName email role profileType isActive lastLogin createdAt')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean(),
     Task.find(scopeFilter)
       .populate('assignedTo', 'name email role profileType')
       .populate('createdBy', 'name email role profileType')
+      .select('title status priority assignedTo createdBy createdAt')
       .sort({ createdAt: -1 })
-      .limit(100),
-    Presence.find(scopeFilter).sort({ createdAt: -1 }).limit(10).populate('userId', 'name email'),
-    PerformanceLog.find(scopeFilter).sort({ date: -1 }).limit(20).populate('userId', 'name email'),
-    Recommendation.find(scopeFilter).sort({ createdAt: -1 }).limit(10),
-    Organization.find(req.user?.tenantId ? { _id: req.user.tenantId } : {}).select('name type ownerId members plan'),
-    ActivityLog.find(scopeFilter).sort({ createdAt: -1 }).limit(10).populate('userId', 'name email'),
+      .limit(100)
+      .lean(),
+    Presence.find(scopeFilter).select('userId date dateKey status delayMinutes createdAt').sort({ createdAt: -1 }).limit(10).populate('userId', 'name email').lean(),
+    PerformanceLog.find(scopeFilter).select('userId date score completedTasks delayedTasks').sort({ date: -1 }).limit(20).populate('userId', 'name email').lean(),
+    Recommendation.find(scopeFilter).select('summary recommendations score meta createdAt kind weekKey windowStart windowEnd').sort({ createdAt: -1 }).limit(10).lean(),
+    Organization.find(req.user?.tenantId ? { _id: req.user.tenantId } : {}).select('name type ownerId members plan').lean(),
+    ActivityLog.find(scopeFilter).select('userId date tasksCompleted tasksCreated activeMinutes loginCount overdueCount score createdAt').sort({ createdAt: -1 }).limit(10).populate('userId', 'name email').lean(),
     User.countDocuments(scopeFilter),
     User.countDocuments({ ...scopeFilter, isActive: true }),
     Task.countDocuments(scopeFilter),
