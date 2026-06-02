@@ -1,5 +1,5 @@
 // Role du fichier: affiche un tableau de bord adapte au role utilisateur.
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertCircle,
   BarChart3,
@@ -60,18 +60,18 @@ interface EmployeeSignal {
   recommendations: string[];
 }
 
-const readableTitle = "text-gray-100";
-const readableBody = "text-gray-200";
-const readableLabel = "text-gray-300";
-const glassSurface = "border-blue-200/15 bg-blue-950/35 backdrop-blur-md shadow-xl shadow-blue-950/20";
-const nestedSurface = "border-blue-200/15 bg-indigo-950/30 backdrop-blur-md";
+const readableTitle = "text-slate-950 dark:text-gray-100";
+const readableBody = "text-slate-700 dark:text-gray-200";
+const readableLabel = "text-slate-500 dark:text-gray-300";
+const glassSurface = "border-slate-200 bg-white shadow-sm dark:border-blue-200/15 dark:bg-blue-950/35 dark:backdrop-blur-md dark:shadow-xl dark:shadow-blue-950/20";
+const nestedSurface = "border-slate-200 bg-slate-50 dark:border-blue-200/15 dark:bg-indigo-950/30 dark:backdrop-blur-md";
 
 const statusMeta: Record<TaskStatus, { label: string; className: string }> = {
-  todo: { label: "To do", className: "border-amber-300/40 bg-amber-500/10 text-amber-50" },
-  overdue: { label: "Overdue", className: "border-rose-300/40 bg-rose-500/10 text-rose-50" },
-  in_progress: { label: "In progress", className: "border-sky-300/40 bg-sky-500/10 text-sky-50" },
-  done: { label: "Done", className: "border-emerald-300/40 bg-emerald-500/10 text-emerald-50" },
-  declined: { label: "Postponed", className: "border-violet-300/40 bg-violet-500/10 text-violet-50" },
+  todo: { label: "To do", className: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-300/40 dark:bg-amber-500/10 dark:text-amber-50" },
+  overdue: { label: "Overdue", className: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/40 dark:bg-rose-500/10 dark:text-rose-50" },
+  in_progress: { label: "In progress", className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-300/40 dark:bg-sky-500/10 dark:text-sky-50" },
+  done: { label: "Done", className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/40 dark:bg-emerald-500/10 dark:text-emerald-50" },
+  declined: { label: "Postponed", className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-300/40 dark:bg-violet-500/10 dark:text-violet-50" },
 };
 
 // Role: Decrit la logique clamp.
@@ -201,18 +201,18 @@ function deriveEmployeeSignal(args: {
 // Role: Affiche et organise cet ecran.
 function HeroEmployee({ signal, isConnected }: { signal: EmployeeSignal; isConnected: boolean }) {
   const cards = [
-    { label: "Productivity", value: `${signal.productivityScore}%`, detail: "daily AI score", icon: Gauge, className: "border-emerald-300/30 bg-emerald-500/10 text-emerald-50" },
-    { label: "Workload", value: signal.workloadState, detail: `${signal.activeTasks} active`, icon: ListChecks, className: "border-blue-300/30 bg-blue-500/10 text-blue-50" },
-    { label: "Risk", value: signal.riskLevel, detail: `${signal.riskScore}%`, icon: ShieldAlert, className: signal.riskLevel === "High" ? "border-rose-300/40 bg-rose-500/10 text-rose-50" : "border-amber-300/30 bg-amber-500/10 text-amber-50" },
-    { label: "Realtime", value: isConnected ? "Live" : "Syncing", detail: "notifications", icon: Zap, className: "border-cyan-300/30 bg-cyan-500/10 text-cyan-50" },
+    { label: "Productivity", value: `${signal.productivityScore}%`, detail: "daily AI score", icon: Gauge, className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/30 dark:bg-emerald-500/10 dark:text-emerald-50" },
+    { label: "Workload", value: signal.workloadState, detail: `${signal.activeTasks} active`, icon: ListChecks, className: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-300/30 dark:bg-blue-500/10 dark:text-blue-50" },
+    { label: "Risk", value: signal.riskLevel, detail: `${signal.riskScore}%`, icon: ShieldAlert, className: signal.riskLevel === "High" ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/40 dark:bg-rose-500/10 dark:text-rose-50" : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-300/30 dark:bg-amber-500/10 dark:text-amber-50" },
+    { label: "Realtime", value: isConnected ? "Live" : "Syncing", detail: "notifications", icon: Zap, className: "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-300/30 dark:bg-cyan-500/10 dark:text-cyan-50" },
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] border border-white/20 bg-[linear-gradient(135deg,rgba(15,23,42,0.44),rgba(15,23,42,0.24)),linear-gradient(135deg,#2563eb_0%,#4f46e5_50%,#10b981_100%)] p-6 shadow-2xl shadow-blue-950/35">
-      <div className="pointer-events-none absolute inset-0 bg-blue-950/20" aria-hidden="true" />
+    <section className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#eef2ff_50%,#d1fae5_100%)] p-6 shadow-xl shadow-slate-200/80 dark:border-white/20 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.44),rgba(15,23,42,0.24)),linear-gradient(135deg,#2563eb_0%,#4f46e5_50%,#10b981_100%)] dark:shadow-2xl dark:shadow-blue-950/35">
+      <div className="pointer-events-none absolute inset-0 hidden bg-blue-950/20 dark:block" aria-hidden="true" />
       <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <Badge className="mb-4 border-white/25 bg-blue-950/35 text-gray-100 shadow-sm shadow-blue-950/20 backdrop-blur-md hover:bg-blue-950/45">
+          <Badge className="mb-4 border-blue-200 bg-white/80 text-blue-700 shadow-sm backdrop-blur-md hover:bg-white dark:border-white/25 dark:bg-blue-950/35 dark:text-gray-100 dark:shadow-blue-950/20 dark:hover:bg-blue-950/45">
             <BrainCircuit className="mr-1 h-3.5 w-3.5" />
             AI workspace assistant
           </Badge>
@@ -229,7 +229,7 @@ function HeroEmployee({ signal, isConnected }: { signal: EmployeeSignal; isConne
 
       <div className="relative z-10 mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className={cn("rounded-2xl border p-4 transition hover:-translate-y-1 hover:border-white/35 hover:bg-blue-950/45", glassSurface, card.className)}>
+          <div key={card.label} className={cn("rounded-2xl border p-4 transition hover:-translate-y-1 hover:border-blue-300 hover:bg-white dark:hover:border-white/35 dark:hover:bg-blue-950/45", glassSurface, card.className)}>
             <div className="flex items-center justify-between">
               <span className={cn("text-xs font-semibold uppercase tracking-[0.16em]", readableLabel)}>{card.label}</span>
               <card.icon className="h-4 w-4" />
@@ -251,7 +251,7 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
     <section className={cn("rounded-2xl p-6", glassSurface)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Badge className="border-cyan-300/40 bg-cyan-400/15 text-cyan-50 shadow-sm shadow-cyan-950/20 hover:bg-cyan-400/20">
+          <Badge className="border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm hover:bg-cyan-100 dark:border-cyan-300/40 dark:bg-cyan-400/15 dark:text-cyan-50 dark:shadow-cyan-950/20 dark:hover:bg-cyan-400/20">
             <Sparkles className="mr-1 h-3.5 w-3.5" />
             AI Insight Center
           </Badge>
@@ -261,11 +261,11 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
         <div className={cn("grid min-w-44 grid-cols-2 gap-3 rounded-2xl p-3 text-center", nestedSurface)}>
           <div>
             <p className={cn("text-xs uppercase tracking-[0.16em]", readableLabel)}>Productivity</p>
-            <p className="mt-2 text-3xl font-bold text-emerald-200">{signal.productivityScore}%</p>
+          <p className="mt-2 text-3xl font-bold text-emerald-600 dark:text-emerald-200">{signal.productivityScore}%</p>
           </div>
           <div>
             <p className={cn("text-xs uppercase tracking-[0.16em]", readableLabel)}>Risk</p>
-            <p className={cn("mt-2 text-3xl font-bold", signal.riskLevel === "High" ? "text-rose-200" : "text-amber-100")}>{signal.riskScore}%</p>
+            <p className={cn("mt-2 text-3xl font-bold", signal.riskLevel === "High" ? "text-rose-600 dark:text-rose-200" : "text-amber-600 dark:text-amber-100")}>{signal.riskScore}%</p>
           </div>
         </div>
       </div>
@@ -273,7 +273,7 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
       <div className="mt-6 grid gap-4 md:grid-cols-[0.85fr_1.15fr]">
         <div className={cn("rounded-2xl p-4", nestedSurface)}>
           <h3 className={cn("flex items-center gap-2 text-sm font-semibold", readableTitle)}>
-            <LineChart className="h-4 w-4 text-blue-300" />
+            <LineChart className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             Execution signals
           </h3>
           <div className="mt-4 space-y-4">
@@ -287,7 +287,7 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
                   <span className={readableBody}>{label}</span>
                   <span className={cn("font-bold", readableTitle)}>{value}%</span>
                 </div>
-                <Progress value={value as number} className="h-2.5 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-blue-400 [&>div]:to-emerald-300" />
+                <Progress value={value as number} className="h-2.5 bg-slate-200 dark:bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-emerald-400 dark:[&>div]:from-blue-400 dark:[&>div]:to-emerald-300" />
               </div>
             ))}
           </div>
@@ -295,13 +295,13 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
 
         <div className={cn("rounded-2xl p-4", nestedSurface)}>
           <h3 className={cn("flex items-center gap-2 text-sm font-semibold", readableTitle)}>
-            <Target className="h-4 w-4 text-emerald-300" />
+            <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
             Recommendations
           </h3>
           <div className="mt-4 space-y-3">
             {signal.recommendations.map((recommendation, index) => (
-              <div key={recommendation} className="flex items-start gap-3 rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm transition hover:border-emerald-300/40 hover:bg-emerald-500/10">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-400/25 text-xs font-bold text-white">{index + 1}</span>
+              <div key={recommendation} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 backdrop-blur-sm transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/15 dark:bg-white/10 dark:hover:border-emerald-300/40 dark:hover:bg-emerald-500/10">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-400/25 dark:text-white">{index + 1}</span>
                 <p className={cn("text-sm leading-6", readableBody)}>{recommendation}</p>
               </div>
             ))}
@@ -309,7 +309,7 @@ function AIInsightEmployee({ signal, onAnalyze }: { signal: EmployeeSignal; onAn
         </div>
       </div>
 
-      <Button onClick={onAnalyze} className="mt-6 w-full rounded-xl border border-white/80 bg-[#F8FAFC] text-blue-950 shadow-lg shadow-blue-950/20 hover:bg-white hover:text-blue-950">
+      <Button onClick={onAnalyze} className="mt-6 w-full rounded-xl border border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 dark:border-white/80 dark:bg-[#F8FAFC] dark:text-blue-950 dark:shadow-blue-950/20 dark:hover:bg-white dark:hover:text-blue-950">
         <BrainCircuit className="h-4 w-4" />
         Analyze my productivity
       </Button>
@@ -328,7 +328,7 @@ function SmartTaskBoard({
   tasks: Task[];
   isLoading: boolean;
   isUpdating: boolean;
-  onStart: (task: Task) => void;
+  onStart: (task: Task, comment?: string) => void;
   onComplete: (task: Task) => void;
 }) {
   const urgentTasks = tasks.filter((task) => task.status !== "done" && isUrgentTask(task)).slice(0, 5);
@@ -339,9 +339,9 @@ function SmartTaskBoard({
     .slice(0, 5);
 
   const columns = [
-    { title: "Urgent", icon: AlertCircle, tasks: urgentTasks, tone: "text-rose-200", empty: "No urgent work right now." },
-    { title: "In progress", icon: PlayCircle, tasks: inProgressTasks, tone: "text-sky-200", empty: "No task currently in progress." },
-    { title: "Suggested by AI", icon: Sparkles, tasks: suggestedTasks, tone: "text-emerald-200", empty: "No AI suggestions until new tasks arrive." },
+    { title: "Urgent", icon: AlertCircle, tasks: urgentTasks, tone: "text-rose-600 dark:text-rose-200", empty: "No urgent work right now." },
+    { title: "In progress", icon: PlayCircle, tasks: inProgressTasks, tone: "text-sky-600 dark:text-sky-200", empty: "No task currently in progress." },
+    { title: "Suggested by AI", icon: Sparkles, tasks: suggestedTasks, tone: "text-emerald-600 dark:text-emerald-200", empty: "No AI suggestions until new tasks arrive." },
   ];
 
   return (
@@ -362,15 +362,15 @@ function SmartTaskBoard({
                 <column.icon className={cn("h-4 w-4", column.tone)} />
                 {column.title}
               </h3>
-              <Badge className="border-white/20 bg-white/10 text-gray-100">{column.tasks.length}</Badge>
+              <Badge className="border-slate-200 bg-white text-slate-700 dark:border-white/20 dark:bg-white/10 dark:text-gray-100">{column.tasks.length}</Badge>
             </div>
 
             <div className="space-y-3">
               {isLoading ? (
-                <div className={cn("rounded-xl border border-dashed border-blue-200/20 p-4 text-sm", readableBody)}>Loading tasks...</div>
+                <div className={cn("rounded-xl border border-dashed border-slate-300 p-4 text-sm dark:border-blue-200/20", readableBody)}>Loading tasks...</div>
               ) : column.tasks.length === 0 ? (
-                <div className={cn("rounded-xl border border-dashed border-blue-200/20 p-4 text-center text-sm", readableBody)}>
-                  <Inbox className="mx-auto mb-2 h-6 w-6 text-gray-300" />
+                <div className={cn("rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm dark:border-blue-200/20", readableBody)}>
+                  <Inbox className="mx-auto mb-2 h-6 w-6 text-slate-400 dark:text-gray-300" />
                   {column.empty}
                 </div>
               ) : (
@@ -379,7 +379,7 @@ function SmartTaskBoard({
                     key={getTaskId(task, index)}
                     task={task}
                     isUpdating={isUpdating}
-                    onStart={() => onStart(task)}
+                    onStart={(comment) => onStart(task, comment)}
                     onComplete={() => onComplete(task)}
                   />
                 ))
@@ -401,15 +401,17 @@ function EmployeeTaskCard({
 }: {
   task: Task;
   isUpdating: boolean;
-  onStart: () => void;
+  onStart: (comment?: string) => void;
   onComplete: () => void;
 }) {
   const meta = statusMeta[task.status] || statusMeta.todo;
   const canStart = task.status === "todo" || task.status === "overdue";
   const canComplete = task.status === "in_progress";
+  const [isWritingComment, setIsWritingComment] = useState(false);
+  const [comment, setComment] = useState("");
 
   return (
-    <article className="rounded-2xl border border-blue-200/15 bg-blue-950/25 p-4 transition hover:border-blue-300/40 hover:bg-blue-950/35">
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:bg-blue-50 dark:border-blue-200/15 dark:bg-blue-950/25 dark:hover:border-blue-300/40 dark:hover:bg-blue-950/35">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className={cn("font-bold leading-snug", readableTitle)}>{task.title}</h4>
@@ -421,23 +423,42 @@ function EmployeeTaskCard({
       {task.description && <p className={cn("mt-3 line-clamp-3 text-sm leading-6", readableBody)}>{task.description}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Badge className="border-white/20 bg-white/10 text-gray-100 font-semibold capitalize">{task.priority || "medium"}</Badge>
-        <Badge className="border-blue-300/30 bg-blue-500/10 text-blue-50 font-semibold">
+        <Badge className="border-slate-200 bg-slate-50 text-slate-700 font-semibold capitalize dark:border-white/20 dark:bg-white/10 dark:text-gray-100">{task.priority || "medium"}</Badge>
+        <Badge className="border-blue-200 bg-blue-50 text-blue-700 font-semibold dark:border-blue-300/30 dark:bg-blue-500/10 dark:text-blue-50">
           <CalendarClock className="mr-1 h-3.5 w-3.5" />
           {formatDeadline(task.dueDate)}
         </Badge>
         {(task.delayDays ?? 0) > 0 && (
-          <Badge className="border-rose-300/40 bg-rose-500/10 text-rose-50 font-semibold">{task.delayDays}d late</Badge>
+          <Badge className="border-rose-200 bg-rose-50 text-rose-700 font-semibold dark:border-rose-300/40 dark:bg-rose-500/10 dark:text-rose-50">{task.delayDays}d late</Badge>
         )}
         {(task.priorityScore ?? 0) >= 60 && (
-          <Badge className="border-emerald-300/40 bg-emerald-500/10 text-emerald-50 font-semibold">AI Suggested</Badge>
+          <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold dark:border-emerald-300/40 dark:bg-emerald-500/10 dark:text-emerald-50">AI Suggested</Badge>
         )}
       </div>
 
       {(canStart || canComplete) && (
         <div className="mt-4">
-          {canStart ? (
-            <Button disabled={isUpdating} onClick={onStart} className="w-full rounded-xl border border-blue-300/50 bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-60">
+          {canStart && isWritingComment ? (
+            <div className="space-y-3">
+              <label className={cn("block text-xs font-bold uppercase", readableLabel)}>Commentaire</label>
+              <textarea
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="Écrire un commentaire pour l'admin..."
+                className="min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-400 dark:border-blue-200/20 dark:bg-blue-950/40 dark:text-white"
+              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button type="button" variant="outline" disabled={isUpdating} onClick={() => setIsWritingComment(false)} className="rounded-xl">
+                  Annuler
+                </Button>
+                <Button type="button" disabled={isUpdating} onClick={() => onStart(comment)} className="rounded-xl border border-blue-300/50 bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-60">
+                  <PlayCircle className="h-4 w-4" />
+                  Envoyer
+                </Button>
+              </div>
+            </div>
+          ) : canStart ? (
+            <Button disabled={isUpdating} onClick={() => setIsWritingComment(true)} className="w-full rounded-xl border border-blue-300/50 bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-60">
               <PlayCircle className="h-4 w-4" />
               Start task
             </Button>
@@ -483,10 +504,10 @@ function SmartActionsEmployee({
           <button
             key={action.label}
             onClick={action.onClick}
-            className={cn("group rounded-2xl bg-gradient-to-br p-px text-left shadow-md shadow-blue-950/20 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-950/30", action.tone)}
+            className={cn("group rounded-2xl bg-gradient-to-br p-px text-left shadow-md shadow-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-300 dark:shadow-blue-950/20 dark:hover:shadow-blue-950/30", action.tone)}
           >
-            <span className="flex h-full items-center gap-3 rounded-2xl border border-blue-200/15 bg-indigo-950/55 p-4 text-gray-100 backdrop-blur-md transition group-hover:border-white/30 group-hover:bg-blue-950/45">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white transition group-hover:bg-white/25">
+            <span className="flex h-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 backdrop-blur-md transition group-hover:border-blue-300 group-hover:bg-blue-50 dark:border-blue-200/15 dark:bg-indigo-950/55 dark:text-gray-100 dark:group-hover:border-white/30 dark:group-hover:bg-blue-950/45">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 transition group-hover:bg-blue-200 dark:bg-white/15 dark:text-white dark:group-hover:bg-white/25">
                 <action.icon className="h-5 w-5" />
               </span>
               <span className={cn("font-semibold", readableTitle)}>{action.label}</span>
@@ -514,7 +535,7 @@ function PerformanceEmployee({ signal }: { signal: EmployeeSignal }) {
           <h2 className={cn("text-xl font-bold", readableTitle)}>Performance metrics</h2>
           <p className={cn("mt-1 text-sm", readableBody)}>Signals OmniAI uses to tune workload recommendations.</p>
         </div>
-        <Badge className="border-emerald-300/40 bg-emerald-500/10 text-emerald-50 font-semibold">Live</Badge>
+        <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold dark:border-emerald-300/40 dark:bg-emerald-500/10 dark:text-emerald-50">Live</Badge>
       </div>
 
       <div className="mt-5 space-y-5">
@@ -522,12 +543,12 @@ function PerformanceEmployee({ signal }: { signal: EmployeeSignal }) {
           <div key={metric.label}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <metric.icon className="h-4 w-4 text-blue-300" />
+                <metric.icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 <span className={cn("text-sm font-semibold", readableTitle)}>{metric.label}</span>
               </div>
               <span className={cn("text-sm font-bold", readableTitle)}>{metric.value}%</span>
             </div>
-            <Progress value={metric.value} className="h-2.5 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-blue-400 [&>div]:to-emerald-300" />
+            <Progress value={metric.value} className="h-2.5 bg-slate-200 dark:bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-emerald-400 dark:[&>div]:from-blue-400 dark:[&>div]:to-emerald-300" />
             <p className={cn("mt-1 text-xs", readableLabel)}>{metric.detail}</p>
           </div>
         ))}
@@ -539,10 +560,10 @@ function PerformanceEmployee({ signal }: { signal: EmployeeSignal }) {
 // Role: Affiche et organise cet ecran.
 function ActivitySignals({ signal }: { signal: EmployeeSignal }) {
   const signals = [
-    { label: "Activity stability", value: `${signal.consistencyScore}%`, tone: "text-emerald-200" },
-    { label: "Focus level", value: signal.focusLevel, tone: "text-blue-200" },
-    { label: "Urgent items", value: signal.urgentTasks, tone: signal.urgentTasks ? "text-rose-200" : "text-emerald-200" },
-    { label: "Delayed items", value: signal.delayedTasks, tone: signal.delayedTasks ? "text-amber-200" : "text-emerald-200" },
+    { label: "Activity stability", value: `${signal.consistencyScore}%`, tone: "text-emerald-600 dark:text-emerald-200" },
+    { label: "Focus level", value: signal.focusLevel, tone: "text-blue-600 dark:text-blue-200" },
+    { label: "Urgent items", value: signal.urgentTasks, tone: signal.urgentTasks ? "text-rose-600 dark:text-rose-200" : "text-emerald-600 dark:text-emerald-200" },
+    { label: "Delayed items", value: signal.delayedTasks, tone: signal.delayedTasks ? "text-amber-600 dark:text-amber-200" : "text-emerald-600 dark:text-emerald-200" },
   ];
 
   return (
@@ -590,10 +611,10 @@ export default function EmployeeDashboard() {
   );
 
   // Role: Enregistre une modification.
-  const updateStatus = (task: Task, status: TaskStatus) => {
+  const updateStatus = (task: Task, status: TaskStatus, comment?: string) => {
     const id = task._id || task.id;
     if (!id) return;
-    updateTaskStatus.mutate({ id, status });
+    updateTaskStatus.mutate({ id, status, comment: comment?.trim() || undefined });
   };
 
   // Role: Lance un traitement metier ou IA.
@@ -609,7 +630,7 @@ export default function EmployeeDashboard() {
 
   return (
     <ModuleLayout activeItem="dashboard">
-      <div className="space-y-6 p-6 md:p-8">
+      <div className="space-y-6 bg-slate-50 p-6 text-slate-950 dark:bg-slate-950 dark:text-slate-100 md:p-8">
         <HeroEmployee signal={signal} isConnected={isConnected} />
 
         <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
@@ -619,7 +640,7 @@ export default function EmployeeDashboard() {
               tasks={tasks}
               isLoading={isLoadingTasks}
               isUpdating={updateTaskStatus.isPending}
-              onStart={(task) => updateStatus(task, "in_progress")}
+              onStart={(task, comment) => updateStatus(task, "in_progress", comment)}
               onComplete={(task) => updateStatus(task, "done")}
             />
           </div>

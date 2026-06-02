@@ -1,5 +1,5 @@
 // Role du fichier: affiche une page React de l application.
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "wouter";
 import { CalendarClock, CheckCircle2, Clock, Eye, ListChecks, PauseCircle, PlayCircle, XCircle } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
@@ -46,17 +46,23 @@ function isDelayed(task: Task) {
 // Role: Affiche et organise cet ecran.
 export default function MyTasks() {
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [startCommentTaskId, setStartCommentTaskId] = useState("");
+  const [startComments, setStartComments] = useState<Record<string, string>>({});
   const { data: tasks = [], isLoading } = useGetTasks({ params: { status: filter, limit: 100 }, query: { refetchInterval: 15000 } });
   const updateTaskStatus = useUpdateTaskStatus();
   const rescheduleTask = useRescheduleTaskToday();
   const { toast } = useToast();
 
   // Role: Enregistre une modification.
-  const updateStatus = (task: Task, status: TaskStatus) => {
+  const updateStatus = (task: Task, status: TaskStatus, comment?: string) => {
     const id = getTaskId(task);
     if (!id) return;
 
-    const payload: { id: string; status: TaskStatus; declineReason?: string; lateReason?: string } = { id, status };
+    const payload: { id: string; status: TaskStatus; declineReason?: string; lateReason?: string; comment?: string } = { id, status };
+    const trimmedComment = comment?.trim();
+    if (status === "in_progress" && trimmedComment) {
+      payload.comment = trimmedComment;
+    }
 
     if (status === "declined") {
       const reason = window.prompt("Pourquoi cette tâche est en retard / Plus tard ?");
@@ -77,7 +83,14 @@ export default function MyTasks() {
       payload.lateReason = reason.trim();
     }
 
-    updateTaskStatus.mutate(payload);
+    updateTaskStatus.mutate(payload, {
+      onSuccess: () => {
+        if (status === "in_progress") {
+          setStartCommentTaskId("");
+          setStartComments((current) => ({ ...current, [id]: "" }));
+        }
+      },
+    });
   };
 
   // Role: Decrit la logique rescheduleToday.
@@ -142,56 +155,80 @@ export default function MyTasks() {
                   const id = getTaskId(task);
                   const meta = statusMeta[task.status] || statusMeta.todo;
                   const delayed = isDelayed(task);
+                  const isWritingStartComment = startCommentTaskId === id;
 
                   return (
-                    <tr key={id} className="text-slate-200 transition hover:bg-slate-800/50">
-                      <td className="px-5 py-4">
-                        <Link href={`/tasks/${id}`} className="text-base font-bold text-white hover:text-emerald-300">{task.title}</Link>
-                        <p className="mt-1 line-clamp-1 text-xs text-slate-400">{task.description || "No description"}</p>
-                      </td>
-                      <td className="px-5 py-4">{getUserName(task.createdBy as Partial<User>)}</td>
-                      <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
-                      <td className="px-5 py-4">{task.endTime || task.dueDate ? new Date(task.endTime || task.dueDate || "").toLocaleString() : "-"}</td>
-                      <td className="px-5 py-4">
-                        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", delayed && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
-                          {delayed && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
-                          {delayed && task.status !== "done" ? "Delayed" : meta.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        {delayed && task.status !== "done" ? (
-                          <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Replanifier aujourd’hui</span>
-                        ) : (
-                          <span className="text-xs text-slate-500">No urgent action</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/tasks/${id}`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">
-                            <Eye className="h-4 w-4" />
-                            Details
-                          </Link>
-                          {delayed && task.status !== "done" && (
-                            <button type="button" onClick={() => rescheduleToday(task)} disabled={rescheduleTask.isPending} className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50">
-                              <CalendarClock className="h-4 w-4" />
-                              Today
-                            </button>
+                    <Fragment key={id}>
+                      <tr className="text-slate-200 transition hover:bg-slate-800/50">
+                        <td className="px-5 py-4">
+                          <Link href={`/tasks/${id}`} className="text-base font-bold text-white hover:text-emerald-300">{task.title}</Link>
+                          <p className="mt-1 line-clamp-1 text-xs text-slate-400">{task.description || "No description"}</p>
+                        </td>
+                        <td className="px-5 py-4">{getUserName(task.createdBy as Partial<User>)}</td>
+                        <td className="px-5 py-4">{task.startTime ? new Date(task.startTime).toLocaleString() : "-"}</td>
+                        <td className="px-5 py-4">{task.endTime || task.dueDate ? new Date(task.endTime || task.dueDate || "").toLocaleString() : "-"}</td>
+                        <td className="px-5 py-4">
+                          <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", delayed && task.status !== "done" ? statusMeta.overdue.tone : meta.tone)}>
+                            {delayed && task.status !== "done" ? statusMeta.overdue.icon : meta.icon}
+                            {delayed && task.status !== "done" ? "Delayed" : meta.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          {delayed && task.status !== "done" ? (
+                            <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Replanifier aujourd’hui</span>
+                          ) : (
+                            <span className="text-xs text-slate-500">No urgent action</span>
                           )}
-                          {(task.status === "todo" || task.status === "overdue") && (
-                            <>
-                              <button type="button" onClick={() => updateStatus(task, "in_progress")} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start</button>
-                              <button type="button" onClick={() => updateStatus(task, "declined")} disabled={updateTaskStatus.isPending} className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
-                                <PauseCircle className="h-4 w-4" />
-                                Plus tard
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/tasks/${id}`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">
+                              <Eye className="h-4 w-4" />
+                              Details
+                            </Link>
+                            {delayed && task.status !== "done" && (
+                              <button type="button" onClick={() => rescheduleToday(task)} disabled={rescheduleTask.isPending} className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                                <CalendarClock className="h-4 w-4" />
+                                Today
                               </button>
-                            </>
-                          )}
-                          {task.status === "in_progress" && (
-                            <button type="button" onClick={() => updateStatus(task, "done")} disabled={updateTaskStatus.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Complete</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                            )}
+                            {(task.status === "todo" || task.status === "overdue") && (
+                              <>
+                                <button type="button" onClick={() => setStartCommentTaskId(id)} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start</button>
+                                <button type="button" onClick={() => updateStatus(task, "declined")} disabled={updateTaskStatus.isPending} className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                                  <PauseCircle className="h-4 w-4" />
+                                  Plus tard
+                                </button>
+                              </>
+                            )}
+                            {task.status === "in_progress" && (
+                              <button type="button" onClick={() => updateStatus(task, "done")} disabled={updateTaskStatus.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Complete</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {isWritingStartComment && (
+                        <tr className="bg-slate-950/40">
+                          <td className="px-5 py-4" colSpan={7}>
+                            <label className="block text-xs font-bold uppercase text-slate-400">Commentaire</label>
+                            <textarea
+                              value={startComments[id] || ""}
+                              onChange={(event) => setStartComments((current) => ({ ...current, [id]: event.target.value }))}
+                              placeholder="Écrire un commentaire pour l'admin..."
+                              className="mt-2 min-h-24 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none transition focus:border-orange-400"
+                            />
+                            <div className="mt-3 flex justify-end gap-2">
+                              <button type="button" onClick={() => setStartCommentTaskId("")} className="rounded-md border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800">
+                                Annuler
+                              </button>
+                              <button type="button" onClick={() => updateStatus(task, "in_progress", startComments[id])} disabled={updateTaskStatus.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                                Envoyer et démarrer
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })
               ) : (

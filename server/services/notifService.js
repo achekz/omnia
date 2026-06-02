@@ -1,6 +1,6 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
-import Notification from '../models/Notification.js';
 import { emitToUser } from '../config/socket.js';
+import { saveNotification } from './persistenceService.js';
 
 // Role: Construit des donnees derivees.
 function resolveRedirectTarget(target, metadata = {}) {
@@ -15,7 +15,7 @@ function resolveRedirectTarget(target, metadata = {}) {
 export const create = async (userId, tenantId, { type, title, message, source, redirectTarget, actionUrl, metadata }) => {
   const resolvedRedirectTarget = resolveRedirectTarget(redirectTarget || actionUrl, metadata);
 
-  const notif = await Notification.create({
+  const notif = await saveNotification({
     userId,
     tenantId,
     type: type || 'info',

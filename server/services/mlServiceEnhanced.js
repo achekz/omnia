@@ -1,6 +1,7 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import axios from 'axios';
 import { ApiError } from '../utils/ApiError.js';
+import { attachAxiosDiagnostics } from '../utils/networkDiagnostics.js';
 
 /**
  * ML SERVICE ENHANCED CLIENT
@@ -23,6 +24,7 @@ class MLServiceClient {
         'User-Agent': 'ML-Client/1.0',
       },
     });
+    attachAxiosDiagnostics(this.client, 'ML_SERVICE_ENHANCED');
 
     // Add response interceptor
     this.client.interceptors.response.use(

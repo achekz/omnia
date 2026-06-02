@@ -1,12 +1,13 @@
 // Role du fichier: contient la logique backend des requetes et reponses API.
 import { generateResponse } from "../services/geminiService.js";
+import { saveConversationMessage } from "../services/persistenceService.js";
 import { retrieveRagContext } from "../services/ragRetrievalService.js";
 import { ApiError } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Role: Decrit la logique chatWithAI.
 export const chatWithAI = asyncHandler(async (req, res) => {
-  const { message, attachments = [] } = req.body;
+  const { message, attachments = [], conversationId: requestedConversationId } = req.body;
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     throw new ApiError(400, "Message is required");
@@ -21,8 +22,30 @@ export const chatWithAI = asyncHandler(async (req, res) => {
   }
 
   try {
+    const conversationId =
+      requestedConversationId ||
+      `${req.user?._id?.toString?.() || "guest"}-${Date.now()}`;
+
+    await saveConversationMessage({
+      userId: req.user?._id || null,
+      tenantId: req.tenantId || req.user?.tenantId || null,
+      conversationId,
+      role: "user",
+      content: message,
+      attachments,
+    });
+
     const ragContext = await retrieveRagContext({ user: req.user, question: message });
     const reply = await generateResponse(message, req.user?.role, attachments, ragContext);
+
+    await saveConversationMessage({
+      userId: req.user?._id || null,
+      tenantId: req.tenantId || req.user?.tenantId || null,
+      conversationId,
+      role: "assistant",
+      content: reply,
+      attachments: [],
+    });
 
     console.log("[AI:RAG] Chat response generated.", {
       userId: req.user?._id?.toString?.() || null,
@@ -36,6 +59,7 @@ export const chatWithAI = asyncHandler(async (req, res) => {
       reply,
       context: {
         enabled: Boolean(req.user),
+        conversationId,
         taskCount: ragContext.tasks?.length || 0,
         notificationCount: ragContext.recentNotifications?.length || 0,
         generatedAt: ragContext.generatedAt,

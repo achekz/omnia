@@ -192,21 +192,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      const currentToken = getStoredToken();
-      if (currentToken) {
-        await apiClient.post("/auth/logout");
-      }
-    } catch {
-      // Local logout still succeeds when the access token is expired or already revoked.
-    } finally {
-      clearStoredAuth();
-      setToken(null);
-      setUser(null);
-      setLocation("/login");
+const logout = async () => {
+  try {
+    const currentToken = getStoredToken();
+    if (currentToken) {
+      await apiClient.post("/auth/logout");
     }
-  };
+  } catch {
+  } finally {
+  clearStoredAuth();
+    setToken(null);
+    setUser(null);
+
+    toast({
+      title: "Déconnexion",
+      description: "Vous avez été déconnecté avec succès.",
+    });
+
+    setLocation("/login");
+  }
+};
 
   const clearAllUsers = () => {
     clearStoredAuth();

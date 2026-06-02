@@ -16,6 +16,7 @@ import requireDatabase from './middleware/requireDatabase.js';
 import { startRecommendationScheduler } from './services/schedulerService.js';
 import { protect } from './middleware/auth.js';
 import { chatWithAI } from './controllers/aiController.js';
+import { logEnvDiagnostics, sanitizeForLog } from './utils/networkDiagnostics.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -27,6 +28,7 @@ import aiRoutes from './routes/ai.routes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import insightRoutes from './routes/insights.js';
 import mlRoutes from './routes/ml.js';
+import payrollRoutes from './routes/payroll.js';
 import notificationRoutes from './routes/notifications.js';
 import presenceRoutes from './routes/presences.js';
 import ruleRoutes from './routes/rules.js';
@@ -43,6 +45,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env'), override: true });
+logEnvDiagnostics();
 
 
 const app = express();
@@ -94,7 +97,16 @@ app.use('/api/auth/reset-password', rateLimiter({
 
 // Request logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  const startedAt = Date.now();
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  res.on('finish', () => {
+    console.log('[API] Response sent', sanitizeForLog({
+      method: req.method,
+      url: req.originalUrl,
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+    }));
+  });
   next();
 });
 
@@ -166,6 +178,7 @@ app.post('/api/ai-assistant', requireDatabase, protect, chatWithAI);
 app.use('/api/dashboard', requireDatabase, dashboardRoutes);
 app.use('/api/insights', requireDatabase, insightRoutes);
 app.use('/api/ml', requireDatabase, mlRoutes);
+app.use('/api/payroll', requireDatabase, payrollRoutes);
 app.use('/api/notifications', requireDatabase, notificationRoutes);
 app.use('/api/tasks', requireDatabase, taskRoutes);
 app.use('/api/team', requireDatabase, teamRoutes);

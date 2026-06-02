@@ -112,7 +112,6 @@ const MODULES: NavModule[] = [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/dashboard/employee" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
-      { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
@@ -129,7 +128,6 @@ const MODULES: NavModule[] = [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/comptable/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
-      { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
       { id: "ai", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
@@ -191,8 +189,8 @@ const MODULES: NavModule[] = [
     items: [
       { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, path: "/stagiaire/dashboard" },
       { id: "presence", label: "Presence", icon: <Calendar className="w-4 h-4" />, path: "/presence" },
-      { id: "performances", label: "Performance", icon: <BarChart3 className="w-4 h-4" />, path: "/performance" },
       { id: "tasks", label: "My Tasks", icon: <CheckCircle2 className="w-4 h-4" />, path: "/tasks" },
+      { id: "insights", label: "AI Insights", icon: <Sparkles className="w-4 h-4" />, path: "/insights" },
       { id: "ia", label: "IA Assistant", icon: <Bot className="w-4 h-4" />, path: "/ai" },
     ],
   },
@@ -253,12 +251,12 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
   };
 
   return (
-    <div className="h-dvh bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
-      <header className="h-16 bg-slate-950 border-b border-slate-800 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 shadow-sm shadow-slate-950/40 relative z-40">
+    <div className="h-dvh bg-slate-50 text-slate-950 flex flex-col font-sans overflow-hidden dark:bg-slate-950 dark:text-slate-100">
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 shadow-sm shadow-slate-200/70 relative z-40 dark:bg-slate-950 dark:border-slate-800 dark:shadow-slate-950/40">
         <button
           type="button"
           onClick={() => setIsSidebarOpen(true)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 text-slate-300 transition hover:bg-slate-800 lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 lg:hidden dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
@@ -269,7 +267,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
             <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="hidden font-display font-bold text-xl text-slate-100 tracking-tight sm:inline">Omni AI</span>
+            <span className="hidden font-display font-bold text-xl text-slate-950 tracking-tight sm:inline dark:text-slate-100">Omni AI</span>
           </Link>
         </div>
 
@@ -282,11 +280,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
 
           <button
             onClick={() => setIsNotifOpen(true)}
-            className="relative p-2 rounded-full text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+            className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-950 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-950" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white dark:border-slate-950" />
             )}
           </button>
 
@@ -306,11 +304,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
         {activeModule && (
           <aside
             className={cn(
-              "fixed inset-y-0 left-0 z-40 flex w-[min(86vw,280px)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-950 shadow-2xl shadow-slate-950/60 transition-transform duration-300 lg:relative lg:z-30 lg:w-[240px] lg:translate-x-0 lg:shadow-none",
+              "fixed inset-y-0 left-0 z-40 flex w-[min(86vw,280px)] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-2xl shadow-slate-300/60 transition-transform duration-300 lg:relative lg:z-30 lg:w-[240px] lg:translate-x-0 lg:shadow-none dark:border-slate-800 dark:bg-slate-950 dark:shadow-slate-950/60",
               isSidebarOpen ? "translate-x-0" : "-translate-x-full",
             )}
           >
-            <div className="flex items-center justify-between border-b border-slate-800 p-4 lg:hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 p-4 lg:hidden dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md">
                   <Sparkles className="w-4 h-4 text-white" />
@@ -320,7 +318,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
@@ -352,11 +350,11 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
                       "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all duration-200 border border-transparent",
                       isActive
                         ? activeModule.activeSidebarStyle
-                        : "text-slate-400 hover:bg-slate-900 hover:text-slate-100 font-medium",
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 font-medium dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100",
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={cn(isActive ? "text-current" : "text-slate-500")}>
+                      <span className={cn(isActive ? "text-current" : "text-slate-500 dark:text-slate-500")}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -367,10 +365,10 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
               })}
             </nav>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-900/60">
+            <div className="p-4 border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60">
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-200 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors dark:text-slate-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
               >
                 <LogOut className="w-4 h-4" />
                 Déconnexion
@@ -379,7 +377,7 @@ export function ModuleLayout({ children, activeItem = "dashboard", onItemChange 
           </aside>
         )}
 
-        <main className="container-fluid flex-1 overflow-x-hidden overflow-y-auto bg-slate-950 px-0 relative">{children}</main>
+        <main className="container-fluid flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 px-0 relative dark:bg-slate-950">{children}</main>
       </div>
 
       <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />

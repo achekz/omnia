@@ -439,6 +439,7 @@ function SelectedUserDetails({ user, stats }: { user?: Partial<User> | TaskUserS
 
 function TaskRow({ task, onResend, isResending }: { task: Task; onResend: (task: Task) => void; isResending?: boolean }) {
   const meta = statusMeta[task.status] || statusMeta.todo;
+  const comments = task.comments || [];
 
   return (
     <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -467,6 +468,17 @@ function TaskRow({ task, onResend, isResending }: { task: Task; onResend: (task:
             <p className="mt-3 rounded-xl bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
               Raison Plus tard: {task.declineReason}
             </p>
+          )}
+          {comments.length > 0 && (
+            <div className="mt-3 space-y-2 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:bg-blue-500/15 dark:text-blue-100">
+              <p className="font-bold">Commentaires</p>
+              {comments.slice(-3).map((comment, index) => (
+                <p key={comment._id || index}>
+                  <span className="font-semibold">{getUserName(comment.userId as Partial<User>)}: </span>
+                  {comment.message}
+                </p>
+              ))}
+            </div>
           )}
         </div>
 

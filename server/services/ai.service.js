@@ -2,6 +2,7 @@
 import axios from "axios";
 import { predict, recommend } from "./mlService.js";
 import * as notifService from "./notifService.js";
+import { logExternalError, logExternalRequest, logExternalResponse } from "../utils/networkDiagnostics.js";
 
 /**
  * Main AI function
@@ -55,11 +56,25 @@ Answer clearly and naturally.
 `;
 
     // ✅ CALL FLASK (CORRECT)
+    const aiUrl = `${process.env.ML_SERVICE_URL || "http://localhost:5001"}/ai`;
+    logExternalRequest("AI_SERVICE", {
+      method: "POST",
+      url: aiUrl,
+      data: { promptLength: prompt.length },
+      metadata: { timeout: 30000 },
+    });
     const response = await axios.post(
-      "http://localhost:5001/ai",
+      aiUrl,
       { prompt },
       { timeout: 30000 }
     );
+    logExternalResponse("AI_SERVICE", {
+      method: "POST",
+      url: aiUrl,
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    });
 
     const aiResponse = response.data?.response;
 
@@ -71,6 +86,7 @@ Answer clearly and naturally.
     return aiResponse;
 
   } catch (err) {
+    logExternalError("AI_SERVICE", err);
     console.error("❌ AI ERROR:", err.message);
     throw new Error("AI service unavailable");
   }

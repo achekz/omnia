@@ -118,21 +118,40 @@ export default function AdminDashboard() {
   }, []);
 
   // Role: Recupere les donnees necessaires.
-  async function loadDashboard() {
-    try {
-      setLoading(true);
-      const res = await apiClient.get("/admin/dashboard");
-      setDashboard({ ...defaultDashboard, ...res.data.data });
-    } catch {
-      toast({
-        title: "Error",
-        description: "Cannot load dashboard",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+ async function loadDashboard() {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    setLoading(false);
+    return;
   }
+
+  try {
+    setLoading(true);
+
+    const res = await apiClient.get("/admin/dashboard");
+
+    setDashboard({
+      ...defaultDashboard,
+      ...res.data.data,
+    });
+  } catch (error: any) {
+    if (
+      error?.message === "Authentication token missing" ||
+      error?.name === "CanceledError"
+    ) {
+      return;
+    }
+
+    toast({
+      title: "Error",
+      description: "Cannot load dashboard",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+}
 
   const intel = useMemo(() => buildAdminIntel(dashboard, rules), [dashboard, rules]);
 

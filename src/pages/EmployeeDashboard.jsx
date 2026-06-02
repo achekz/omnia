@@ -5,8 +5,11 @@ import AnalyticsChart from "../components/AnalyticsChart";
 import TaskBoard from "../components/TaskBoard";
 import { useAuth } from "@/hooks/useAuth";
 
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+
 const API = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: API_ORIGIN,
+  timeout: 10000,
 });
 
 API.interceptors.request.use((config) => {
@@ -17,7 +20,7 @@ API.interceptors.request.use((config) => {
 
 // Role: Affiche et organise cet ecran.
 export default function EmployeeDashboard() {
-  const { clearAllUsers } = useAuth(); // ✅ هنا
+  const { clearAllUsers } = useAuth();
 
   const [prediction, setPrediction] = useState(null);
   const [tasks, setTasks] = useState([]);

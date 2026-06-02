@@ -1,5 +1,6 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import axios from "axios";
+import { attachAxiosDiagnostics } from "../utils/networkDiagnostics.js";
 
 const FLASK_AI_URL = process.env.FLASK_AI_URL || "http://localhost:5000";
 
@@ -10,6 +11,7 @@ const aiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+attachAxiosDiagnostics(aiClient, "FLASK_AI");
 
 // Role: Decrit la logique fallbackPrediction.
 function fallbackPrediction(user, tasks = [], performanceLogs = []) {

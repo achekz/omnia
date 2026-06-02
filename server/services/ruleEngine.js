@@ -3,6 +3,7 @@ import Rule from '../models/Rule.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
 import * as notifService from './notifService.js';
+import { saveRuleExecution } from './persistenceService.js';
 import { normalizeRole } from '../utils/roleNormalization.js';
 
 const priorityScores = {
@@ -118,6 +119,15 @@ async function notify(rule, context) {
       }),
     ),
   );
+  return targetIds.length;
+}
+
+async function persistRuleExecution(rule, context, matched, notifiedTargets = 0) {
+  try {
+    await saveRuleExecution({ rule, context, matched, notifiedTargets });
+  } catch (error) {
+    console.error('[DB] Rule execution save failed:', error.message);
+  }
 }
 
 // Role: Decrit la logique metricValue.
@@ -244,7 +254,8 @@ class RuleEngine {
 
       for (const context of contexts) {
         if (await matchesRule(rule, context)) {
-          await notify(rule, context);
+          const notifiedTargets = await notify(rule, context);
+          await persistRuleExecution(rule, context, true, notifiedTargets);
           rule.lastTriggeredAt = new Date();
           triggeredCount += 1;
           await rule.save();
@@ -282,7 +293,8 @@ class RuleEngine {
 
     for (const rule of rules) {
       if (await matchesRule(rule, context)) {
-        await notify(rule, context);
+        const notifiedTargets = await notify(rule, context);
+        await persistRuleExecution(rule, context, true, notifiedTargets);
         rule.lastTriggeredAt = new Date();
         triggeredCount += 1;
         await rule.save();

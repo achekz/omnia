@@ -6,7 +6,13 @@ import type { AxiosError } from "axios";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Loader2, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import type { User } from "@/lib/types";
 
 // Role: Recupere les donnees necessaires.
@@ -147,6 +153,7 @@ export default function Login() {
                   </div>
                   <input
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
@@ -169,6 +176,7 @@ export default function Login() {
                   </div>
                   <input
                     type="password"
+                    autoComplete="current-password"
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
@@ -239,6 +247,10 @@ export default function Login() {
               <ShieldCheck className="h-5 w-5 text-amber-600" />
               Admin Quick Login
             </DialogTitle>
+
+            <DialogDescription className="sr-only">
+              Enter administrator credentials to access the admin dashboard.
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -254,6 +266,7 @@ export default function Login() {
                 <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
+                    autoComplete="email"
                   required
                   value={adminEmail}
                   onChange={(event) => setAdminEmail(event.target.value)}
@@ -269,6 +282,7 @@ export default function Login() {
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type="password"
+                    autoComplete="current-password"
                   required
                   value={adminPassword}
                   onChange={(event) => setAdminPassword(event.target.value)}

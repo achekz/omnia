@@ -27,9 +27,12 @@ const presenceSchema = new Schema(
     checkOut: {
       type: Date,
     },
+    logoutTime: {
+      type: Date,
+    },
     status: {
       type: String,
-      enum: ["present", "absent", "late", "very_late"],
+      enum: ["present", "absent", "late", "very_late", "on_time"],
       required: true,
       index: true,
     },

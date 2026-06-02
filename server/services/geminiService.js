@@ -1,5 +1,6 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import { normalizeRole } from "../utils/roleNormalization.js";
+import { logExternalError, logExternalRequest, logExternalResponse, redactUrl } from "../utils/networkDiagnostics.js";
 
 const GEMINI_PREFERRED_MODELS = [
   "gemini-2.0-flash",
@@ -229,12 +230,19 @@ function isTemporaryModelMessage(reply) {
 }
 
 async function listAvailableGeminiModels(apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
+    logExternalRequest("GEMINI", { method: "GET", url });
+    const response = await fetch(url);
     const rawText = await response.text();
     const payload = parseJsonSafe(rawText);
+    logExternalResponse("GEMINI", {
+      method: "GET",
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      data: payload || rawText,
+    });
 
     if (!response.ok) {
       return [];
@@ -244,7 +252,8 @@ async function listAvailableGeminiModels(apiKey) {
     return sortGeminiModels(
       models.filter(isTextGenerationModel).map((model) => normalizeModelName(model.name))
     );
-  } catch {
+  } catch (error) {
+    logExternalError("GEMINI", error, { method: "GET", url });
     return [];
   }
 }
@@ -271,16 +280,37 @@ export async function generateResponse(prompt, role = "employee", attachments = 
 
   for (const model of candidateModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-      }),
-    });
+    const requestBody = {
+      contents: [{ role: "user", parts }],
+    };
+    let response;
+
+    try {
+      logExternalRequest("GEMINI", {
+        method: "POST",
+        url: redactUrl(url),
+        data: { model, partsCount: parts.length },
+      });
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (error) {
+      logExternalError("GEMINI", error, { method: "POST", url, metadata: { model } });
+      throw error;
+    }
 
     const rawText = await response.text();
     const payload = parseJsonSafe(rawText);
+    logExternalResponse("GEMINI", {
+      method: "POST",
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      data: payload || rawText,
+      metadata: { model },
+    });
 
     if (response.status === 404 || response.status === 429) {
       continue;

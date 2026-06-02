@@ -34,6 +34,12 @@ const emailVerificationCodeSchema = new Schema(
       enum: ["male", "female"],
       required: true,
     },
+    purpose: {
+      type: String,
+      default: "register",
+      trim: true,
+      index: true,
+    },
     codeHash: {
       type: String,
       required: true,

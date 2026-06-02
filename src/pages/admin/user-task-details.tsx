@@ -224,6 +224,7 @@ export default function AdminUserTaskDetailsPage() {
                       <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       <input
                         type="email"
+                        autoComplete="username"
                         value={form.email}
                         onChange={(event) => updateField("email", event.target.value)}
                         className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-950"
@@ -242,6 +243,7 @@ export default function AdminUserTaskDetailsPage() {
                             visible={showAdminPassword}
                             onToggle={() => setShowAdminPassword((current) => !current)}
                             placeholder="Mot de passe admin"
+                            autoComplete="current-password"
                           />
                           <button type="button" onClick={requestEmailCode} disabled={sendEmailCode.isPending} className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-60">
                             Envoyer code
@@ -266,6 +268,7 @@ export default function AdminUserTaskDetailsPage() {
                       visible={showPassword}
                       onToggle={() => setShowPassword((current) => !current)}
                       placeholder="Laisser vide pour garder l'ancien"
+                      autoComplete="new-password"
                     />
                     {form.password.trim() && (
                       <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-400/30 dark:bg-amber-500/10">
@@ -386,18 +389,22 @@ function PasswordInput({
   visible,
   onToggle,
   placeholder,
+  autoComplete = "current-password",
 }: {
   value: string;
   onChange: (value: string) => void;
   visible: boolean;
   onToggle: () => void;
   placeholder: string;
-}) {
+  autoComplete?: string;
+})
+ {
   return (
     <div className="relative">
       <Key className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
       <input
         type={visible ? "text" : "password"}
+        autoComplete={autoComplete}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

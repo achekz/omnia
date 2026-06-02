@@ -37,6 +37,23 @@ const performanceLogSchema = new Schema(
       type: Number,
       default: 0,
     },
+    productivityScore: {
+      type: Number,
+      default: 0,
+    },
+    attendanceRate: {
+      type: Number,
+      default: 0,
+    },
+    riskScore: {
+      type: Number,
+      default: 0,
+    },
+    source: {
+      type: String,
+      trim: true,
+      default: "system",
+    },
     notes: {
       type: String,
       trim: true,
@@ -45,7 +62,7 @@ const performanceLogSchema = new Schema(
   },
   {
     timestamps: true,
-    collection: "performanceLogs",
+    collection: "performances",
   },
 );
 

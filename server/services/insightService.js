@@ -1,10 +1,10 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import ActivityLog from "../models/ActivityLog.js";
 import Attendance from "../models/Attendance.js";
-import InsightSnapshot from "../models/InsightSnapshot.js";
 import Recommendation from "../models/Recommendation.js";
 import Task from "../models/Task.js";
 import User from "../models/User.js";
+import { saveInsightSnapshot } from "./persistenceService.js";
 import { refreshRecommendationsForScope } from "./recommendationService.js";
 
 const WINDOW_DAYS = 30;
@@ -196,7 +196,7 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
 
   const summary = `AI analyzed ${users.length} user(s), ${tasks.length} task(s), and ${attendance.length} attendance record(s) for the last ${WINDOW_DAYS} days.`;
 
-  return InsightSnapshot.create({
+  return saveInsightSnapshot({
     tenantId: tenantId || null,
     generatedBy,
     generatedForRole: role,
@@ -218,6 +218,7 @@ export async function generateInsightSnapshot({ tenantId, generatedBy = "system"
 // Role: Recupere les donnees necessaires.
 export async function getLatestInsightSnapshot({ tenantId } = {}) {
   const scoped = scopeFilter(tenantId);
+  const { default: InsightSnapshot } = await import("../models/InsightSnapshot.js");
   const latest = await InsightSnapshot.findOne(scoped).sort({ createdAt: -1 });
 
   if (latest) {

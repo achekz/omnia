@@ -75,6 +75,79 @@ function buildTaskRiskFeatures(tasks = []) {
   };
 }
 
+// Role: Construit des signaux globaux quand l'interface ne fournit pas de values.
+async function buildGlobalAnomalyValues(req) {
+  const scopeFilter = req.tenantId ? { tenantId: req.tenantId } : {};
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [users, tasks, attendance, recentPredictions] = await Promise.all([
+    User.countDocuments({ ...scopeFilter, isActive: { $ne: false } }),
+    Task.find({ ...scopeFilter, createdAt: { $gte: since } })
+      .select('status isDelayed delayDays priority priorityScore progress')
+      .lean(),
+    Attendance.find({ ...scopeFilter, date: { $gte: since } })
+      .select('status delayMinutes')
+      .lean(),
+    MLPrediction.find({ ...scopeFilter, createdAt: { $gte: since } })
+      .select('riskScore isAnomaly')
+      .lean(),
+  ]);
+
+  const overdueTasks = tasks.filter((task) => task.status === 'overdue' || task.isDelayed || Number(task.delayDays || 0) > 0).length;
+  const urgentTasks = tasks.filter((task) => ['high', 'critical'].includes(task.priority) || Number(task.priorityScore || 0) >= 70).length;
+  const averageProgress = tasks.length
+    ? tasks.reduce((sum, task) => sum + Number(task.progress || 0), 0) / tasks.length
+    : 0;
+  const lateAttendance = attendance.filter((entry) => ['late', 'very_late'].includes(entry.status)).length;
+  const averageDelay = attendance.length
+    ? attendance.reduce((sum, entry) => sum + Number(entry.delayMinutes || 0), 0) / attendance.length
+    : 0;
+  const anomalyHistory = recentPredictions.filter((prediction) => prediction.isAnomaly).length;
+  const averageRisk = recentPredictions.length
+    ? recentPredictions.reduce((sum, prediction) => sum + normalizeRiskScore(prediction.riskScore), 0) / recentPredictions.length
+    : 0;
+
+  return [
+    users,
+    tasks.length,
+    overdueTasks,
+    urgentTasks,
+    averageProgress,
+    attendance.length,
+    lateAttendance,
+    averageDelay,
+    anomalyHistory,
+    averageRisk * 100,
+  ];
+}
+
+// Role: Calcule une anomalie locale si le service ML externe est indisponible.
+function detectLocalAnomaly(values = []) {
+  const numericValues = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+  if (!numericValues.length) {
+    return {
+      is_anomaly: false,
+      anomaly_score: 0,
+      source: 'local-fallback',
+      signals: [],
+    };
+  }
+
+  const average = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+  const maxValue = Math.max(...numericValues);
+  const variance = numericValues.reduce((sum, value) => sum + ((value - average) ** 2), 0) / numericValues.length;
+  const standardDeviation = Math.sqrt(variance);
+  const zScore = standardDeviation > 0 ? Math.abs(maxValue - average) / standardDeviation : 0;
+  const anomalyScore = Math.max(0, Math.min(1, zScore / 4));
+
+  return {
+    is_anomaly: anomalyScore >= 0.6,
+    anomaly_score: anomalyScore,
+    source: 'local-fallback',
+    signals: anomalyScore >= 0.6 ? ['global_metric_outlier'] : [],
+  };
+}
+
 // Role: Decrit la logique throwIfMlUnavailable.
 function throwIfMlUnavailable(error) {
   if (error?.code === 'ML_SERVICE_UNAVAILABLE') {
@@ -126,7 +199,7 @@ export const predict = asyncHandler(async (req, res) => {
         : 'low'),
   };
 
-  const saved = await MLPrediction.create({
+  const saved = await mlService.persistPrediction({
     userId: req.user._id,
     tenantId: req.tenantId,
     modelType: 'prediction',
@@ -184,7 +257,7 @@ export const recommend = asyncHandler(async (req, res) => {
     trigger: 'manual-ml-route',
   });
 
-  await MLPrediction.create({
+  await mlService.persistPrediction({
     userId: req.user._id,
     tenantId: req.tenantId,
     modelType: 'recommendation',
@@ -208,17 +281,27 @@ export const anomaly = asyncHandler(async (req, res) => {
   let { values } = req.body;
 
   if (!Array.isArray(values)) {
-    throw new ApiError(400, 'values array required');
+    values = await buildGlobalAnomalyValues(req);
+  }
+
+  values = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+
+  if (!values.length) {
+    values = [0];
   }
 
   let result;
   try {
     result = await mlService.detectAnomaly(values);
   } catch (error) {
-    throwIfMlUnavailable(error);
+    if (error?.code === 'ML_SERVICE_UNAVAILABLE') {
+      result = detectLocalAnomaly(values);
+    } else {
+      throw error;
+    }
   }
 
-  const saved = await MLPrediction.create({
+  const saved = await mlService.persistPrediction({
     userId: req.user._id,
     tenantId: req.tenantId,
     modelType: 'anomaly',
@@ -268,7 +351,7 @@ export const predictDelay = asyncHandler(async (req, res) => {
   }
 
   const riskScore = normalizeRiskScore(result.risk_score ?? result.riskScore ?? result.risk ?? 0);
-  const saved = await MLPrediction.create({
+  const saved = await mlService.persistPrediction({
     userId,
     tenantId: req.tenantId,
     modelType: 'presence_delay',
@@ -305,7 +388,7 @@ export const presenceAnomaly = asyncHandler(async (req, res) => {
     throwIfMlUnavailable(error);
   }
 
-  const saved = await MLPrediction.create({
+  const saved = await mlService.persistPrediction({
     userId,
     tenantId: req.tenantId,
     modelType: 'presence_anomaly',
@@ -398,7 +481,7 @@ export const taskRisk = asyncHandler(async (req, res) => {
   }).sort({ createdAt: -1 }).limit(100).lean();
 
   const features = buildTaskRiskFeatures(tasks);
-  const saved = await MLPrediction.create({
+  const saved = await mlService.persistPrediction({
     userId,
     tenantId: req.tenantId,
     modelType: 'task_risk',
@@ -435,7 +518,7 @@ export const taskRecommendation = asyncHandler(async (req, res) => {
       : 'User productivity is acceptable; keep planned schedule and monitor progress.',
   ];
 
-  await MLPrediction.create({
+  await mlService.persistPrediction({
     userId,
     tenantId: req.tenantId,
     modelType: 'task_recommendation',
@@ -447,3 +530,5 @@ export const taskRecommendation = asyncHandler(async (req, res) => {
 
   return res.json(new ApiResponse(200, { recommendations, urgentTasks, features }));
 });
+
+

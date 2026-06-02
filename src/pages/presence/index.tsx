@@ -67,6 +67,20 @@ function normalizeStatus(status?: string) {
   return String(status || "").replace("_", " ");
 }
 
+// Role: Prepare un message d erreur lisible pour l utilisateur.
+function getVerificationErrorMessage(error: any) {
+  if (error?.code === "ECONNABORTED" || String(error?.message || "").toLowerCase().includes("timeout")) {
+    return "The verification email is taking too long to send. Check your email configuration or try again.";
+  }
+
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Could not send code."
+  );
+}
+
 // Role: Affiche et organise cet ecran.
 export default function PresencePage() {
   const now = new Date();
@@ -152,12 +166,7 @@ export default function PresencePage() {
         toast({ title: "Code sent", description: "Check your email for the verification code." });
       }
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Could not send code.";
-      toast({ title: "Verification failed", description: message, variant: "destructive" });
+      toast({ title: "Verification failed", description: getVerificationErrorMessage(error), variant: "destructive" });
     }
   };
 

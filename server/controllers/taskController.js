@@ -1,7 +1,6 @@
 // Role du fichier: contient la logique backend des requetes et reponses API.
 import Task from '../models/Task.js';
 import ActivityLog from '../models/ActivityLog.js';
-import MLPrediction from '../models/MLPrediction.js';
 import User from '../models/User.js';
 import { ApiError, ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -13,6 +12,7 @@ import { refreshRecommendationsForScope } from '../services/recommendationServic
 import { sendAlert } from '../services/emailService.js';
 import { ruleEngine } from '../services/ruleEngine.js';
 import { assertDocumentPersisted, ensureMongoConnected } from '../services/persistenceVerifier.js';
+import { recordPerformance, savePrediction } from '../services/persistenceService.js';
 
 const ASSIGNABLE_ROLES = ['employee', 'stagiaire', 'comptable'];
 const ADMIN_ROLES = ['company_admin', 'cabinet_admin', 'manager', 'admin'];
@@ -458,6 +458,11 @@ export const createTask = asyncHandler(async (req, res) => {
   });
 
   await populateTask(task);
+  await recordPerformance({
+    userId: assignedUser._id,
+    tenantId: task.tenantId || req.tenantId,
+    source: 'task-created',
+  });
 
   await runNonCriticalTaskSideEffect('activity log creation', async () => {
     const today = new Date(); today.setHours(0,0,0,0);
@@ -550,6 +555,11 @@ export const updateTask = asyncHandler(async (req, res) => {
     status: task.status,
   });
   await populateTask(task);
+  await recordPerformance({
+    userId: task.assignedTo?._id || task.assignedTo,
+    tenantId: task.tenantId || req.tenantId,
+    source: 'task-updated',
+  });
 
   if (task.assignedTo?._id) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
@@ -592,7 +602,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
 // PATCH /api/tasks/:id/status
 // Role: Enregistre une modification.
 export const updateTaskStatus = asyncHandler(async (req, res) => {
-  const { status, declineReason, lateReason, progress } = req.body;
+  const { status, declineReason, lateReason, progress, comment } = req.body;
   if (!status) throw new ApiError(400, 'status is required');
   if (!TASK_STATUSES.includes(status)) {
     throw new ApiError(400, 'Invalid task status');
@@ -638,6 +648,10 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     task.progress = Math.max(Number(progress || task.progress || 35), 35);
     task.declinedAt = undefined;
     task.declineReason = undefined;
+    const startComment = String(comment || '').trim();
+    if (startComment) {
+      task.comments.push({ userId: req.user._id, message: startComment });
+    }
   }
 
   if (status === 'declined') {
@@ -680,6 +694,11 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     status: task.status,
   });
   await populateTask(task);
+  await recordPerformance({
+    userId: task.assignedTo?._id || task.assignedTo || req.user._id,
+    tenantId: task.tenantId || req.tenantId,
+    source: `task-${status}`,
+  });
 
   if (task.assignedTo) {
     emitToUser(task.assignedTo._id.toString(), 'task_updated', { task });
@@ -697,14 +716,15 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   const actorName = getDisplayName(req.user);
 
   if (status === 'in_progress' && task.createdBy) {
+    const startComment = String(comment || '').trim();
     await runNonCriticalTaskSideEffect('task confirmed notification', async () => {
       await notifService.create(task.createdBy._id, task.tenantId || req.tenantId, {
         type: 'info',
         title: 'Task confirmed',
-        message: `${actorName} confirmed "${task.title}". It is now in progress.`,
+        message: `${actorName} confirmed "${task.title}". It is now in progress.${startComment ? ` Comment: ${startComment}` : ''}`,
         source: 'user',
         actionUrl: '/admin/tasks',
-        metadata: { taskId: task._id.toString(), taskStatus: 'in_progress' },
+        metadata: { taskId: task._id.toString(), taskStatus: 'in_progress', comment: startComment || undefined },
       });
     });
   }
@@ -744,7 +764,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     });
 
     if (task.assignedTo?._id && savedRecommendation) {
-      await MLPrediction.create({
+      await savePrediction({
         userId: task.assignedTo._id,
         tenantId: task.tenantId || req.tenantId,
         modelType: 'recommendation',
@@ -815,6 +835,11 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
     status: task.status,
   });
   await populateTask(task);
+  await recordPerformance({
+    userId: task.assignedTo?._id || task.assignedTo || req.user._id,
+    tenantId: task.tenantId || req.tenantId,
+    source: 'task-reschedule',
+  });
 
   const aiRecommendation = buildTaskAiRecommendation(task);
 
@@ -839,7 +864,7 @@ export const rescheduleTaskToday = asyncHandler(async (req, res) => {
   await evaluateTaskRules(task, req, 'task');
 
   await runNonCriticalTaskSideEffect('task reschedule ML prediction', async () => {
-    await MLPrediction.create({
+    await savePrediction({
       userId: task.assignedTo?._id || task.assignedTo || req.user._id,
       tenantId: task.tenantId || req.tenantId,
       modelType: 'recommendation',
@@ -935,3 +960,4 @@ export const getTaskStats = asyncHandler(async (req, res) => {
 
   return res.json(new ApiResponse(200, { stats }));
 });
+

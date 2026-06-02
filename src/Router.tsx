@@ -26,7 +26,6 @@ import TaskDetailsPage from "./pages/tasks/task-details";
 import SettingsPage from "./pages/settings";
 import NotificationsPage from "./pages/notifications";
 import RuleEnginePage from "./pages/rules";
-import MyPerformancePage from "./pages/performance/my-performance";
 import AdminUsersPage from "./pages/admin/users";
 import AdminUserTaskDetailsPage from "./pages/admin/user-task-details";
 import AdminPresencesPage from "./pages/admin/presences";
@@ -103,6 +102,10 @@ function HomeRoute() {
   return <LandingPage />;
 }
 
+function PerformanceRedirect() {
+  return <Redirect to="/insights" />;
+}
+
 function ScrollToTop() {
   const [pathname] = useLocation();
 
@@ -150,7 +153,7 @@ const routes: AppRoute[] = [
   { path: "/settings", component: SettingsPage, protected: true },
   { path: "/profile", component: SettingsPage, protected: true },
   { path: "/notifications", component: NotificationsPage, protected: true },
-  { path: "/performance", component: MyPerformancePage, protected: true },
+  { path: "/performance", component: PerformanceRedirect, protected: true, roles: ["comptable", "employee", "stagiaire"] },
   { path: "/rh/employes", component: RHEmployeesPage, protected: true },
 
   { path: "/employee/organization", component: EmployeeSectionPage, protected: true },

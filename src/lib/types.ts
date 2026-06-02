@@ -79,6 +79,12 @@ export interface RegisterRequest extends SendCodeRequest {
 export type TaskStatus = "todo" | "in_progress" | "done" | "overdue" | "declined";
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
+export interface AIRecommendation {
+  shouldRescheduleToday: boolean;
+  recommendation: string;
+  priority: "low" | "medium" | "high";
+}
+
 export interface Task {
   _id?: string;
   id?: string;
@@ -114,11 +120,7 @@ export interface Task {
   startedAt?: string;
   progress?: number;
   delayRisk?: number;
-  aiRecommendation?: {
-    shouldRescheduleToday: boolean;
-    recommendation: string;
-    priority: "low" | "medium" | "high";
-  };
+  aiRecommendation?: AIRecommendation;
   comments?: Array<{
     _id?: string;
     userId?: Partial<User> | string;

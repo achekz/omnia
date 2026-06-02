@@ -1,6 +1,6 @@
 // Role du fichier: affiche une page reservee au compte admin.
 import { useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Award, CalendarClock, Clock3, Loader2, RefreshCw, Sparkles, Target, TrendingUp } from "lucide-react";
 import { ModuleLayout } from "@/components/layout/module-layout";
 import { useGenerateWeeklyRecommendation, useGetWeeklyRecommendations } from "@/lib/api-client";
@@ -72,6 +72,34 @@ function sameAccount(a?: WeeklyRecommendationUserScore | null, b?: WeeklyRecomme
   return Boolean(a && b && String(a.userId || a.email) === String(b.userId || b.email));
 }
 
+function scoreKey(account: WeeklyRecommendationUserScore) {
+  return String(account.userId || account.email || account.name);
+}
+
+function numberValue(value?: number | null) {
+  return Number(value || 0);
+}
+
+function average(values: number[]) {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function buildGlobalAccounts(records: WeeklyRecommendation[]) {
+  const accounts = new Map<string, WeeklyRecommendationUserScore>();
+
+  records.forEach((record) => {
+    (record.meta?.userScores || []).forEach((account) => {
+      const key = scoreKey(account);
+      if (!accounts.has(key)) {
+        accounts.set(key, account);
+      }
+    });
+  });
+
+  return [...accounts.values()].sort((a, b) => numberValue(b.score) - numberValue(a.score));
+}
+
 // Role: Affiche et organise cet ecran.
 export default function AdminRecommendationsPage() {
   const { data: records = [], isLoading } = useGetWeeklyRecommendations();
@@ -79,6 +107,7 @@ export default function AdminRecommendationsPage() {
   const { toast } = useToast();
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [selectedAccountKey, setSelectedAccountKey] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState("individual");
 
   const sortedRecords = useMemo(() => {
     return [...records].sort((a, b) => {
@@ -89,10 +118,12 @@ export default function AdminRecommendationsPage() {
   }, [records]);
 
   const selectedRecord = useMemo(() => {
+    if (viewMode === "all") return null;
     return sortedRecords.find((record) => record._id === selectedRecordId) || sortedRecords[0] || null;
-  }, [selectedRecordId, sortedRecords]);
+  }, [selectedRecordId, sortedRecords, viewMode]);
 
   const ranking = selectedRecord?.meta?.userScores || [];
+  const globalAccounts = useMemo(() => buildGlobalAccounts(sortedRecords), [sortedRecords]);
   const selectedAccount = useMemo(() => {
     return (
       ranking.find((entry) => String(entry.userId || entry.email) === selectedAccountKey) ||
@@ -104,10 +135,10 @@ export default function AdminRecommendationsPage() {
   const chartData = useMemo(() => buildChartData(selectedAccount), [selectedAccount]);
 
   useEffect(() => {
-    if (!selectedRecordId && sortedRecords[0]?._id) {
+    if (viewMode === "individual" && !selectedRecordId && sortedRecords[0]?._id) {
       setSelectedRecordId(sortedRecords[0]._id);
     }
-  }, [selectedRecordId, sortedRecords]);
+  }, [selectedRecordId, sortedRecords, viewMode]);
 
   useEffect(() => {
     setSelectedAccountKey(null);
@@ -128,6 +159,22 @@ export default function AdminRecommendationsPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const showAllRecommendations = () => {
+    setViewMode("all");
+    setSelectedRecordId(null);
+    setSelectedAccountKey(null);
+  };
+
+  const backToIndividualView = () => {
+    setViewMode("individual");
+    setSelectedRecordId(sortedRecords[0]?._id || null);
+  };
+
+  const selectWeek = (id: string | null) => {
+    setViewMode("individual");
+    setSelectedRecordId(id);
   };
 
   return (
@@ -154,7 +201,7 @@ export default function AdminRecommendationsPage() {
 
         {isLoading ? (
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-sm text-gray-400">Loading recommendations...</div>
-        ) : !selectedRecord ? (
+        ) : !sortedRecords.length ? (
           <div className="rounded-2xl border border-dashed border-gray-700 bg-gray-900 p-8 text-center">
             <Sparkles className="mx-auto h-10 w-10 text-violet-400" />
             <h2 className="mt-4 text-xl font-bold text-gray-100">No weekly recommendation yet</h2>
@@ -162,18 +209,34 @@ export default function AdminRecommendationsPage() {
           </div>
         ) : (
           <div className="grid gap-6 2xl:grid-cols-[260px_minmax(0,1fr)_390px]">
-            <WeekHistory records={sortedRecords} selectedId={selectedRecord._id} onSelect={setSelectedRecordId} />
+            <WeekHistory records={sortedRecords} selectedId={selectedRecord?._id} viewMode={viewMode} onAll={showAllRecommendations} onSelect={selectWeek} />
 
-            <section className="space-y-6">
-              <HeroRecommendation record={selectedRecord} account={selectedAccount} />
-              <TrendChart account={selectedAccount} data={chartData} />
-              <AccountRanking ranking={ranking} selected={selectedAccount} onSelect={(entry) => setSelectedAccountKey(String(entry.userId || entry.email))} />
-            </section>
+            {viewMode === "all" ? (
+              <>
+                <section className="space-y-6">
+                  <GlobalSummary accounts={globalAccounts} />
+                  <GlobalRecommendationsChart accounts={globalAccounts} />
+                  <AccountRanking ranking={globalAccounts} selected={null} onSelect={() => undefined} />
+                </section>
 
-            <aside className="space-y-6">
-              <AccountDetails account={selectedAccount} />
-              <AiRecommendations record={selectedRecord} />
-            </aside>
+                <aside className="space-y-6">
+                  <GlobalDetails accounts={globalAccounts} onBack={backToIndividualView} />
+                </aside>
+              </>
+            ) : (
+              <>
+                <section className="space-y-6">
+                  <HeroRecommendation record={selectedRecord!} account={selectedAccount} />
+                  <TrendChart account={selectedAccount} data={chartData} />
+                  <AccountRanking ranking={ranking} selected={selectedAccount} onSelect={(entry) => setSelectedAccountKey(String(entry.userId || entry.email))} />
+                </section>
+
+                <aside className="space-y-6">
+                  <AccountDetails account={selectedAccount} />
+                  <AiRecommendations record={selectedRecord!} />
+                </aside>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -182,9 +245,32 @@ export default function AdminRecommendationsPage() {
 }
 
 // Role: Affiche les anciennes recommandations triees.
-function WeekHistory({ records, selectedId, onSelect }: { records: WeeklyRecommendation[]; selectedId?: string; onSelect: (id: string | null) => void }) {
+function WeekHistory({
+  records,
+  selectedId,
+  viewMode,
+  onAll,
+  onSelect,
+}: {
+  records: WeeklyRecommendation[];
+  selectedId?: string;
+  viewMode: string;
+  onAll: () => void;
+  onSelect: (id: string | null) => void;
+}) {
   return (
     <aside className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <button
+        onClick={onAll}
+        className={cn(
+          "mb-4 w-full rounded-xl border p-4 text-left transition",
+          viewMode === "all" ? "border-violet-400 bg-violet-500/10" : "border-gray-800 bg-gray-950 hover:border-gray-700",
+        )}
+      >
+        <p className="text-xs font-bold uppercase text-violet-300">Global view</p>
+        <p className="mt-1 text-sm font-bold text-gray-100">All</p>
+        <p className="mt-1 text-xs text-gray-400">All analyzed accounts</p>
+      </button>
       <div className="mb-4 flex items-center gap-2">
         <CalendarClock className="h-5 w-5 text-blue-300" />
         <h2 className="text-lg font-bold text-gray-100">Saturday history</h2>
@@ -206,6 +292,119 @@ function WeekHistory({ records, selectedId, onSelect }: { records: WeeklyRecomme
         ))}
       </div>
     </aside>
+  );
+}
+
+function GlobalSummary({ accounts }: { accounts: WeeklyRecommendationUserScore[] }) {
+  const bestAccount = accounts[0] || null;
+  const averageScore = Math.round(average(accounts.map((account) => numberValue(account.score))));
+
+  return (
+    <div className="rounded-2xl border border-violet-500/30 bg-gray-900 p-6 shadow-lg shadow-violet-950/20">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+          <Award className="h-6 w-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">All recommendations</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Global account overview</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <DetailMetric label="Utilisateurs analysés" value={String(accounts.length)} />
+            <DetailMetric label="Score moyen global" value={`${averageScore}/100`} />
+            <DetailMetric label="Meilleur utilisateur" value={bestAccount?.name || "-"} />
+            <DetailMetric label="Score maximum" value={`${bestAccount?.score ?? 0}/100`} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GlobalRecommendationsChart({ accounts }: { accounts: WeeklyRecommendationUserScore[] }) {
+  const data = accounts.map((account) => ({
+    name: account.name || account.email || "-",
+    email: account.email || "",
+    score: numberValue(account.score),
+    role: roleLabel(String(account.role || "")),
+  }));
+  const chartWidth = Math.max(900, data.length * 92);
+
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold text-gray-100">Global recommendation scores</h2>
+        <p className="mt-1 text-sm text-gray-400">Tous les comptes triés par score décroissant.</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="h-[360px]" style={{ minWidth: chartWidth }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 18, left: -20, bottom: 75 }}>
+              <CartesianGrid strokeDasharray="4 4" stroke="#cbd5e1" opacity={0.55} />
+              <XAxis dataKey="name" stroke="#9ca3af" tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end" height={80} />
+              <YAxis stroke="#9ca3af" tickLine={false} axisLine={false} allowDecimals={false} domain={[0, 100]} />
+              <Tooltip content={<GlobalTooltip />} />
+              <Bar dataKey="score" fill="#8b5cf6" radius={[8, 8, 0, 0]} isAnimationActive />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GlobalTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const account = payload[0]?.payload || {};
+
+  return (
+    <div className="rounded-2xl border border-gray-700 bg-[#25242d] px-4 py-3 shadow-xl">
+      <p className="font-bold text-gray-100">{label}</p>
+      {account.email ? <p className="mt-1 text-xs text-gray-400">{account.email}</p> : null}
+      <p className="mt-2 font-semibold text-violet-300">score : {account.score || 0}/100</p>
+      <p className="font-semibold text-gray-300">role : {account.role || "-"}</p>
+    </div>
+  );
+}
+
+function GlobalDetails({ accounts, onBack }: { accounts: WeeklyRecommendationUserScore[]; onBack: () => void }) {
+  const totalUsers = accounts.length;
+  const totalPresences = accounts.reduce((sum, account) => sum + numberValue(account.sessions ?? account.presentDays), 0);
+  const totalLate = accounts.reduce((sum, account) => sum + numberValue(account.lateDays), 0);
+  const totalAbsent = accounts.reduce((sum, account) => sum + numberValue(account.absentDays), 0);
+  const totalTasksDone = accounts.reduce((sum, account) => sum + numberValue(account.tasksDone ?? account.completedTasks), 0);
+  const averageEfficiency = Math.round(average(accounts.map((account) => numberValue(account.completionRate))));
+  const averagePunctuality = Math.round(average(accounts.map((account) => numberValue(account.punctualityRate))));
+
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
+          <Target className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-100">Global statistics</h2>
+          <p className="text-sm text-gray-500">All analyzed accounts</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <DetailMetric label="Total utilisateurs" value={String(totalUsers)} />
+        <DetailMetric label="Présences totales" value={String(totalPresences)} />
+        <DetailMetric label="Retards totaux" value={String(totalLate)} />
+        <DetailMetric label="Absences totales" value={String(totalAbsent)} />
+        <DetailMetric label="Tâches terminées" value={String(totalTasksDone)} />
+        <DetailMetric label="Efficacité moyenne" value={`${averageEfficiency}%`} />
+        <DetailMetric label="Ponctualité moyenne" value={`${averagePunctuality}%`} />
+      </div>
+
+      <button
+        onClick={onBack}
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-500"
+      >
+        Back to Individual View
+      </button>
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import nodemailer from "nodemailer";
+import { logExternalError, logExternalRequest, logExternalResponse, sanitizeForLog } from "../utils/networkDiagnostics.js";
 
 const transporters = new Map();
 const DEFAULT_FROM_NAME = "OmniAI Platform";
@@ -7,11 +8,11 @@ const DEFAULT_FROM_NAME = "OmniAI Platform";
 // Role: Recupere les donnees necessaires.
 function getEmailCredentials() {
   const user = process.env.EMAIL_USER?.trim();
-  const pass = process.env.EMAIL_PASS?.replace(/\s+/g, "");
+  const pass = (process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS)?.replace(/\s+/g, "");
 
   if (!user || !pass) {
     const error = new Error(
-      "Email configuration missing. Set EMAIL_USER and EMAIL_PASS in your environment.",
+      "Email configuration missing. Set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS) in your environment.",
     );
     error.code = "EMAIL_CONFIG_MISSING";
     throw error;
@@ -31,6 +32,9 @@ function getSystemSender() {
 // Role: Cree une nouvelle ressource.
 function createTransporter(mode = "gmail-service") {
   const { user, pass } = getEmailCredentials();
+  const smtpHost = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const smtpPort = Number(process.env.SMTP_PORT || (mode === "ssl-ipv4" ? 465 : 587));
+  const smtpSecure = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || smtpPort === 465;
   const baseConfig = {
     auth: {
       user,
@@ -41,10 +45,32 @@ function createTransporter(mode = "gmail-service") {
     socketTimeout: 20000,
   };
 
+  if (mode === "smtp-env") {
+    return nodemailer.createTransport({
+      ...baseConfig,
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      requireTLS: !smtpSecure,
+      name: "localhost",
+      family: 4,
+      tls: {
+        minVersion: "TLSv1.2",
+        servername: smtpHost,
+        rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
+      },
+    });
+  }
+
   if (mode === "gmail-service") {
     return nodemailer.createTransport({
       ...baseConfig,
       service: "gmail",
+      tls: {
+        minVersion: "TLSv1.2",
+        servername: "smtp.gmail.com",
+        rejectUnauthorized: true,
+      },
     });
   }
 
@@ -107,9 +133,63 @@ function shouldRetryWithAlternateMode(error) {
   ].some((pattern) => message.includes(pattern) || String(error?.code || "").toLowerCase().includes(pattern));
 }
 
+function getTransportDescription(mode) {
+  const smtpHost = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const smtpPort = Number(process.env.SMTP_PORT || (mode === "ssl-ipv4" ? 465 : 587));
+
+  if (mode === "gmail-service") {
+    return {
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      tls: { minVersion: "TLSv1.2", servername: "smtp.gmail.com", rejectUnauthorized: true },
+    };
+  }
+
+  if (mode === "smtp-env") {
+    return {
+      host: smtpHost,
+      port: smtpPort,
+      secure: String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || smtpPort === 465,
+      requireTLS: smtpPort !== 465,
+      tls: {
+        minVersion: "TLSv1.2",
+        servername: smtpHost,
+        rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
+      },
+    };
+  }
+
+  if (mode === "starttls-ipv4") {
+    return {
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      family: 4,
+      tls: { minVersion: "TLSv1.2", servername: "smtp.gmail.com", rejectUnauthorized: true },
+    };
+  }
+
+  return {
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    family: 4,
+    tls: { minVersion: "TLSv1.2", servername: "smtp.gmail.com", rejectUnauthorized: true },
+  };
+}
+
 // Role: Envoie un message ou une notification.
 async function sendWithMode({ mode, to, subject, html, text }) {
   const smtpTransporter = getTransporter(mode);
+  logExternalRequest("EMAIL", {
+    method: "SMTP_SEND",
+    url: `${getTransportDescription(mode).secure ? "smtps" : "smtp"}://${getTransportDescription(mode).host || "smtp.gmail.com"}:${getTransportDescription(mode).port}`,
+    data: { from: getSystemSender(), to, subject, hasHtml: Boolean(html), hasText: Boolean(text) },
+    metadata: { mode, transport: getTransportDescription(mode) },
+  });
   const info = await smtpTransporter.sendMail({
     from: getSystemSender(),
     to,
@@ -121,6 +201,13 @@ async function sendWithMode({ mode, to, subject, html, text }) {
   console.log(
     `[EMAIL] Sent "${subject}" to ${to} using Gmail ${mode}. Message ID: ${info.messageId}`,
   );
+  logExternalResponse("EMAIL", {
+    method: "SMTP_SEND",
+    url: `${getTransportDescription(mode).secure ? "smtps" : "smtp"}://${getTransportDescription(mode).host || "smtp.gmail.com"}:${getTransportDescription(mode).port}`,
+    status: "sent",
+    data: info,
+    metadata: { mode },
+  });
 
   return {
     success: true,
@@ -135,11 +222,11 @@ async function sendWithMode({ mode, to, subject, html, text }) {
 // Role: Recupere les donnees necessaires.
 function getTransportModesForError(error) {
   if (!error) {
-    return ["gmail-service", "starttls-ipv4", "ssl-ipv4"];
+    return process.env.SMTP_HOST ? ["smtp-env", "starttls-ipv4", "ssl-ipv4", "gmail-service"] : ["starttls-ipv4", "ssl-ipv4", "gmail-service"];
   }
 
   if (shouldRetryWithAlternateMode(error)) {
-    return ["starttls-ipv4", "ssl-ipv4"];
+    return process.env.SMTP_HOST ? ["smtp-env", "starttls-ipv4", "ssl-ipv4"] : ["starttls-ipv4", "ssl-ipv4"];
   }
 
   return [];
@@ -156,11 +243,12 @@ async function sendEmail({ to, subject, html, text }) {
   }
 
   const attemptedModes = [];
+  const firstMode = process.env.SMTP_HOST ? "smtp-env" : "gmail-service";
 
   try {
-    attemptedModes.push("gmail-service");
+    attemptedModes.push(firstMode);
     return await sendWithMode({
-      mode: "gmail-service",
+      mode: firstMode,
       to,
       subject,
       html,
@@ -168,13 +256,19 @@ async function sendEmail({ to, subject, html, text }) {
     });
   } catch (error) {
     console.error(`[EMAIL] Failed to send "${subject}" to ${to}`);
-    console.error("[EMAIL] Error details:", {
+    logExternalError("EMAIL", error, {
+      method: "SMTP_SEND",
+      url: `${getTransportDescription(attemptedModes[0]).secure ? "smtps" : "smtp"}://${getTransportDescription(attemptedModes[0]).host || "smtp.gmail.com"}:${getTransportDescription(attemptedModes[0]).port}`,
+      metadata: { attemptedModes, transport: getTransportDescription(attemptedModes[0]) },
+    });
+    console.error("[EMAIL] Error details:", sanitizeForLog({
       message: error.message,
       code: error.code,
       command: error.command,
       response: error.response,
       responseCode: error.responseCode,
-    });
+      stack: error.stack,
+    }));
 
     for (const mode of getTransportModesForError(error)) {
       if (attemptedModes.includes(mode)) {
@@ -193,13 +287,19 @@ async function sendEmail({ to, subject, html, text }) {
           text,
         });
       } catch (retryError) {
-        console.error(`[EMAIL] Retry with ${mode} failed:`, {
+        logExternalError("EMAIL", retryError, {
+          method: "SMTP_SEND",
+          url: `${getTransportDescription(mode).secure ? "smtps" : "smtp"}://${getTransportDescription(mode).host || "smtp.gmail.com"}:${getTransportDescription(mode).port}`,
+          metadata: { attemptedModes, transport: getTransportDescription(mode) },
+        });
+        console.error(`[EMAIL] Retry with ${mode} failed:`, sanitizeForLog({
           message: retryError.message,
           code: retryError.code,
           command: retryError.command,
           response: retryError.response,
           responseCode: retryError.responseCode,
-        });
+          stack: retryError.stack,
+        }));
 
         if (mode === attemptedModes[attemptedModes.length - 1]) {
           error = retryError;
@@ -214,19 +314,31 @@ async function sendEmail({ to, subject, html, text }) {
 
 // Role: Verifie les donnees ou les droits.
 export async function verifyEmailTransport() {
+  const firstMode = process.env.SMTP_HOST ? "smtp-env" : "gmail-service";
   try {
-    await getTransporter("gmail-service").verify();
-    console.log("[EMAIL] Gmail service transporter verified successfully.");
+    logExternalRequest("EMAIL", {
+      method: "SMTP_VERIFY",
+      url: `${getTransportDescription(firstMode).secure ? "smtps" : "smtp"}://${getTransportDescription(firstMode).host || "smtp.gmail.com"}:${getTransportDescription(firstMode).port}`,
+      metadata: { mode: firstMode, transport: getTransportDescription(firstMode) },
+    });
+    await getTransporter(firstMode).verify();
+    console.log(`[EMAIL] Transporter verified successfully with ${firstMode}.`);
     return true;
   } catch (error) {
-    console.error("[EMAIL] Gmail service transporter verification failed.");
-    console.error("[EMAIL] Verify error details:", {
+    console.error(`[EMAIL] Transporter verification failed with ${firstMode}.`);
+    logExternalError("EMAIL", error, {
+      method: "SMTP_VERIFY",
+      url: `${getTransportDescription(firstMode).secure ? "smtps" : "smtp"}://${getTransportDescription(firstMode).host || "smtp.gmail.com"}:${getTransportDescription(firstMode).port}`,
+      metadata: { mode: firstMode, transport: getTransportDescription(firstMode) },
+    });
+    console.error("[EMAIL] Verify error details:", sanitizeForLog({
       message: error.message,
       code: error.code,
       command: error.command,
       response: error.response,
       responseCode: error.responseCode,
-    });
+      stack: error.stack,
+    }));
 
     for (const mode of getTransportModesForError(error)) {
       try {

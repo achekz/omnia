@@ -1,17 +1,35 @@
 // Role du fichier: filtre ou enrichit les requetes avant les controleurs.
 import { ApiError } from '../utils/ApiResponse.js';
 import { parseMongoConnectionError } from '../config/db.js';
+import { sanitizeForLog } from '../utils/networkDiagnostics.js';
 
 // Role: Decrit la logique errorHandler.
 const errorHandler = (err, req, res, next) => {
   const isDev = process.env.NODE_ENV === 'development';
+  const statusCode = err instanceof ApiError
+    ? err.statusCode
+    : err.name === 'ValidationError'
+      ? 400
+      : err.name === 'CastError'
+        ? 400
+        : err.code === 11000
+          ? 409
+          : (err.name === 'MongooseServerSelectionError' || err.name === 'MongoServerSelectionError')
+            ? 503
+            : 500;
 
   // 🔴 LOG ERROR
-  if (isDev) {
-    console.error(`❌ [ERROR] ${err.name}`);
-    console.error(`Message: ${err.message}`);
-    console.error(err.stack);
-  }
+  console.error("❌ [API ERROR]", sanitizeForLog({
+    method: req.method,
+    url: req.originalUrl,
+    statusCode,
+    name: err.name,
+    message: err.message,
+    body: req.body,
+    params: req.params,
+    query: req.query,
+    stack: err.stack,
+  }));
 
   // ========================
   // CUSTOM API ERROR

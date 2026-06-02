@@ -17,6 +17,7 @@ import * as mlService from '../services/mlService.js';
 import * as notifService from '../services/notifService.js';
 import { generateWeeklyEffectivenessRecommendation, refreshRecommendationsForScope } from '../services/recommendationService.js';
 import { createAndSendVerificationCode, verifyOtpCode } from '../services/verificationCodeService.js';
+import { savePrediction } from '../services/persistenceService.js';
 
 // Role: Construit des donnees derivees.
 function buildScopeFilter(req) {
@@ -234,12 +235,38 @@ export const detectGlobalAnomalies = asyncHandler(async (req, res) => {
     tasks.reduce((sum, task) => sum + (task.delayDays || 0), 0),
   ];
 
-  const result = await mlService.detectAnomaly(values);
+  let result;
+  try {
+    result = await mlService.detectAnomaly(values);
+  } catch (error) {
+    if (error?.code !== 'ML_SERVICE_UNAVAILABLE') {
+      throw error;
+    }
+
+    const numericValues = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+    const average = numericValues.length
+      ? numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length
+      : 0;
+    const maxValue = numericValues.length ? Math.max(...numericValues) : 0;
+    const variance = numericValues.length
+      ? numericValues.reduce((sum, value) => sum + ((value - average) ** 2), 0) / numericValues.length
+      : 0;
+    const standardDeviation = Math.sqrt(variance);
+    const zScore = standardDeviation > 0 ? Math.abs(maxValue - average) / standardDeviation : 0;
+    const anomalyScore = Math.max(0, Math.min(1, zScore / 4));
+
+    result = {
+      is_anomaly: anomalyScore >= 0.6,
+      anomaly_score: anomalyScore,
+      source: 'admin-local-fallback',
+      signals: anomalyScore >= 0.6 ? ['global_metric_outlier'] : [],
+    };
+  }
   const fallbackScore = Math.min(1, (values.reduce((sum, value) => sum + Number(value || 0), 0) / Math.max(1, values.length)) / 100);
   const anomalyScore = Number(result.anomaly_score ?? result.score ?? fallbackScore);
   const isAnomaly = Boolean(result.is_anomaly || anomalyScore >= 0.65);
 
-  const saved = await MLPrediction.create({
+  const saved = await savePrediction({
     userId: req.user._id,
     tenantId: req.user?.tenantId || req.tenantId || null,
     modelType: 'anomaly',
@@ -283,7 +310,7 @@ export const monitorUserRisks = asyncHandler(async (req, res) => {
     const riskScore = Number(mlPrediction.risk_score ?? mlPrediction.risk ?? 0);
     const riskLevel = mlPrediction.risk_level || riskLevelFromScore(riskScore);
 
-    const saved = await MLPrediction.create({
+    const saved = await savePrediction({
       userId: user._id,
       tenantId: user.tenantId || req.tenantId || null,
       modelType: 'prediction',

@@ -15,6 +15,7 @@ import { createAndSendVerificationCode, verifyOtpCode } from "../services/verifi
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
 import * as notifService from "../services/notifService.js";
 import { assertDocumentPersisted, ensureMongoConnected } from "../services/persistenceVerifier.js";
+import { sanitizeForLog } from "../utils/networkDiagnostics.js";
 
 const RESET_CODE_WINDOW_MS = 5 * 60 * 1000;
 const MAX_RESET_CODE_ATTEMPTS = 5;
@@ -249,7 +250,7 @@ export const sendCode = asyncHandler(async (req, res) => {
       ),
     );
   } catch (error) {
-    console.error("[AUTH] Failed to send verification code email:", {
+    console.error("[AUTH] Failed to send verification code email:", sanitizeForLog({
       email,
       phoneNumber,
       city,
@@ -259,7 +260,8 @@ export const sendCode = asyncHandler(async (req, res) => {
       response: error.response,
       responseCode: error.responseCode,
       attemptedModes: error.attemptedModes,
-    });
+      stack: error.stack,
+    }));
     throw new ApiError(500, error.message || "Failed to send verification code");
   }
 });
@@ -678,14 +680,15 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     await VerificationCode.deleteOne({ _id: verification._id });
-    console.error("[AUTH] Failed to send password reset email:", {
+    console.error("[AUTH] Failed to send password reset email:", sanitizeForLog({
       email: user.email,
       message: error.message,
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
       attemptedModes: error.attemptedModes,
-    });
+      stack: error.stack,
+    }));
     const sslMessage = String(error.message || "").toLowerCase();
     if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
       throw new ApiError(
@@ -902,14 +905,15 @@ export const testEmail = asyncHandler(async (req, res) => {
       ),
     );
   } catch (error) {
-    console.error("[AUTH] Test email failed:", {
+    console.error("[AUTH] Test email failed:", sanitizeForLog({
       email: to,
       message: error.message,
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
       attemptedModes: error.attemptedModes,
-    });
+      stack: error.stack,
+    }));
     const sslMessage = String(error.message || "").toLowerCase();
     if (sslMessage.includes("ssl") || sslMessage.includes("tls")) {
       throw new ApiError(

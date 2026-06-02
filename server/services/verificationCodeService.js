@@ -1,7 +1,9 @@
 // Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import VerificationCode from "../models/VerificationCode.js";
 import { deliverVerificationCode } from "./otpDeliveryService.js";
+import { markEmailVerificationVerified, saveEmailVerificationAudit } from "./persistenceService.js";
 import { normalizeProfileType, normalizeRole } from "../utils/roleNormalization.js";
+import { sanitizeForLog } from "../utils/networkDiagnostics.js";
 
 const VERIFICATION_WINDOW_MS = 5 * 60 * 1000;
 
@@ -38,6 +40,13 @@ export async function createAndSendVerificationCode(payload) {
 
   await verification.setCode(code);
   await verification.save();
+  await saveEmailVerificationAudit({
+    email: normalizedPayload.email,
+    code,
+    expiresAt,
+    purpose: normalizedPayload.purpose,
+    payload: normalizedPayload,
+  });
 
   let delivery;
 
@@ -54,10 +63,14 @@ export async function createAndSendVerificationCode(payload) {
       throw error;
     }
 
-    console.warn("[OTP] Email delivery failed; local development fallback enabled.", {
+    console.warn("[OTP] Email delivery failed; local development fallback enabled.", sanitizeForLog({
       message: error?.message,
       code: error?.code,
-    });
+      response: error?.response,
+      responseCode: error?.responseCode,
+      attemptedModes: error?.attemptedModes,
+      stack: error?.stack,
+    }));
 
     delivery = {
       provider: "local-dev",
@@ -104,6 +117,7 @@ export async function verifyOtpCode({ purpose, email, phoneNumber, code }) {
 
   verification.verifiedAt = new Date();
   await verification.save();
+  await markEmailVerificationVerified({ email: normalizedEmail, purpose });
 
   return { verified: true, verification };
 }

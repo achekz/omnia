@@ -32,6 +32,9 @@ const attendanceSchema = new Schema(
     checkOut: {
       type: Date,
     },
+    logoutTime: {
+      type: Date,
+    },
     status: {
       type: String,
       enum: ["present", "absent", "late", "very_late", "on_time"],

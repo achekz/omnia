@@ -4,8 +4,10 @@ import User from "../models/User.js";
 import { emitToRole, emitToUser } from "../config/socket.js";
 import * as notifService from "../services/notifService.js";
 import { createAndSendVerificationCode, verifyOtpCode } from "../services/verificationCodeService.js";
+import { mirrorAttendanceToPresence, recordPerformance } from "../services/persistenceService.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { sanitizeForLog } from "../utils/networkDiagnostics.js";
 
 const USER_ROLES = ["employee", "stagiaire", "comptable", "admin"];
 
@@ -217,10 +219,14 @@ export const sendAttendanceCode = asyncHandler(async (req, res) => {
       allowDeliveryFailure: allowLocalCodeFallback,
     });
   } catch (error) {
-    console.error("[ATTENDANCE] Could not send verification code.", {
+    console.error("[ATTENDANCE] Could not send verification code.", sanitizeForLog({
       message: error?.message,
       code: error?.code,
-    });
+      response: error?.response,
+      responseCode: error?.responseCode,
+      attemptedModes: error?.attemptedModes,
+      stack: error?.stack,
+    }));
     throw new ApiError(503, "Could not send verification code. Check the system email configuration.");
   }
 
@@ -292,6 +298,12 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
     }
 
     await attendance.populate("userId", "name firstName lastName email role profileType");
+    await mirrorAttendanceToPresence(attendance);
+    await recordPerformance({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      source: "attendance-check-in",
+    });
 
     await notifService.create(req.user._id, req.tenantId, {
       type: checkInState.status === "present" ? "info" : "warning",
@@ -338,6 +350,12 @@ export const confirmAttendance = asyncHandler(async (req, res) => {
     attendance.userSnapshot = attendance.userSnapshot?.email ? attendance.userSnapshot : buildUserSnapshot(req.user);
     await attendance.save();
     await attendance.populate("userId", "name firstName lastName email role profileType");
+    await mirrorAttendanceToPresence(attendance);
+    await recordPerformance({
+      userId: req.user._id,
+      tenantId: req.tenantId,
+      source: "attendance-check-out",
+    });
 
     await notifService.create(req.user._id, req.tenantId, {
       type: checkOutState.checkOutStatus === "on_time" ? "info" : "warning",

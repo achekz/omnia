@@ -41,6 +41,57 @@ const apiClient = axios.create({
   },
 });
 
+function redactForLog(value: unknown): unknown {
+  if (typeof value === "string") {
+    return value.replace(/(token|password|apiKey|key)=([^&\s]+)/gi, "$1=<redacted>").replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer <redacted>");
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(redactForLog);
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+      key,
+      /(token|password|secret|authorization|cookie)/i.test(key) ? "<redacted>" : redactForLog(entry),
+    ]),
+  );
+}
+
+function logApiError(error: any) {
+  if (
+    error?.code === "ERR_CANCELED" ||
+    error instanceof axios.CanceledError
+  ) {
+    return;
+  }
+  const method = String(error?.config?.method || "GET").toUpperCase();
+  const url = error?.config?.baseURL && error?.config?.url && !String(error.config.url).startsWith("http")
+    ? `${String(error.config.baseURL).replace(/\/$/, "")}/${String(error.config.url).replace(/^\//, "")}`
+    : error?.config?.url;
+
+  console.error("[API] Axios request failed", redactForLog({
+    method,
+    url,
+    timeout: error?.config?.timeout,
+    baseURL: error?.config?.baseURL,
+    code: error?.code,
+    message: error?.message,
+    status: error?.response?.status,
+    statusText: error?.response?.statusText,
+    responseHeaders: error?.response?.headers,
+    responseData: error?.response?.data,
+    stack: error?.stack,
+  }));
+}
+
+const VERIFICATION_REQUEST_TIMEOUT_MS = 60000;
+export const ADMIN_DASHBOARD_TIMEOUT_MS = 60000;
+
 let refreshAccessTokenPromise: Promise<string> | null = null;
 
 const PUBLIC_API_PATHS = new Set([
@@ -101,7 +152,7 @@ async function refreshAccessToken() {
       const refreshToken = getStoredRefreshToken();
       if (!refreshToken) throw new Error("No refresh token");
 
-      const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
+      const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken }, { timeout: 10000 });
       const newToken = res.data?.data?.accessToken as string | undefined;
       if (!newToken) throw new Error("Invalid refresh response");
 
@@ -120,13 +171,17 @@ apiClient.interceptors.request.use(
   async (config) => {
     let token = getStoredToken();
 
-    if (token && isJwtExpired(token) && getStoredRefreshToken() && !isPublicApiRequest(config.url)) {
+    if (
+      token &&
+      isJwtExpired(token) &&
+      getStoredRefreshToken() &&
+      !isPublicApiRequest(config.url)
+    ) {
       try {
         token = await refreshAccessToken();
-      } catch {
+      } catch (error) {
         clearStoredAuth();
-        window.location.href = "/login";
-        return Promise.reject(new axios.CanceledError("Authentication refresh failed"));
+        return Promise.reject(error);
       }
     }
 
@@ -134,14 +189,24 @@ apiClient.interceptors.request.use(
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     } else if (!isPublicApiRequest(config.url)) {
-      return Promise.reject(new axios.CanceledError("Authentication token missing"));
+        if (window.location.pathname !== "/login") {
+          if (import.meta.env.DEV) {
+          console.log(
+            "[AUTH] Request cancelled after logout:",
+            config.url
+          );
+}
+        }
+
+      return Promise.reject(
+        new axios.CanceledError("Authentication token missing")
+      );
     }
 
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );
-
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -156,12 +221,14 @@ apiClient.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
         return apiClient(originalRequest);
-      } catch {
+      } catch (error) {
+        logApiError(error);
         clearStoredAuth();
         window.location.href = "/login";
       }
     }
 
+    logApiError(error);
     return Promise.reject(error);
   },
 );
@@ -295,19 +362,24 @@ function unwrapEntity<T>(payload: unknown, entityKey: string, fallback: T): T {
 
   return unwrapData<T>(payload, fallback);
 }
-
 export function useGetNotifications(options?: QueryHookOptions) {
+  const token = getStoredToken();
+
   return useQuery<Notification[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
       try {
         const response = await apiClient.get("/notifications?limit=100");
-        return unwrapCollection<Notification>(response.data, "notifications", fallbackNotifications);
+        return unwrapCollection<Notification>(
+          response.data,
+          "notifications",
+          fallbackNotifications
+        );
       } catch {
         return fallbackNotifications;
       }
     },
-    enabled: options?.query?.enabled ?? true,
+    enabled: (options?.query?.enabled ?? true) && !!token,
     refetchInterval: options?.query?.refetchInterval,
     initialData: fallbackNotifications,
   });
@@ -356,16 +428,26 @@ export function useClearReadNotifications() {
 }
 
 export function useGetDashboardStats() {
+  const token = getStoredToken();
+
   return useQuery<DashboardStats>({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       try {
         const response = await apiClient.get("/dashboard/stats");
-        return { ...fallbackDashboardStats, ...unwrapData<DashboardStats>(response.data, fallbackDashboardStats) };
+
+        return {
+          ...fallbackDashboardStats,
+          ...unwrapData<DashboardStats>(
+            response.data,
+            fallbackDashboardStats
+          ),
+        };
       } catch {
         return fallbackDashboardStats;
       }
     },
+    enabled: !!token,
     initialData: fallbackDashboardStats,
   });
 }
@@ -382,13 +464,21 @@ function cleanTaskParams(params?: TaskQueryParams) {
 }
 
 export function useGetTasks(options?: QueryHookOptions & { params?: TaskQueryParams }) {
+  const token = localStorage.getItem("token");
+
   return useQuery<Task[]>({
     queryKey: ["tasks", options?.params || {}],
+
     queryFn: async () => {
-      const response = await apiClient.get("/tasks", { params: cleanTaskParams(options?.params) });
+      const response = await apiClient.get("/tasks", {
+        params: cleanTaskParams(options?.params),
+      });
+
       return unwrapCollection<Task>(response.data, "tasks", []);
     },
-    enabled: options?.query?.enabled ?? true,
+
+    enabled: !!token && (options?.query?.enabled ?? true),
+
     refetchInterval: options?.query?.refetchInterval,
     initialData: [],
   });
@@ -461,8 +551,8 @@ export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, declineReason, lateReason, progress }: { id: string; status: Task["status"]; declineReason?: string; lateReason?: string; progress?: number }) => {
-      const response = await apiClient.patch(`/tasks/${id}/status`, { status, declineReason, lateReason, progress });
+    mutationFn: async ({ id, status, declineReason, lateReason, progress, comment }: { id: string; status: Task["status"]; declineReason?: string; lateReason?: string; progress?: number; comment?: string }) => {
+      const response = await apiClient.patch(`/tasks/${id}/status`, { status, declineReason, lateReason, progress, comment });
       return unwrapEntity<Task>(response.data, "task", { id, title: "Task", status });
     },
     onSuccess: () => {
@@ -477,17 +567,23 @@ export function useUpdateTaskStatus() {
   });
 }
 
-export function useGetTaskDetails(id?: string, options?: QueryHookOptions) {
+export function useGetTaskDetails(
+  id?: string,
+  options?: QueryHookOptions,
+) {
+  const token = localStorage.getItem("token");
+
   return useQuery<Task | null>({
-    queryKey: ["task-details", id],
+    queryKey: ["task", id],
+
+    enabled: !!token && !!id,
+
     queryFn: async () => {
-      if (!id) return null;
       const response = await apiClient.get(`/tasks/${id}`);
       return unwrapEntity<Task | null>(response.data, "task", null);
     },
-    enabled: Boolean(id) && (options?.query?.enabled ?? true),
-    refetchInterval: options?.query?.refetchInterval,
-    initialData: null,
+
+    ...options?.query,
   });
 }
 
@@ -615,7 +711,9 @@ export function useGetMyAttendance(month: number, year: number, options?: QueryH
 export function useSendAttendanceCode() {
   return useMutation({
     mutationFn: async (data: { action: "check-in" | "check-out"; reason?: string }) => {
-      const response = await apiClient.post("/presence/send-code", data);
+      const response = await apiClient.post("/presence/send-code", data, {
+        timeout: VERIFICATION_REQUEST_TIMEOUT_MS,
+      });
       return unwrapData<SendAttendanceCodeResponse>(response.data, {});
     },
   });
@@ -1065,20 +1163,26 @@ export function useGetAnalyticsScore() {
 }
 
 export function useGetRules() {
+  const token = getStoredToken();
+
   return useQuery<Rule[]>({
     queryKey: ["rules"],
     queryFn: async () => {
       try {
         const response = await apiClient.get("/rules");
-        return unwrapCollection<Rule>(response.data, "rules", fallbackRules);
+        return unwrapCollection<Rule>(
+          response.data,
+          "rules",
+          fallbackRules
+        );
       } catch {
         return fallbackRules;
       }
     },
+    enabled: !!token,
     initialData: fallbackRules,
   });
 }
-
 export function useSaveRule() {
   const queryClient = useQueryClient();
 
@@ -1137,5 +1241,33 @@ export function useGetTeamMembers() {
     initialData: fallbackTeamMembers,
   });
 }
+
+const sortTasksNewestFirst = (tasks: any[]) =>
+  [...tasks].sort((a, b) => {
+    const dateA = new Date(a.created_at || a.createdAt || a.start_time || a.startTime || a.deadline || 0).getTime();
+    const dateB = new Date(b.created_at || b.createdAt || b.start_time || b.startTime || b.deadline || 0).getTime();
+    return dateB - dateA;
+  });
+
+apiClient.interceptors.response.use((response) => {
+  if (Array.isArray(response.data)) {
+    const looksLikeTaskList = response.data.some(
+      (item) => item && typeof item === "object" && ("deadline" in item || "start_time" in item || "startTime" in item)
+    );
+
+    if (looksLikeTaskList) {
+      response.data = sortTasksNewestFirst(response.data);
+    }
+  }
+
+  if (response.data && typeof response.data === "object" && Array.isArray(response.data.tasks)) {
+    response.data = {
+      ...response.data,
+      tasks: sortTasksNewestFirst(response.data.tasks),
+    };
+  }
+
+  return response;
+});
 
 export default apiClient;

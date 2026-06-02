@@ -6,6 +6,7 @@ import Recommendation from "../models/Recommendation.js";
 import ActivityLog from "../models/ActivityLog.js";
 import Attendance from "../models/Attendance.js";
 import { fetchRecommendations, predictPerformance } from "./aiService.js";
+import { saveRecommendation } from "./persistenceService.js";
 import { normalizeRole } from "../utils/roleNormalization.js";
 
 const WINDOW_DAYS = 6;
@@ -281,7 +282,7 @@ export async function refreshRecommendationsForScope({ tenantId, userIds, trigge
     predictions,
   });
 
-  const recommendation = await Recommendation.create({
+  const recommendation = await saveRecommendation({
     tenantId: tenantId || null,
     windowStart,
     windowEnd,
@@ -342,7 +343,7 @@ export async function generateWeeklyEffectivenessRecommendation({
     .sort({ role: 1, name: 1 });
 
   if (!users.length) {
-    return Recommendation.create({
+    return saveRecommendation({
       tenantId: scopedTenant,
       kind: "weekly_effectiveness",
       weekKey,
@@ -410,7 +411,7 @@ export async function generateWeeklyEffectivenessRecommendation({
       : "L efficacite globale de l equipe est stable cette semaine.",
   ];
 
-  return Recommendation.create({
+  return saveRecommendation({
     tenantId: scopedTenant,
     kind: "weekly_effectiveness",
     weekKey,
