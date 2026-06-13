@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-01T11:33:54.536433+00:00",
+  "generated_at": "2026-06-02T18:55:49.550530+00:00",
   "model_version": "2.0-trained",
   "synthetic_users": 3000,
   "feature_names": [
@@ -14,8 +14,8 @@
     "completion_rate",
     "task_trend_7d"
   ],
-  "risk_accuracy": 0.935,
-  "risk_roc_auc": 0.984953556432116,
+  "risk_accuracy": 0.9483333333333334,
+  "risk_roc_auc": 0.9821258987925654,
   "anomaly_contamination": 0.08,
   "output_files": {
     "risk_predictor": "C:\\Users\\MSI\\omnia\\ml_service\\trained_models\\risk_predictor.pkl",

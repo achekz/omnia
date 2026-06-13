@@ -18,18 +18,18 @@ from pathlib import Path
 from typing import Any
 
 try:
-    import joblib
-    import numpy as np
-    import pandas as pd
-    from faker import Faker
-    from sklearn.ensemble import IsolationForest
-    from sklearn.linear_model import LogisticRegression
+    import joblib #sauvegarde et chargement du modeles 
+    import numpy as np #calcul numerique et generer le nmbr aleatoire
+    import pandas as pd #mnipulation des dataset fake 
+    from faker import Faker #generer de dataset fake (synthetique)
+    from sklearn.ensemble import IsolationForest #detection des anomalies 
+    from sklearn.linear_model import LogisticRegression #prediction du risque 
     from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
     from sklearn.model_selection import train_test_split
-    from sklearn.neighbors import NearestNeighbors
+    from sklearn.neighbors import NearestNeighbors #trouver les recommendation les plus proches 
     from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.preprocessing import StandardScaler, LabelEncoder #normalisation des données 
+    from sklearn.feature_extraction.text import TfidfVectorizer #transfert le texte en numerique et recommendation intelligente 
 except ModuleNotFoundError as exc:
     missing_name = exc.name or "a required package"
     raise SystemExit(
@@ -87,6 +87,8 @@ def build_user_features(fake: Faker, rng: np.random.Generator, user_id: int) -> 
         active_minutes = bounded_normal(rng, 195, 75, 0, 480)
 
     active_days = int(np.clip(rng.normal(23, 6), 1, 30))
+    absence_count = int(np.clip(rng.poisson(2), 0, 15))
+    late_count = int(np.clip(rng.poisson(3), 0, 20))
     engagement = bounded_normal(rng, 1.6, 0.75, 0, 5)
     consistency = bounded_normal(rng, 3.8, 2.5, 0, 18)
     completion_rate = float(np.clip(rng.beta(6, 2), 0, 1))
@@ -148,6 +150,8 @@ def build_user_features(fake: Faker, rng: np.random.Generator, user_id: int) -> 
         "risk_probability": risk_probability,
         "high_risk": high_risk,
         "profile_text": build_profile_text(role, avg_tasks, missed_ratio, performance_score, engagement, task_trend),
+        "absence_count": absence_count,
+        "late_count": late_count,
     }
 
 
@@ -167,6 +171,7 @@ def build_profile_text(
     return f"{role} {activity} {deadlines} {performance} {engagement_text} {trend}"
 
 
+# yassn3 dataset fake 
 def generate_dataset(size: int, seed: int) -> pd.DataFrame:
     fake = Faker()
     Faker.seed(seed)
@@ -178,7 +183,7 @@ def generate_dataset(size: int, seed: int) -> pd.DataFrame:
 def train_risk_predictor(df: pd.DataFrame) -> tuple[dict[str, Any], dict[str, float]]:
     x = df[FEATURE_NAMES]
     y = df["high_risk"]
-    x_train, x_test, y_train, y_test = train_test_split(
+    x_train, x_test, y_train, y_test = train_test_split( #test Split / train 
         x,
         y,
         test_size=0.2,
@@ -285,7 +290,7 @@ def train_content_recommender(df: pd.DataFrame) -> dict[str, Any]:
         "trained_at": datetime.now(timezone.utc).isoformat(),
     }
 
-
+#250 arbres de decision pour isoler les anomalies
 def train_anomaly_detector(df: pd.DataFrame, contamination: float) -> dict[str, Any]:
     pipeline = Pipeline(
         steps=[
@@ -293,7 +298,7 @@ def train_anomaly_detector(df: pd.DataFrame, contamination: float) -> dict[str, 
             (
                 "detector",
                 IsolationForest(
-                    n_estimators=250,
+                    n_estimators=250, #parametre de dataset 
                     contamination=contamination,
                     random_state=42,
                     n_jobs=-1,
@@ -327,7 +332,7 @@ def train_anomaly_detector(df: pd.DataFrame, contamination: float) -> dict[str, 
 def save_artifact(output_dir: Path, filename: str, payload: dict[str, Any]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / filename
-    joblib.dump(payload, path)
+    joblib.dump(payload, path)  #yrod el object python en .pkl
     return path
 
 
@@ -352,6 +357,10 @@ def main() -> None:
         raise ValueError("--size must be at least 500 for stable train/test splits.")
 
     df = generate_dataset(args.size, args.seed)
+    df.fillna(0, inplace=True)
+    df.dropna(inplace=True)
+    role_encoder = LabelEncoder()
+    df["role_encoded"] = role_encoder.fit_transform(df["role"])
     risk_artifact, risk_metrics = train_risk_predictor(df)
     recommender_artifact = train_content_recommender(df)
     anomaly_artifact = train_anomaly_detector(df, args.contamination)

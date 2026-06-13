@@ -301,9 +301,7 @@ export const getObjectACL = async (bucket, key) => {
   }
 };
 
-/**
- * Set object ACL
- */
+
 export const setObjectACL = async (bucket, key, acl = 'private') => {
   try {
     await s3Client.putObjectAcl({
@@ -320,9 +318,7 @@ export const setObjectACL = async (bucket, key, acl = 'private') => {
   }
 };
 
-/**
- * Get bucket size (total size of all objects)
- */
+
 export const getBucketSize = async (bucket) => {
   try {
     const response = await s3Client.listObjectsV2({

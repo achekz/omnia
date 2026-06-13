@@ -173,9 +173,7 @@ class CacheManager {
 
 const cache = new CacheManager();
 
-// ========================
-// ✅ EXPORTS FOR RATE LIMITER
-// ========================
+
 
 export const incrementCounter = async (key) => {
   const count = await cache.increment(key);

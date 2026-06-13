@@ -2,11 +2,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
-/**
- * ==========================================
- * SWAGGER/OPENAPI CONFIGURATION
- * ==========================================
- */
+
 
 const swaggerOptions = {
   definition: {
@@ -144,9 +140,7 @@ const swaggerOptions = {
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-/**
- * Setup Swagger UI
- */
+
 export const setupSwagger = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     swaggerOptions: {

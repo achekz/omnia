@@ -1,4 +1,3 @@
-// Role du fichier: regroupe la logique metier reutilisable et les integrations externes.
 import { normalizeRole } from "../utils/roleNormalization.js";
 import { logExternalError, logExternalRequest, logExternalResponse, redactUrl } from "../utils/networkDiagnostics.js";
 

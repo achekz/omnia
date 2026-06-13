@@ -137,7 +137,7 @@ def _fallback_recommendations(features):
 
 
 # ----------- RISK -----------
-@app.route("/predict-risk", methods=["POST"])
+@app.route("/predict-risk", methods=["POST"]) #routes de flask API
 def predict_risk():
     data = request.json.get("features")
     if data is None:
@@ -165,7 +165,7 @@ def predict_risk():
 
 
 # ----------- RECOMMENDATION -----------
-@app.route("/recommend", methods=["POST"])
+@app.route("/recommend", methods=["POST"]) #routes de flask API
 def recommend():
     data = request.json.get("features")
     if data is None:
@@ -204,7 +204,7 @@ def recommend():
 
 
 # ----------- ANOMALY -----------
-@app.route("/detect-anomaly", methods=["POST"])
+@app.route("/detect-anomaly", methods=["POST"]) #routes de flask API
 def detect_anomaly():
     data = request.json.get("features")
     if data is None:
